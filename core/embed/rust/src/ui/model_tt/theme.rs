@@ -35,6 +35,8 @@ pub const GREY_LIGHT: Color = Color::rgb(168, 168, 168); // greyish
 pub const GREY_MEDIUM: Color = Color::rgb(100, 100, 100);
 pub const GREY_DARK: Color = Color::rgb(51, 51, 51); // greyer
 
+pub const ERROR_COLOR: Color = Color::rgb(0xAD, 0x2B, 0x2B);
+
 // Commonly used corner radius (i.e. for buttons).
 pub const RADIUS: u8 = 2;
 
@@ -54,6 +56,8 @@ pub const ICON_NEXT: &[u8] = include_res!("model_tt/res/next.toif");
 pub const ICON_WARN: &[u8] = include_res!("model_tt/res/warn-icon.toif");
 pub const ICON_LIST_CURRENT: &[u8] = include_res!("model_tt/res/current.toif");
 pub const ICON_LIST_CHECK: &[u8] = include_res!("model_tt/res/check.toif");
+pub const ICON_SUCCESS_SMALL: &[u8] = include_res!("model_tt/res/success_bld.toif");
+pub const ICON_WARN_SMALL: &[u8] = include_res!("model_tt/res/warn_bld.toif");
 
 // Large, color icons.
 pub const IMAGE_WARN: &[u8] = include_res!("model_tt/res/warn.toif");
@@ -409,6 +413,10 @@ pub const TEXT_NORMAL: TextStyle = TextStyle::new(Font::NORMAL, FG, BG, GREY_LIG
 pub const TEXT_MEDIUM: TextStyle = TextStyle::new(Font::MEDIUM, FG, BG, GREY_LIGHT, GREY_LIGHT);
 pub const TEXT_BOLD: TextStyle = TextStyle::new(Font::BOLD, FG, BG, GREY_LIGHT, GREY_LIGHT);
 pub const TEXT_MONO: TextStyle = TextStyle::new(Font::MONO, FG, BG, GREY_LIGHT, GREY_LIGHT);
+pub const TEXT_ERROR_NORMAL: TextStyle =
+    TextStyle::new(Font::NORMAL, FG, ERROR_COLOR, GREY_LIGHT, GREY_LIGHT);
+pub const TEXT_ERROR_BOLD: TextStyle =
+    TextStyle::new(Font::BOLD, FG, ERROR_COLOR, GREY_LIGHT, GREY_LIGHT);
 
 pub const FORMATTED: FormattedFonts = FormattedFonts {
     normal: Font::NORMAL,
