@@ -29,9 +29,11 @@ core fw regular build:
     - nix-shell --run "poetry run make -C core build_firmware"
     - nix-shell --run "poetry run make -C core sizecheck"
     - cp core/build/firmware/firmware.bin trezor-fw-regular-$CORE_VERSION-$CI_COMMIT_SHORT_SHA.bin
+    - cp core/build/firmware/firmware.elf firmware.elf
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_SHORT_SHA"
     paths:
+      - firmware.elf
       - trezor-fw-regular-*.*.*-$CI_COMMIT_SHORT_SHA.bin
     expire_in: 1 week
 
