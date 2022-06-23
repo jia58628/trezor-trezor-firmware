@@ -5,10 +5,12 @@ from trezor import wire
 from apps.common import paths
 from apps.common.keychain import get_keychain
 
-from . import CURVE, networks
+from . import CURVE, networks, definitions
 
 if TYPE_CHECKING:
-    from typing import Callable, Iterable, TypeVar
+    from typing import Awaitable, Callable, Iterable, TypeVar
+
+    from apps.common.keychain import Keychain
 
     from trezor.messages import (
         EthereumGetAddress,
@@ -19,19 +21,17 @@ if TYPE_CHECKING:
         EthereumSignTypedData,
     )
 
-    from apps.common.keychain import MsgOut, Handler, HandlerWithKeychain
+    from apps.common.keychain import MsgIn as MsgInGeneric, MsgOut, Handler, HandlerWithKeychain
 
-    EthereumMessages = (
-        EthereumGetAddress
-        | EthereumGetPublicKey
-        | EthereumSignTx
-        | EthereumSignMessage
-        | EthereumSignTypedData
-    )
-    MsgIn = TypeVar("MsgIn", bound=EthereumMessages)
+    # messages for "with_keychain_from_path" decorator
+    MsgInKeychainPath = TypeVar("MsgInKeychainPath", bound=EthereumGetPublicKey)
+    # messages for "with_keychain_from_path_and_defs" decorator
+    MsgInKeychainPathDefs = TypeVar("MsgInKeychainPathDefs", bound=EthereumGetAddress | EthereumSignMessage | EthereumSignTypedData)
+    # messages for "with_keychain_from_chain_id_and_defs" decorator
+    MsgInKeychainChainIdDefs = TypeVar("MsgInKeychainChainIdDefs", bound=EthereumSignTx | EthereumSignTxEIP1559)
 
-    EthereumSignTxAny = EthereumSignTx | EthereumSignTxEIP1559
-    MsgInChainId = TypeVar("MsgInChainId", bound=EthereumSignTxAny)
+    # TODO: check the types of messages
+    HandlerWithKeychainAndDefinitions = Callable[[wire.Context, MsgInGeneric, Keychain, definitions.EthereumDefinitions], Awaitable[MsgOut]]
 
 
 # We believe Ethereum should use 44'/60'/a' for everything, because it is
@@ -43,13 +43,20 @@ PATTERNS_ADDRESS = (paths.PATTERN_BIP44, paths.PATTERN_SEP5)
 
 
 def _schemas_from_address_n(
-    patterns: Iterable[str], address_n: paths.Bip32Path
+    patterns: Iterable[str], address_n: paths.Bip32Path, network_info: networks.NetworkInfo | None
 ) -> Iterable[paths.PathSchema]:
     if len(address_n) < 2:
         return ()
 
     slip44_hardened = address_n[1]
-    if slip44_hardened not in networks.all_slip44_ids_hardened():
+
+    def _get_hardened_slip44_networks():
+        if network_info is not None:
+            yield network_info.slip44 | paths.HARDENED
+        yield from networks.all_slip44_ids_hardened()
+
+    # check with network from definitions and if that is None then with built-in ones
+    if slip44_hardened not in _get_hardened_slip44_networks():
         return ()
 
     if not slip44_hardened & paths.HARDENED:
@@ -62,10 +69,11 @@ def _schemas_from_address_n(
 
 def with_keychain_from_path(
     *patterns: str,
-) -> Callable[[HandlerWithKeychain[MsgIn, MsgOut]], Handler[MsgIn, MsgOut]]:
-    def decorator(func: HandlerWithKeychain[MsgIn, MsgOut]) -> Handler[MsgIn, MsgOut]:
-        async def wrapper(ctx: wire.Context, msg: MsgIn) -> MsgOut:
-            schemas = _schemas_from_address_n(patterns, msg.address_n)
+) -> Callable[[HandlerWithKeychain[MsgInKeychainPath, MsgOut]], Handler[MsgInKeychainPath, MsgOut]]:
+    def decorator(func: HandlerWithKeychain[MsgInKeychainPath, MsgOut]) -> Handler[MsgInKeychainPath, MsgOut]:
+        async def wrapper(ctx: wire.Context, msg: MsgInKeychainPath) -> MsgOut:
+            defs = definitions.get_definitions_from_msg(msg)
+            schemas = _schemas_from_address_n(patterns, msg.address_n, defs.network)
             keychain = await get_keychain(ctx, CURVE, schemas)
             with keychain:
                 return await func(ctx, msg, keychain)
@@ -75,17 +83,32 @@ def with_keychain_from_path(
     return decorator
 
 
-def _schemas_from_chain_id(msg: EthereumSignTxAny) -> Iterable[paths.PathSchema]:
-    info = networks.by_chain_id(msg.chain_id)
+def with_keychain_from_path_and_defs(
+    *patterns: str,
+) -> Callable[[HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]], Handler[MsgInKeychainPathDefs, MsgOut]]:
+    def decorator(func: HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]) -> Handler[MsgInKeychainPathDefs, MsgOut]:
+        async def wrapper(ctx: wire.Context, msg: MsgInKeychainPathDefs) -> MsgOut:
+            defs = definitions.get_definitions_from_msg(msg)
+            schemas = _schemas_from_address_n(patterns, msg.address_n, defs.network)
+            keychain = await get_keychain(ctx, CURVE, schemas)
+            with keychain:
+                return await func(ctx, msg, keychain, defs)
+
+        return wrapper
+
+    return decorator
+
+
+def _schemas_from_chain_id(network_info: networks.NetworkInfo | None) -> Iterable[paths.PathSchema]:
     slip44_id: tuple[int, ...]
-    if info is None:
+    if network_info is None:
         # allow Ethereum or testnet paths for unknown networks
         slip44_id = (60, 1)
-    elif info.slip44 not in (60, 1):
+    elif network_info.slip44 not in (60, 1):
         # allow cross-signing with Ethereum unless it's testnet
-        slip44_id = (info.slip44, 60)
+        slip44_id = (network_info.slip44, 60)
     else:
-        slip44_id = (info.slip44,)
+        slip44_id = (network_info.slip44,)
 
     schemas = [
         paths.PathSchema.parse(pattern, slip44_id) for pattern in PATTERNS_ADDRESS
@@ -93,14 +116,15 @@ def _schemas_from_chain_id(msg: EthereumSignTxAny) -> Iterable[paths.PathSchema]
     return [s.copy() for s in schemas]
 
 
-def with_keychain_from_chain_id(
-    func: HandlerWithKeychain[MsgInChainId, MsgOut]
-) -> Handler[MsgInChainId, MsgOut]:
+def with_keychain_from_chain_id_and_defs(
+    func: HandlerWithKeychainAndDefinitions[MsgInKeychainChainIdDefs, MsgOut]
+) -> Handler[MsgInKeychainChainIdDefs, MsgOut]:
     # this is only for SignTx, and only PATTERN_ADDRESS is allowed
-    async def wrapper(ctx: wire.Context, msg: MsgInChainId) -> MsgOut:
-        schemas = _schemas_from_chain_id(msg)
+    async def wrapper(ctx: wire.Context, msg: MsgInKeychainChainIdDefs) -> MsgOut:
+        defs = definitions.get_definitions_from_msg(msg)
+        schemas = _schemas_from_chain_id(defs.network)
         keychain = await get_keychain(ctx, CURVE, schemas)
         with keychain:
-            return await func(ctx, msg, keychain)
+            return await func(ctx, msg, keychain, defs)
 
     return wrapper

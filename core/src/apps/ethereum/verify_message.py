@@ -8,6 +8,7 @@ from trezor.ui.layouts import confirm_signverify, show_success
 
 from apps.common.signverify import decode_message
 
+from . import definitions
 from .helpers import address_from_bytes, bytes_from_address
 from .sign_message import message_digest
 
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
 
 
 async def verify_message(ctx: Context, msg: EthereumVerifyMessage) -> Success:
+    defs = definitions.get_definitions_from_msg(msg)
+
     digest = message_digest(msg.message)
     if len(msg.signature) != 65:
         raise wire.DataError("Invalid signature")
@@ -33,7 +36,7 @@ async def verify_message(ctx: Context, msg: EthereumVerifyMessage) -> Success:
     if address_bytes != pkh:
         raise wire.DataError("Invalid signature")
 
-    address = address_from_bytes(address_bytes)
+    address = address_from_bytes(address_bytes, defs.network)
 
     await confirm_signverify(
         ctx, "ETH", decode_message(msg.message), address=address, verify=True

@@ -18,7 +18,7 @@ from trezor.utils import HashWriter
 from apps.common import paths
 
 from .helpers import address_from_bytes, get_type_name
-from .keychain import PATTERNS_ADDRESS, with_keychain_from_path
+from .keychain import PATTERNS_ADDRESS, with_keychain_from_path_and_defs
 from .layout import (
     confirm_empty_typed_message,
     confirm_typed_data_final,
@@ -32,14 +32,16 @@ if TYPE_CHECKING:
     from apps.common.keychain import Keychain
     from trezor.wire import Context
 
+    from . import definitions
+
 
 # Maximum data size we support
 MAX_VALUE_BYTE_SIZE = 1024
 
 
-@with_keychain_from_path(*PATTERNS_ADDRESS)
+@with_keychain_from_path_and_defs(*PATTERNS_ADDRESS)
 async def sign_typed_data(
-    ctx: Context, msg: EthereumSignTypedData, keychain: Keychain
+    ctx: Context, msg: EthereumSignTypedData, keychain: Keychain, defs: definitions.EthereumDefinitions
 ) -> EthereumTypedDataSignature:
     await paths.validate_path(ctx, keychain, msg.address_n)
 
@@ -53,7 +55,7 @@ async def sign_typed_data(
     )
 
     return EthereumTypedDataSignature(
-        address=address_from_bytes(node.ethereum_pubkeyhash()),
+        address=address_from_bytes(node.ethereum_pubkeyhash(), defs.network),
         signature=signature[1:] + signature[0:1],
     )
 
