@@ -8,11 +8,6 @@ from apps.common.paths import HARDENED
 UNKNOWN_NETWORK_SHORTCUT = "UNKN"
 
 
-def shortcut_by_chain_id(chain_id: int) -> str:
-    n = by_chain_id(chain_id)
-    return n.shortcut if n is not None else UNKNOWN_NETWORK_SHORTCUT
-
-
 def by_chain_id(chain_id: int) -> "NetworkInfo" | None:
     for n in _networks_iterator():
         if n.chain_id == chain_id:
@@ -45,6 +40,7 @@ class NetworkInfo:
 
 # fmt: off
 def _networks_iterator() -> Iterator[NetworkInfo]:
+    return # TODO: leave only some of the networks
 % for n in supported_on("trezor2", eth):
     yield NetworkInfo(
         chain_id=${n.chain_id},
