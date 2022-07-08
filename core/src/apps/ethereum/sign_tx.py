@@ -20,7 +20,6 @@ from .layout import (
 )
 
 if TYPE_CHECKING:
-    from collections import defaultdict
     from apps.common.keychain import Keychain
 
     from .keychain import EthereumSignTxAny
@@ -95,7 +94,7 @@ async def sign_tx(
 
 
 async def handle_erc20(
-    ctx: wire.Context, msg: EthereumSignTxAny, token_dict: defaultdict[bytes, tokens.TokenInfo]
+    ctx: wire.Context, msg: EthereumSignTxAny, token_dict: dict[bytes, tokens.TokenInfo]
 ) -> tuple[tokens.TokenInfo | None, bytes, bytes, int]:
     token = None
     address_bytes = recipient = bytes_from_address(msg.to)
@@ -108,7 +107,7 @@ async def handle_erc20(
         and msg.data_initial_chunk[:16]
         == b"\xa9\x05\x9c\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     ):
-        token = token_dict[address_bytes]
+        token = token_dict.get(address_bytes, tokens.UNKNOWN_TOKEN)
         recipient = msg.data_initial_chunk[16:36]
         value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
 
