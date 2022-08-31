@@ -16,6 +16,9 @@ mod trezorhal;
 mod micropython;
 #[cfg(feature = "protobuf")]
 mod protobuf;
+#[cfg(feature = "sdcard")]
+mod sdsalt;
+mod storage;
 mod time;
 #[cfg(feature = "ui_debug")]
 mod trace;

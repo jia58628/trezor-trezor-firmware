@@ -54,12 +54,17 @@ pub const ICON_NEXT: &[u8] = include_res!("model_tt/res/next.toif");
 pub const ICON_WARN: &[u8] = include_res!("model_tt/res/warn-icon.toif");
 pub const ICON_LIST_CURRENT: &[u8] = include_res!("model_tt/res/current.toif");
 pub const ICON_LIST_CHECK: &[u8] = include_res!("model_tt/res/check.toif");
+pub const ICON_TREZOR_EMPTY: &[u8] = include_res!("model_tt/res/trezor_empty.toif");
+pub const ICON_TREZOR_FULL: &[u8] = include_res!("model_tt/res/trezor_full.toif");
 
 // Large, color icons.
 pub const IMAGE_WARN: &[u8] = include_res!("model_tt/res/warn.toif");
 pub const IMAGE_SUCCESS: &[u8] = include_res!("model_tt/res/success.toif");
 pub const IMAGE_ERROR: &[u8] = include_res!("model_tt/res/error.toif");
 pub const IMAGE_INFO: &[u8] = include_res!("model_tt/res/info.toif");
+
+// Default homescreen imange
+pub const IMAGE_HOMESCREEN: &[u8] = include_res!("model_tt/res/bg.toif");
 
 // Scrollbar/PIN dots.
 pub const DOT_ACTIVE: &[u8] = include_res!("model_tt/res/scroll-active.toif");

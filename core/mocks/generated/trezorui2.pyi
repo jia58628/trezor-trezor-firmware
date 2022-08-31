@@ -348,3 +348,15 @@ def show_remaining_shares(
     pages: Iterable[tuple[str, str]],
 ) -> int:
    """Shows SLIP39 state after info button is pressed on `confirm_recovery`."""
+
+
+# rust/src/ui/model_tt/layout.rs
+def set_keepalive_callback(
+    callback: KeepaliveCallback,
+) -> None:
+   """Sets keepalive callback. """
+
+
+# rust/src/ui/model_tt/layout.rs
+def remove_keepalive_callback() -> None:
+   """Removes keepalive callback. """

@@ -56,7 +56,7 @@ async def request_pin_and_sd_salt(
     return pin, salt
 
 
-def _set_last_unlock_time() -> None:
+def set_last_unlock_time() -> None:
     now = utime.ticks_ms()
     storage.cache.set(
         storage.cache.APP_COMMON_REQUEST_PIN_LAST_UNLOCK, now.to_bytes(4, "big")
@@ -85,6 +85,11 @@ async def verify_user_pin(
     ):
         return
 
+    try:
+        salt = await request_sd_salt(ctx)
+    except SdCardUnavailable:
+        raise wire.PinCancelled("SD salt is unavailable")
+
     if config.has_pin():
         from trezor.ui.layouts import request_pin_on_device
 
@@ -95,12 +100,8 @@ async def verify_user_pin(
     else:
         pin = ""
 
-    try:
-        salt = await request_sd_salt(ctx)
-    except SdCardUnavailable:
-        raise wire.PinCancelled("SD salt is unavailable")
     if config.unlock(pin, salt):
-        _set_last_unlock_time()
+        set_last_unlock_time()
         return
     elif not config.has_pin():
         raise RuntimeError
@@ -110,7 +111,7 @@ async def verify_user_pin(
             ctx, "Wrong PIN, enter again", config.get_pin_rem(), allow_cancel
         )
         if config.unlock(pin, salt):
-            _set_last_unlock_time()
+            set_last_unlock_time()
             return
 
     raise wire.PinInvalid
