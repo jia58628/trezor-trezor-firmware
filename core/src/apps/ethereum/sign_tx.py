@@ -22,7 +22,7 @@ from .layout import (
 if TYPE_CHECKING:
     from apps.common.keychain import Keychain
 
-    from .keychain import EthereumSignTxAny
+    from .keychain import MsgInKeychainChainIdDefs
 
 
 # Maximum chain_id which returns the full signature_v (which must fit into an uint32).
@@ -94,7 +94,7 @@ async def sign_tx(
 
 
 async def handle_erc20(
-    ctx: wire.Context, msg: EthereumSignTxAny, token_dict: dict[bytes, tokens.TokenInfo]
+    ctx: wire.Context, msg: MsgInKeychainChainIdDefs, token_dict: dict[bytes, tokens.TokenInfo]
 ) -> tuple[tokens.TokenInfo | None, bytes, bytes, int]:
     token = None
     address_bytes = recipient = bytes_from_address(msg.to)
@@ -184,7 +184,7 @@ def check(msg: EthereumSignTx) -> None:
     check_common_fields(msg)
 
 
-def check_common_fields(msg: EthereumSignTxAny) -> None:
+def check_common_fields(msg: MsgInKeychainChainIdDefs) -> None:
     if msg.data_length > 0:
         if not msg.data_initial_chunk:
             raise wire.DataError("Data length provided, but no initial chunk")
