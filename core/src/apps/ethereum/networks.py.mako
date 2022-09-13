@@ -40,7 +40,6 @@ class NetworkInfo:
 
 # fmt: off
 def _networks_iterator() -> Iterator[NetworkInfo]:
-    return # TODO: leave only some of the networks
 % for n in supported_on("trezor2", eth):
     yield NetworkInfo(
         chain_id=${n.chain_id},
