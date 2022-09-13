@@ -801,19 +801,13 @@ async def confirm_metadata(
 async def confirm_replacement(
     ctx: wire.GenericContext, description: str, txid: str
 ) -> None:
-    await raise_if_not_confirmed(
-        interact(
-            ctx,
-            _RustLayout(
-                trezorui2.confirm_blob(
-                    title=description.upper(),
-                    description="Confirm transaction ID:",
-                    data=txid,
-                )
-            ),
-            "confirm_replacement",
-            ButtonRequestType.SignTx,
-        )
+    await confirm_blob(
+        ctx,
+        title=description.upper(),
+        data=txid,
+        description="Confirm transaction ID:",
+        br_type="confirm_replacement",
+        br_code=ButtonRequestType.SignTx,
     )
 
 
@@ -900,34 +894,22 @@ async def confirm_signverify(
         title = f"SIGN {coin} MESSAGE"
         br_type = "sign_message"
 
-    await raise_if_not_confirmed(
-        interact(
-            ctx,
-            _RustLayout(
-                trezorui2.confirm_blob(
-                    title=title,
-                    description="Confirm address:",
-                    data=address,
-                )
-            ),
-            br_type,
-            ButtonRequestType.Other,
-        )
+    await confirm_blob(
+        ctx,
+        title=title,
+        data=address,
+        description="Confirm address:",
+        br_type=br_type,
+        br_code=ButtonRequestType.Other,
     )
 
-    await raise_if_not_confirmed(
-        interact(
-            ctx,
-            _RustLayout(
-                trezorui2.confirm_blob(
-                    title=title,
-                    description="Confirm message:",
-                    data=message,
-                )
-            ),
-            br_type,
-            ButtonRequestType.Other,
-        )
+    await confirm_blob(
+        ctx,
+        title=title,
+        data=message,
+        description="Confirm message:",
+        br_type=br_type,
+        br_code=ButtonRequestType.Other,
     )
 
 
