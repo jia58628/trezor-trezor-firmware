@@ -44,29 +44,6 @@ class ButtonMono(ButtonDefault):
         text_style = ui.MONO
 
 
-class ButtonMonoDark(ButtonDefault):
-    class normal:
-        bg_color = ui.DARK_BLACK
-        fg_color = ui.DARK_WHITE
-        text_style = ui.MONO
-        border_color = ui.BG
-        radius = ui.RADIUS
-
-    class active(normal):
-        bg_color = ui.FG
-        fg_color = ui.DARK_BLACK
-        text_style = ui.MONO
-        border_color = ui.FG
-        radius = ui.RADIUS
-
-    class disabled(normal):
-        bg_color = ui.DARK_BLACK
-        fg_color = ui.GREY
-        text_style = ui.MONO
-        border_color = ui.BG
-        radius = ui.RADIUS
-
-
 class ButtonConfirm(ButtonDefault):
     class normal(ButtonDefault.normal):
         bg_color = ui.GREEN

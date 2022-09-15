@@ -42,20 +42,6 @@ def uvarint_size(n: int) -> int:
     return bts
 
 
-def load_uvarint_b(buffer: bytes) -> int:
-    """
-    Variable int deserialization, synchronous from buffer.
-    """
-    result = 0
-    idx = 0
-    byte = 0x80
-    while byte & 0x80:
-        byte = buffer[idx]
-        result += (byte & 0x7F) << (7 * idx)
-        idx += 1
-    return result
-
-
 def dump_uvarint_b(n: int) -> bytearray:
     """
     Serializes uvarint to the buffer
@@ -76,18 +62,6 @@ def dump_uvarint_b_into(n: int, buffer: bytearray, offset: int = 0) -> bytearray
         buffer[offset] = (n & 0x7F) | (0x80 if shifted else 0x00)
         offset += 1
         n = shifted
-    return buffer
-
-
-def dump_uint_b_into(
-    n: int, width: int, buffer: bytearray, offset: int = 0
-) -> bytearray:
-    """
-    Serializes fixed size integer to the buffer
-    """
-    for idx in range(width):
-        buffer[idx + offset] = n & 0xFF
-        n >>= 8
     return buffer
 
 

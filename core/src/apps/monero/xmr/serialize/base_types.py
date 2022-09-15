@@ -62,7 +62,3 @@ class IntType:
     @classmethod
     def dump(cls, writer: Writer, n: int):
         return dump_uint(writer, n, cls.WIDTH)
-
-
-class UInt8(IntType):
-    WIDTH = 1
