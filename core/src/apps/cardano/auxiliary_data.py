@@ -1,3 +1,4 @@
+from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor import messages, wire
@@ -23,12 +24,12 @@ if TYPE_CHECKING:
 
     from . import seed
 
-AUXILIARY_DATA_HASH_SIZE = 32
-CATALYST_VOTING_PUBLIC_KEY_LENGTH = 32
-CATALYST_REGISTRATION_HASH_SIZE = 32
+_AUXILIARY_DATA_HASH_SIZE = const(32)
+_CATALYST_VOTING_PUBLIC_KEY_LENGTH = const(32)
+_CATALYST_REGISTRATION_HASH_SIZE = const(32)
 
-METADATA_KEY_CATALYST_REGISTRATION = 61284
-METADATA_KEY_CATALYST_REGISTRATION_SIGNATURE = 61285
+_METADATA_KEY_CATALYST_REGISTRATION = const(61284)
+_METADATA_KEY_CATALYST_REGISTRATION_SIGNATURE = const(61285)
 
 
 def validate(auxiliary_data: messages.CardanoTxAuxiliaryData) -> None:
@@ -47,7 +48,7 @@ def validate(auxiliary_data: messages.CardanoTxAuxiliaryData) -> None:
 
 
 def _validate_hash(auxiliary_data_hash: bytes) -> None:
-    if len(auxiliary_data_hash) != AUXILIARY_DATA_HASH_SIZE:
+    if len(auxiliary_data_hash) != _AUXILIARY_DATA_HASH_SIZE:
         raise wire.ProcessError("Invalid auxiliary data")
 
 
@@ -56,7 +57,7 @@ def _validate_catalyst_registration_parameters(
 ) -> None:
     if (
         len(catalyst_registration_parameters.voting_public_key)
-        != CATALYST_VOTING_PUBLIC_KEY_LENGTH
+        != _CATALYST_VOTING_PUBLIC_KEY_LENGTH
     ):
         raise wire.ProcessError("Invalid auxiliary data")
 
@@ -165,8 +166,8 @@ def _cborize_catalyst_registration(
     catalyst_registration_signature = {1: catalyst_registration_payload_signature}
 
     return {
-        METADATA_KEY_CATALYST_REGISTRATION: catalyst_registration_payload,
-        METADATA_KEY_CATALYST_REGISTRATION_SIGNATURE: catalyst_registration_signature,
+        _METADATA_KEY_CATALYST_REGISTRATION: catalyst_registration_payload,
+        _METADATA_KEY_CATALYST_REGISTRATION_SIGNATURE: catalyst_registration_signature,
     }
 
 
@@ -209,12 +210,12 @@ def _create_catalyst_registration_payload_signature(
     node = keychain.derive(path)
 
     encoded_catalyst_registration = cbor.encode(
-        {METADATA_KEY_CATALYST_REGISTRATION: catalyst_registration_payload}
+        {_METADATA_KEY_CATALYST_REGISTRATION: catalyst_registration_payload}
     )
 
     catalyst_registration_hash = hashlib.blake2b(
         data=encoded_catalyst_registration,
-        outlen=CATALYST_REGISTRATION_HASH_SIZE,
+        outlen=_CATALYST_REGISTRATION_HASH_SIZE,
     ).digest()
 
     return ed25519.sign_ext(
@@ -236,5 +237,5 @@ def _wrap_metadata(metadata: dict) -> tuple[dict, tuple]:
 
 def _get_hash(auxiliary_data: bytes) -> bytes:
     return hashlib.blake2b(
-        data=auxiliary_data, outlen=AUXILIARY_DATA_HASH_SIZE
+        data=auxiliary_data, outlen=_AUXILIARY_DATA_HASH_SIZE
     ).digest()

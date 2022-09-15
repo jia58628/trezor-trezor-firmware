@@ -1,5 +1,7 @@
-MAINNET = 764824073
-TESTNET = 1097911063
+from micropython import const
+
+MAINNET = const(764824073)
+TESTNET = const(1097911063)
 
 NAMES = {
     MAINNET: "Mainnet",

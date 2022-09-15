@@ -329,10 +329,10 @@ class BasicApprover(Approver):
 
 class CoinJoinApprover(Approver):
     # Minimum registrable output amount in a CoinJoin.
-    MIN_REGISTRABLE_OUTPUT_AMOUNT = 5000
+    MIN_REGISTRABLE_OUTPUT_AMOUNT = const(5000)
 
     # Largest possible weight of an output supported by Trezor (P2TR or P2WSH).
-    MAX_OUTPUT_WEIGHT = 4 * (8 + 1 + 1 + 1 + 32)
+    MAX_OUTPUT_WEIGHT = const(4 * (8 + 1 + 1 + 1 + 32))
 
     def __init__(
         self, tx: SignTx, coin: CoinInfo, authorization: CoinJoinAuthorization
