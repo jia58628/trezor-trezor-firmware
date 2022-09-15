@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from trezor import ui, wire
 from trezor.enums import ButtonRequestType
-from trezor.messages import AuthorizeCoinJoin, Success
+from trezor.messages import Success
 from trezor.strings import format_amount
 from trezor.ui.layouts import confirm_action, confirm_coinjoin, confirm_metadata
 
@@ -16,6 +16,7 @@ from .common import BIP32_WALLET_DEPTH
 from .keychain import validate_path_against_script_type, with_keychain
 
 if TYPE_CHECKING:
+    from trezor.messages import AuthorizeCoinJoin
     from apps.common.coininfo import CoinInfo
     from apps.common.keychain import Keychain
 
