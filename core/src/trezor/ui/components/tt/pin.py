@@ -42,37 +42,37 @@ class PinInput(ui.Component):
             self.repaint = False
 
     def render_pin(self) -> None:
-        MAX_LENGTH = const(14)  # maximum length of displayed PIN
+        _MAX_LENGTH = const(14)  # maximum length of displayed PIN
         CONTD_MARK = "<"
-        BOX_WIDTH = const(240)
-        DOT_SIZE = const(10)
-        PADDING = const(4)
-        RENDER_Y = const(20)
-        TWITCH = const(3)
+        _BOX_WIDTH = const(240)
+        _DOT_SIZE = const(10)
+        _PADDING = const(4)
+        _RENDER_Y = const(20)
+        _TWITCH = const(3)
 
         display.bar(0, 0, ui.WIDTH, 50, ui.BG)
 
-        if len(self.pin) > MAX_LENGTH:
-            contd_width = display.text_width(CONTD_MARK, ui.BOLD) + PADDING
-            twitch = TWITCH * (len(self.pin) % 2)
+        if len(self.pin) > _MAX_LENGTH:
+            contd_width = display.text_width(CONTD_MARK, ui.BOLD) + _PADDING
+            twitch = _TWITCH * (len(self.pin) % 2)
         else:
             contd_width = 0
             twitch = 0
 
-        count = min(len(self.pin), MAX_LENGTH)
-        render_x = (BOX_WIDTH - count * (DOT_SIZE + PADDING) - contd_width) // 2
+        count = min(len(self.pin), _MAX_LENGTH)
+        render_x = (_BOX_WIDTH - count * (_DOT_SIZE + _PADDING) - contd_width) // 2
 
         if contd_width:
             display.text(
-                render_x, RENDER_Y + DOT_SIZE, CONTD_MARK, ui.BOLD, ui.GREY, ui.BG
+                render_x, _RENDER_Y + _DOT_SIZE, CONTD_MARK, ui.BOLD, ui.GREY, ui.BG
             )
 
         for i in range(0, count):
             display.bar_radius(
-                render_x + contd_width + twitch + i * (DOT_SIZE + PADDING),
-                RENDER_Y,
-                DOT_SIZE,
-                DOT_SIZE,
+                render_x + contd_width + twitch + i * (_DOT_SIZE + _PADDING),
+                _RENDER_Y,
+                _DOT_SIZE,
+                _DOT_SIZE,
                 ui.GREY,
                 ui.BG,
                 4,

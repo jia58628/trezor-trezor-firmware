@@ -27,22 +27,22 @@ WAS_PAGED = object()
 
 
 def render_scrollbar(pages: int, page: int) -> None:
-    BBOX = const(220)
-    SIZE = const(8)
+    _BBOX = const(220)
+    _SIZE = const(8)
 
     padding = 14
-    if pages * padding > BBOX:
-        padding = BBOX // pages
+    if pages * padding > _BBOX:
+        padding = _BBOX // pages
 
     X = const(220)
-    Y = (BBOX // 2) - (pages // 2) * padding
+    Y = (_BBOX // 2) - (pages // 2) * padding
 
     for i in range(0, pages):
         if i == page:
             fg = ui.FG
         else:
             fg = ui.GREY
-        ui.display.bar_radius(X, Y + i * padding, SIZE, SIZE, fg, ui.BG, 4)
+        ui.display.bar_radius(X, Y + i * padding, _SIZE, _SIZE, fg, ui.BG, 4)
 
 
 def render_swipe_icon(x_offset: int = 0) -> None:

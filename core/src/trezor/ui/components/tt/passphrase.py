@@ -28,15 +28,15 @@ def digit_area(i: int) -> ui.Area:
 
 
 def render_scrollbar(page: int) -> None:
-    BBOX = const(240)
-    SIZE = const(8)
+    _BBOX = const(240)
+    _SIZE = const(8)
     pages = len(KEYBOARD_KEYS)
 
     padding = 12
-    if pages * padding > BBOX:
-        padding = BBOX // pages
+    if pages * padding > _BBOX:
+        padding = _BBOX // pages
 
-    x = (BBOX // 2) - (pages // 2) * padding
+    x = (_BBOX // 2) - (pages // 2) * padding
     Y = const(44)
 
     for i in range(0, pages):
@@ -44,7 +44,7 @@ def render_scrollbar(page: int) -> None:
             fg = ui.FG
         else:
             fg = ui.DARK_GREY
-        ui.display.bar_radius(x + i * padding, Y, SIZE, SIZE, fg, ui.BG, SIZE // 2)
+        ui.display.bar_radius(x + i * padding, Y, _SIZE, _SIZE, fg, ui.BG, _SIZE // 2)
 
 
 class KeyButton(Button):

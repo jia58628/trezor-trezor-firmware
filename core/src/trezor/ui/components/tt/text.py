@@ -57,9 +57,9 @@ class Text(TextBase):
             self.repaint = False
 
 
-LABEL_LEFT = const(0)
+_LABEL_LEFT = const(0)
 LABEL_CENTER = const(1)
-LABEL_RIGHT = const(2)
+_LABEL_RIGHT = const(2)
 
 
 class Label(ui.Component):
@@ -67,7 +67,7 @@ class Label(ui.Component):
         self,
         area: ui.Area,
         content: str,
-        align: int = LABEL_LEFT,
+        align: int = _LABEL_LEFT,
         style: int = ui.NORMAL,
     ) -> None:
         super().__init__()
@@ -83,11 +83,11 @@ class Label(ui.Component):
             ui.display.bar(ax, ay, aw, ah, ui.BG)
             tx = ax + aw // 2
             ty = ay + ah // 2 + 8
-            if align is LABEL_LEFT:
+            if align is _LABEL_LEFT:
                 ui.display.text(tx, ty, self.content, self.style, ui.FG, ui.BG)
             elif align is LABEL_CENTER:
                 ui.display.text_center(tx, ty, self.content, self.style, ui.FG, ui.BG)
-            elif align is LABEL_RIGHT:
+            elif align is _LABEL_RIGHT:
                 ui.display.text_right(tx, ty, self.content, self.style, ui.FG, ui.BG)
             self.repaint = False
 
