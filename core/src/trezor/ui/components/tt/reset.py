@@ -108,8 +108,6 @@ class Slip39NumInput(ui.Component):
 
 
 class MnemonicWordSelect(ui.Layout):
-    NUM_OF_CHOICES = 3
-
     def __init__(
         self,
         words: Sequence[str],
