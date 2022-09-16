@@ -1,21 +1,19 @@
 from typing import TYPE_CHECKING
 
-from trezor import wire
-from trezor.crypto import hashlib
-from trezor.crypto.curve import ed25519
-from trezor.enums import TezosBallotType, TezosContractType
-from trezor.messages import TezosSignedTx
+from trezor.enums import TezosContractType
+from trezor.wire import DataError
 
-from apps.common import paths
 from apps.common.keychain import with_slip44_keychain
-from apps.common.writers import (
-    write_bytes_fixed,
-    write_bytes_unchecked,
-    write_uint8,
-    write_uint32_be,
-)
+from apps.common.writers import write_bytes_fixed, write_uint8, write_uint32_be
 
-from . import CURVE, PATTERNS, SLIP44_ID, helpers, layout
+from . import CURVE, PATTERNS, SLIP44_ID, helpers
+from .helpers import (  # symbols used more than once
+    CONTRACT_ID_SIZE,
+    TAGGED_PUBKEY_HASH_SIZE,
+    base58_encode_check,
+    write_bool,
+    write_instruction,
+)
 
 if TYPE_CHECKING:
     from apps.common.keychain import Keychain
@@ -23,99 +21,126 @@ if TYPE_CHECKING:
     from trezor.messages import (
         TezosSignTx,
         TezosContractID,
-        TezosManagerTransfer,
-        TezosBallotOp,
-        TezosProposalOp,
         TezosRevealOp,
         TezosDelegationOp,
         TezosTransactionOp,
         TezosOriginationOp,
+        TezosSignedTx,
     )
     from trezor.utils import Writer
 
 
 @with_slip44_keychain(*PATTERNS, slip44_id=SLIP44_ID, curve=CURVE)
 async def sign_tx(ctx: Context, msg: TezosSignTx, keychain: Keychain) -> TezosSignedTx:
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    from trezor.crypto import hashlib
+    from trezor.crypto.curve import ed25519
+    from apps.common.paths import validate_path
+    from trezor.messages import TezosSignedTx
+    from trezor.enums import TezosBallotType
+    from . import layout
+
+    await validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
 
-    if msg.transaction is not None:
+    msg_transaction = msg.transaction  # cache
+    msg_origination = msg.origination  # cache
+    msg_delegation = msg.delegation  # cache
+
+    if msg_transaction is not None:
+        msg_transaction_fee = msg_transaction.fee  # cache
+
         # if the transaction operation is used to execute code on a smart contract
-        if msg.transaction.parameters_manager is not None:
-            parameters_manager = msg.transaction.parameters_manager
+        if msg_transaction.parameters_manager is not None:
+            parameters_manager = msg_transaction.parameters_manager
+            parameters_manager_transfer = parameters_manager.transfer  # cache
 
             # operation to delegate from a smart contract with manager.tz
             if parameters_manager.set_delegate is not None:
                 delegate = _get_address_by_tag(parameters_manager.set_delegate)
                 await layout.require_confirm_delegation_baker(ctx, delegate)
-                await layout.require_confirm_set_delegate(ctx, msg.transaction.fee)
+                await layout.require_confirm_set_delegate(ctx, msg_transaction_fee)
 
             # operation to remove delegate from the smart contract with manager.tz
             elif parameters_manager.cancel_delegate is not None:
-                address = _get_address_from_contract(msg.transaction.destination)
+                address = _get_address_from_contract(msg_transaction.destination)
                 await layout.require_confirm_delegation_manager_withdraw(ctx, address)
                 await layout.require_confirm_manager_remove_delegate(
-                    ctx, msg.transaction.fee
+                    ctx, msg_transaction_fee
                 )
 
             # operation to transfer tokens from a smart contract to an implicit account or a smart contract
-            elif parameters_manager.transfer is not None:
-                to = _get_address_from_contract(parameters_manager.transfer.destination)
+            elif parameters_manager_transfer is not None:
+                to = _get_address_from_contract(parameters_manager_transfer.destination)
                 await layout.require_confirm_tx(
-                    ctx, to, parameters_manager.transfer.amount
+                    ctx, to, parameters_manager_transfer.amount
                 )
                 await layout.require_confirm_fee(
-                    ctx, parameters_manager.transfer.amount, msg.transaction.fee
+                    ctx, parameters_manager_transfer.amount, msg_transaction_fee
                 )
         else:
             # transactions from an implicit account
-            to = _get_address_from_contract(msg.transaction.destination)
-            await layout.require_confirm_tx(ctx, to, msg.transaction.amount)
+            to = _get_address_from_contract(msg_transaction.destination)
+            await layout.require_confirm_tx(ctx, to, msg_transaction.amount)
             await layout.require_confirm_fee(
-                ctx, msg.transaction.amount, msg.transaction.fee
+                ctx, msg_transaction.amount, msg_transaction_fee
             )
 
-    elif msg.origination is not None:
-        source = _get_address_by_tag(msg.origination.source)
+    elif msg_origination is not None:
+        source = _get_address_by_tag(msg_origination.source)
         await layout.require_confirm_origination(ctx, source)
 
         # if we are immediately delegating contract
-        if msg.origination.delegate is not None:
-            delegate = _get_address_by_tag(msg.origination.delegate)
+        if msg_origination.delegate is not None:
+            delegate = _get_address_by_tag(msg_origination.delegate)
             await layout.require_confirm_delegation_baker(ctx, delegate)
 
         await layout.require_confirm_origination_fee(
-            ctx, msg.origination.balance, msg.origination.fee
+            ctx, msg_origination.balance, msg_origination.fee
         )
 
-    elif msg.delegation is not None:
-        source = _get_address_by_tag(msg.delegation.source)
+    elif msg_delegation is not None:
+        source = _get_address_by_tag(msg_delegation.source)
 
         delegate_address: str | None = None
-        if msg.delegation.delegate is not None:
-            delegate_address = _get_address_by_tag(msg.delegation.delegate)
+        if msg_delegation.delegate is not None:
+            delegate_address = _get_address_by_tag(msg_delegation.delegate)
 
         if delegate_address is not None and source != delegate_address:
             await layout.require_confirm_delegation_baker(ctx, delegate_address)
-            await layout.require_confirm_set_delegate(ctx, msg.delegation.fee)
+            await layout.require_confirm_set_delegate(ctx, msg_delegation.fee)
         # if account registers itself as a delegate
         else:
             await layout.require_confirm_register_delegate(
-                ctx, source, msg.delegation.fee
+                ctx, source, msg_delegation.fee
             )
 
     elif msg.proposal is not None:
-        proposed_protocols = [_get_protocol_hash(p) for p in msg.proposal.proposals]
+        proposed_protocols = [
+            # _get_protocol_hash
+            base58_encode_check(p, "P")
+            for p in msg.proposal.proposals
+        ]
         await layout.require_confirm_proposals(ctx, proposed_protocols)
 
     elif msg.ballot is not None:
-        proposed_protocol = _get_protocol_hash(msg.ballot.proposal)
-        submitted_ballot = _get_ballot(msg.ballot.ballot)
+        # _get_protocol_hash
+        proposed_protocol = base58_encode_check(msg.ballot.proposal, "P")
+
+        # _get_ballot
+        # Throws KeyError in case of failure - instead of RuntimeError, that saves 17 bytes
+        submitted_ballot = {
+            TezosBallotType.Yay: "yay",
+            TezosBallotType.Nay: "nay",
+            TezosBallotType.Pass: "pass",
+        }[
+            msg.ballot.ballot
+        ]  # unrecognized enum value
+
         await layout.require_confirm_ballot(ctx, proposed_protocol, submitted_ballot)
 
     else:
-        raise wire.DataError("Invalid operation")
+        raise DataError("Invalid operation")
 
     w = bytearray()
     _get_operation_bytes(w, msg)
@@ -131,11 +156,9 @@ async def sign_tx(ctx: Context, msg: TezosSignTx, keychain: Keychain) -> TezosSi
 
     sig_op_contents = opbytes + signature
     sig_op_contents_hash = hashlib.blake2b(sig_op_contents, outlen=32).digest()
-    ophash = helpers.base58_encode_check(sig_op_contents_hash, prefix="o")
+    ophash = base58_encode_check(sig_op_contents_hash, "o")
 
-    sig_prefixed = helpers.base58_encode_check(
-        signature, prefix=helpers.TEZOS_SIGNATURE_PREFIX
-    )
+    sig_prefixed = base58_encode_check(signature, helpers.TEZOS_SIGNATURE_PREFIX)
 
     return TezosSignedTx(
         signature=sig_prefixed, sig_op_contents=sig_op_contents, operation_hash=ophash
@@ -147,8 +170,8 @@ def _get_address_by_tag(address_hash: bytes) -> str:
     tag = int(address_hash[0])
 
     if 0 <= tag < len(prefixes):
-        return helpers.base58_encode_check(address_hash[1:], prefix=prefixes[tag])
-    raise wire.DataError("Invalid tag in address hash")
+        return base58_encode_check(address_hash[1:], prefixes[tag])
+    raise DataError("Invalid tag in address hash")
 
 
 def _get_address_from_contract(address: TezosContractID) -> str:
@@ -156,94 +179,149 @@ def _get_address_from_contract(address: TezosContractID) -> str:
         return _get_address_by_tag(address.hash)
 
     elif address.tag == TezosContractType.Originated:
-        return helpers.base58_encode_check(
-            address.hash[:-1], prefix=helpers.TEZOS_ORIGINATED_ADDRESS_PREFIX
+        return base58_encode_check(
+            address.hash[:-1], helpers.TEZOS_ORIGINATED_ADDRESS_PREFIX
         )
 
-    raise wire.DataError("Invalid contract type")
-
-
-def _get_protocol_hash(proposal: bytes) -> str:
-    return helpers.base58_encode_check(proposal, prefix="P")
-
-
-def _get_ballot(ballot: TezosBallotType) -> str:
-    if ballot == TezosBallotType.Yay:
-        return "yay"
-    elif ballot == TezosBallotType.Nay:
-        return "nay"
-    elif ballot == TezosBallotType.Pass:
-        return "pass"
-
-    raise RuntimeError  # unrecognized enum value
+    raise DataError("Invalid contract type")
 
 
 def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
-    write_bytes_fixed(w, msg.branch, helpers.BRANCH_HASH_SIZE)
+    from apps.common.writers import write_bytes_unchecked
+    from .helpers import PROPOSAL_HASH_SIZE
+
+    write_bytes_fixed_local = write_bytes_fixed  # cache
+
+    write_bytes_fixed_local(w, msg.branch, helpers.BRANCH_HASH_SIZE)
+
+    msg_reveal = msg.reveal  # cache
 
     # when the account sends first operation in lifetime,
     # we need to reveal its public key
-    if msg.reveal is not None:
-        _encode_common(w, msg.reveal, "reveal")
-        tag = int(msg.reveal.public_key[0])
+    if msg_reveal is not None:
+        _encode_common(w, msg_reveal, "reveal")
+        tag = int(msg_reveal.public_key[0])
 
         try:
             public_key_size = helpers.PUBLIC_KEY_TAG_TO_SIZE[tag]
         except KeyError:
-            raise wire.DataError("Invalid tag in public key")
+            raise DataError("Invalid tag in public key")
 
-        write_bytes_fixed(w, msg.reveal.public_key, 1 + public_key_size)
+        write_bytes_fixed_local(w, msg_reveal.public_key, 1 + public_key_size)
 
     # transaction operation
     if msg.transaction is not None:
-        _encode_common(w, msg.transaction, "transaction")
-        _encode_zarith(w, msg.transaction.amount)
-        _encode_contract_id(w, msg.transaction.destination)
+        transaction = msg.transaction
+        _encode_common(w, transaction, "transaction")
+        _encode_zarith(w, transaction.amount)
+
+        # _encode_contract_id
+        contract_id = transaction.destination
+        write_uint8(w, contract_id.tag)
+        write_bytes_fixed_local(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
 
         # support delegation and transfer from the old scriptless contracts (now with manager.tz script)
-        if msg.transaction.parameters_manager is not None:
-            parameters_manager = msg.transaction.parameters_manager
+        if transaction.parameters_manager is not None:
+            parameters_manager = transaction.parameters_manager  # cache
+            parameters_manager_transfer = parameters_manager.transfer  # cache
 
             if parameters_manager.set_delegate is not None:
-                _encode_manager_delegation(w, parameters_manager.set_delegate)
+                # _encode_manager_delegation
+                delegate = parameters_manager.set_delegate
+                michelson_length = 42
+                _encode_manager_common(w, michelson_length, "PUSH")
+                write_bytes_fixed_local(w, delegate, TAGGED_PUBKEY_HASH_SIZE)
+                for i in ("SOME", "SET_DELEGATE", "CONS"):
+                    write_instruction(w, i)
             elif parameters_manager.cancel_delegate is not None:
-                _encode_manager_delegation_remove(w)
-            elif parameters_manager.transfer is not None:
-                assert parameters_manager.transfer.destination is not None
+                # _encode_manager_delegation_remove
+                michelson_length = 14
+                _encode_manager_common(w, michelson_length, "NONE")
+                for i in ("SET_DELEGATE", "CONS"):
+                    write_instruction(w, i)
+            elif parameters_manager_transfer is not None:
+                assert parameters_manager_transfer.destination is not None
                 if (
-                    parameters_manager.transfer.destination.tag
+                    parameters_manager_transfer.destination.tag
                     == TezosContractType.Implicit
                 ):
-                    _encode_manager_to_implicit_transfer(w, parameters_manager.transfer)
+                    # _encode_manager_to_implicit_transfer
+                    manager_transfer = parameters_manager_transfer
+                    michelson_length = 48
+                    value_natural = bytearray()
+                    _encode_natural(value_natural, manager_transfer.amount)
+                    sequence_length = michelson_length + len(value_natural)
+
+                    _encode_manager_common(w, sequence_length, "PUSH")
+                    write_bytes_fixed_local(
+                        w, manager_transfer.destination.hash, TAGGED_PUBKEY_HASH_SIZE
+                    )
+                    for i in ("IMPLICIT_ACCOUNT", "PUSH", "mutez"):
+                        write_instruction(w, i)
+                    _encode_natural(w, manager_transfer.amount)
+                    for i in ("UNIT", "TRANSFER_TOKENS", "CONS"):
+                        write_instruction(w, i)
                 else:
-                    _encode_manager_to_manager_transfer(w, parameters_manager.transfer)
+                    # _encode_manager_to_manager_transfer
+                    manager_transfer = parameters_manager_transfer
+                    michelson_length = 77
+
+                    value_natural = bytearray()
+                    _encode_natural(value_natural, manager_transfer.amount)
+                    sequence_length = michelson_length + len(value_natural)
+
+                    _encode_manager_common(w, sequence_length, "PUSH", to_contract=True)
+
+                    # _encode_contract_id
+                    contract_id = manager_transfer.destination
+                    write_uint8(w, contract_id.tag)
+                    write_bytes_fixed_local(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
+
+                    for i in ("CONTRACT", "unit", "ASSERT_SOME", "PUSH", "mutez"):
+                        write_instruction(w, i)
+                    _encode_natural(w, manager_transfer.amount)
+                    for i in ("UNIT", "TRANSFER_TOKENS", "CONS"):
+                        write_instruction(w, i)
         else:
-            if msg.transaction.parameters:
-                helpers.write_bool(w, True)
-                helpers.check_tx_params_size(msg.transaction.parameters)
-                write_bytes_unchecked(w, msg.transaction.parameters)
+            transaction_parameters = transaction.parameters
+            if transaction_parameters:
+                write_bool(w, True)
+                helpers.check_tx_params_size(transaction_parameters)
+                write_bytes_unchecked(w, transaction_parameters)
             else:
-                helpers.write_bool(w, False)
+                write_bool(w, False)
     # origination operation
     elif msg.origination is not None:
-        _encode_common(w, msg.origination, "origination")
-        _encode_zarith(w, msg.origination.balance)
-        _encode_data_with_bool_prefix(
-            w, msg.origination.delegate, helpers.TAGGED_PUBKEY_HASH_SIZE
-        )
-        helpers.check_script_size(msg.origination.script)
-        write_bytes_unchecked(w, msg.origination.script)
+        origination = msg.origination
+        _encode_common(w, origination, "origination")
+        _encode_zarith(w, origination.balance)
+        _encode_data_with_bool_prefix(w, origination.delegate, TAGGED_PUBKEY_HASH_SIZE)
+        helpers.check_script_size(origination.script)
+        write_bytes_unchecked(w, origination.script)
 
     # delegation operation
     elif msg.delegation is not None:
         _encode_common(w, msg.delegation, "delegation")
         _encode_data_with_bool_prefix(
-            w, msg.delegation.delegate, helpers.TAGGED_PUBKEY_HASH_SIZE
+            w, msg.delegation.delegate, TAGGED_PUBKEY_HASH_SIZE
         )
     elif msg.proposal is not None:
-        _encode_proposal(w, msg.proposal)
+        # _encode_proposal
+        proposal = msg.proposal
+        write_uint8(w, helpers.OP_TAG_PROPOSALS)
+        write_bytes_fixed_local(w, proposal.source, TAGGED_PUBKEY_HASH_SIZE)
+        write_uint32_be(w, proposal.period)
+        write_uint32_be(w, len(proposal.proposals) * PROPOSAL_HASH_SIZE)
+        for proposal_hash in proposal.proposals:
+            write_bytes_fixed_local(w, proposal_hash, PROPOSAL_HASH_SIZE)
     elif msg.ballot is not None:
-        _encode_ballot(w, msg.ballot)
+        # _encode_ballot
+        ballot = msg.ballot
+        write_uint8(w, helpers.OP_TAG_BALLOT)
+        write_bytes_fixed_local(w, ballot.source, TAGGED_PUBKEY_HASH_SIZE)
+        write_uint32_be(w, ballot.period)
+        write_bytes_fixed_local(w, ballot.proposal, PROPOSAL_HASH_SIZE)
+        write_uint8(w, ballot.ballot)
 
 
 def _encode_common(
@@ -261,16 +339,14 @@ def _encode_common(
         "delegation": helpers.OP_TAG_DELEGATION,
     }
     write_uint8(w, operation_tags[str_operation])
-    write_bytes_fixed(w, operation.source, helpers.TAGGED_PUBKEY_HASH_SIZE)
-    _encode_zarith(w, operation.fee)
-    _encode_zarith(w, operation.counter)
-    _encode_zarith(w, operation.gas_limit)
-    _encode_zarith(w, operation.storage_limit)
-
-
-def _encode_contract_id(w: Writer, contract_id: TezosContractID) -> None:
-    write_uint8(w, contract_id.tag)
-    write_bytes_fixed(w, contract_id.hash, helpers.CONTRACT_ID_SIZE - 1)
+    write_bytes_fixed(w, operation.source, TAGGED_PUBKEY_HASH_SIZE)
+    for num in (
+        operation.fee,
+        operation.counter,
+        operation.gas_limit,
+        operation.storage_limit,
+    ):
+        _encode_zarith(w, num)
 
 
 def _encode_data_with_bool_prefix(
@@ -295,23 +371,6 @@ def _encode_zarith(w: Writer, num: int) -> None:
         write_uint8(w, 128 | byte)
 
 
-def _encode_proposal(w: Writer, proposal: TezosProposalOp) -> None:
-    write_uint8(w, helpers.OP_TAG_PROPOSALS)
-    write_bytes_fixed(w, proposal.source, helpers.TAGGED_PUBKEY_HASH_SIZE)
-    write_uint32_be(w, proposal.period)
-    write_uint32_be(w, len(proposal.proposals) * helpers.PROPOSAL_HASH_SIZE)
-    for proposal_hash in proposal.proposals:
-        write_bytes_fixed(w, proposal_hash, helpers.PROPOSAL_HASH_SIZE)
-
-
-def _encode_ballot(w: Writer, ballot: TezosBallotOp) -> None:
-    write_uint8(w, helpers.OP_TAG_BALLOT)
-    write_bytes_fixed(w, ballot.source, helpers.TAGGED_PUBKEY_HASH_SIZE)
-    write_uint32_be(w, ballot.period)
-    write_bytes_fixed(w, ballot.proposal, helpers.PROPOSAL_HASH_SIZE)
-    write_uint8(w, ballot.ballot)
-
-
 def _encode_natural(w: Writer, num: int) -> None:
     # encode a natural integer with its signed bit on position 7
     # as we do not expect negative numbers in a transfer operation the bit is never set
@@ -334,84 +393,20 @@ def _encode_manager_common(
     # 5 = tag and sequence_length (1 byte + 4 bytes)
     argument_length = sequence_length + 5
 
-    helpers.write_bool(w, True)
+    write_bool(w, True)
     write_uint8(w, helpers.DO_ENTRYPOINT_TAG)
     write_uint32_be(w, argument_length)
     write_uint8(w, helpers.MICHELSON_SEQUENCE_TAG)
     write_uint32_be(w, sequence_length)
-    helpers.write_instruction(w, "DROP")
-    helpers.write_instruction(w, "NIL")
-    helpers.write_instruction(w, "operation")
-    helpers.write_instruction(w, operation)
+    for i in ("DROP", "NIL", "operation", operation):
+        write_instruction(w, i)
     if to_contract:
-        helpers.write_instruction(w, "address")
+        write_instruction(w, "address")
     else:
-        helpers.write_instruction(w, "key_hash")
+        write_instruction(w, "key_hash")
     if operation == "PUSH":
         write_uint8(w, 10)  # byte sequence
         if to_contract:
-            write_uint32_be(w, helpers.CONTRACT_ID_SIZE)
+            write_uint32_be(w, CONTRACT_ID_SIZE)
         else:
-            write_uint32_be(w, helpers.TAGGED_PUBKEY_HASH_SIZE)
-
-
-def _encode_manager_to_implicit_transfer(
-    w: Writer, manager_transfer: TezosManagerTransfer
-) -> None:
-    MICHELSON_LENGTH = 48
-
-    value_natural = bytearray()
-    _encode_natural(value_natural, manager_transfer.amount)
-    sequence_length = MICHELSON_LENGTH + len(value_natural)
-
-    _encode_manager_common(w, sequence_length, "PUSH")
-    write_bytes_fixed(
-        w, manager_transfer.destination.hash, helpers.TAGGED_PUBKEY_HASH_SIZE
-    )
-    helpers.write_instruction(w, "IMPLICIT_ACCOUNT")
-    helpers.write_instruction(w, "PUSH")
-    helpers.write_instruction(w, "mutez")
-    _encode_natural(w, manager_transfer.amount)
-    helpers.write_instruction(w, "UNIT")
-    helpers.write_instruction(w, "TRANSFER_TOKENS")
-    helpers.write_instruction(w, "CONS")
-
-
-# smart_contract_delegation
-def _encode_manager_delegation(w: Writer, delegate: bytes) -> None:
-    MICHELSON_LENGTH = 42  # length is fixed this time(no variable length fields)
-
-    _encode_manager_common(w, MICHELSON_LENGTH, "PUSH")
-    write_bytes_fixed(w, delegate, helpers.TAGGED_PUBKEY_HASH_SIZE)
-    helpers.write_instruction(w, "SOME")
-    helpers.write_instruction(w, "SET_DELEGATE")
-    helpers.write_instruction(w, "CONS")
-
-
-def _encode_manager_delegation_remove(w: Writer) -> None:
-    MICHELSON_LENGTH = 14  # length is fixed this time(no variable length fields)
-    _encode_manager_common(w, MICHELSON_LENGTH, "NONE")
-    helpers.write_instruction(w, "SET_DELEGATE")
-    helpers.write_instruction(w, "CONS")
-
-
-def _encode_manager_to_manager_transfer(
-    w: Writer, manager_transfer: TezosManagerTransfer
-) -> None:
-    MICHELSON_LENGTH = 77
-
-    value_natural = bytearray()
-    _encode_natural(value_natural, manager_transfer.amount)
-    sequence_length = MICHELSON_LENGTH + len(value_natural)
-
-    _encode_manager_common(w, sequence_length, "PUSH", to_contract=True)
-    _encode_contract_id(w, manager_transfer.destination)
-    helpers.write_instruction(w, "CONTRACT")
-    helpers.write_instruction(w, "unit")
-    helpers.write_instruction(w, "ASSERT_SOME")
-    helpers.write_instruction(w, "PUSH")
-    helpers.write_instruction(w, "mutez")
-    _encode_natural(w, manager_transfer.amount)
-    helpers.write_instruction(w, "UNIT")
-    helpers.write_instruction(w, "TRANSFER_TOKENS")
-    helpers.write_instruction(w, "CONS")
+            write_uint32_be(w, TAGGED_PUBKEY_HASH_SIZE)
