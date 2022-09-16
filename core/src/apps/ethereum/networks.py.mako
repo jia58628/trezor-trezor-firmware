@@ -4,18 +4,19 @@
 from typing import Iterator
 
 from apps.common.paths import HARDENED
+from trezor.messages import EthereumNetworkInfo
 
 UNKNOWN_NETWORK_SHORTCUT = "UNKN"
 
 
-def by_chain_id(chain_id: int) -> "NetworkInfo" | None:
+def by_chain_id(chain_id: int) -> EthereumNetworkInfo | None:
     for n in _networks_iterator():
         if n.chain_id == chain_id:
             return n
     return None
 
 
-def by_slip44(slip44: int) -> "NetworkInfo" | None:
+def by_slip44(slip44: int) -> EthereumNetworkInfo | None:
     for n in _networks_iterator():
         if n.slip44 == slip44:
             return n
@@ -27,21 +28,10 @@ def all_slip44_ids_hardened() -> Iterator[int]:
         yield n.slip44 | HARDENED
 
 
-class NetworkInfo:
-    def __init__(
-        self, chain_id: int, slip44: int, shortcut: str, name: str, rskip60: bool
-    ) -> None:
-        self.chain_id = chain_id
-        self.slip44 = slip44
-        self.shortcut = shortcut
-        self.name = name
-        self.rskip60 = rskip60
-
-
 # fmt: off
-def _networks_iterator() -> Iterator[NetworkInfo]:
+def _networks_iterator() -> Iterator[EthereumNetworkInfo]:
 % for n in supported_on("trezor2", eth):
-    yield NetworkInfo(
+    yield EthereumNetworkInfo(
         chain_id=${n.chain_id},
         slip44=${n.slip44},
         shortcut="${n.shortcut}",

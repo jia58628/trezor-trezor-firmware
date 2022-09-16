@@ -55,14 +55,19 @@ def write_access_list(w: HashWriter, access_list: list[EthereumAccessList]) -> N
 
 @with_keychain_from_chain_id_and_defs
 async def sign_tx_eip1559(
-    ctx: wire.Context, msg: EthereumSignTxEIP1559, keychain: Keychain, defs: definitions.EthereumDefinitions
+    ctx: wire.Context,
+    msg: EthereumSignTxEIP1559,
+    keychain: Keychain,
+    defs: definitions.EthereumDefinitions,
 ) -> EthereumTxRequest:
     check(msg)
 
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     # Handle ERC20s
-    token, address_bytes, recipient, value = await handle_erc20(ctx, msg, defs.token_dict)
+    token, address_bytes, recipient, value = await handle_erc20(
+        ctx, msg, defs.token_dict
+    )
 
     data_total = msg.data_length
 

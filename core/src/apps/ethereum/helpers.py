@@ -8,10 +8,12 @@ from trezor.messages import EthereumFieldType
 from .networks import by_chain_id
 
 if TYPE_CHECKING:
-    from .networks import NetworkInfo
+    from trezor.messages import EthereumNetworkInfo
 
 
-def address_from_bytes(address_bytes: bytes, network: NetworkInfo = by_chain_id(1)) -> str:
+def address_from_bytes(
+    address_bytes: bytes, network: EthereumNetworkInfo | None = by_chain_id(1)
+) -> str:
     """
     Converts address in bytes to a checksummed string as defined
     in https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md

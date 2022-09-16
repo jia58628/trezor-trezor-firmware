@@ -5,7 +5,7 @@ from trezor import wire
 from apps.common import paths
 from apps.common.keychain import get_keychain
 
-from . import CURVE, networks, definitions
+from . import CURVE, definitions, networks
 
 if TYPE_CHECKING:
     from typing import Awaitable, Callable, Iterable, TypeVar
@@ -15,23 +15,37 @@ if TYPE_CHECKING:
     from trezor.messages import (
         EthereumGetAddress,
         EthereumGetPublicKey,
+        EthereumNetworkInfo,
         EthereumSignMessage,
         EthereumSignTx,
         EthereumSignTxEIP1559,
         EthereumSignTypedData,
     )
 
-    from apps.common.keychain import MsgIn as MsgInGeneric, MsgOut, Handler, HandlerWithKeychain
+    from apps.common.keychain import (
+        MsgIn as MsgInGeneric,
+        MsgOut,
+        Handler,
+        HandlerWithKeychain,
+    )
 
     # messages for "with_keychain_from_path" decorator
     MsgInKeychainPath = TypeVar("MsgInKeychainPath", bound=EthereumGetPublicKey)
     # messages for "with_keychain_from_path_and_defs" decorator
-    MsgInKeychainPathDefs = TypeVar("MsgInKeychainPathDefs", bound=EthereumGetAddress | EthereumSignMessage | EthereumSignTypedData)
+    MsgInKeychainPathDefs = TypeVar(
+        "MsgInKeychainPathDefs",
+        bound=EthereumGetAddress | EthereumSignMessage | EthereumSignTypedData,
+    )
     # messages for "with_keychain_from_chain_id_and_defs" decorator
-    MsgInKeychainChainIdDefs = TypeVar("MsgInKeychainChainIdDefs", bound=EthereumSignTx | EthereumSignTxEIP1559)
+    MsgInKeychainChainIdDefs = TypeVar(
+        "MsgInKeychainChainIdDefs", bound=EthereumSignTx | EthereumSignTxEIP1559
+    )
 
     # TODO: check the types of messages
-    HandlerWithKeychainAndDefinitions = Callable[[wire.Context, MsgInGeneric, Keychain, definitions.EthereumDefinitions], Awaitable[MsgOut]]
+    HandlerWithKeychainAndDefinitions = Callable[
+        [wire.Context, MsgInGeneric, Keychain, definitions.EthereumDefinitions],
+        Awaitable[MsgOut],
+    ]
 
 
 # We believe Ethereum should use 44'/60'/a' for everything, because it is
@@ -43,7 +57,9 @@ PATTERNS_ADDRESS = (paths.PATTERN_BIP44, paths.PATTERN_SEP5)
 
 
 def _schemas_from_address_n(
-    patterns: Iterable[str], address_n: paths.Bip32Path, network_info: networks.NetworkInfo | None
+    patterns: Iterable[str],
+    address_n: paths.Bip32Path,
+    network_info: EthereumNetworkInfo | None,
 ) -> Iterable[paths.PathSchema]:
     if len(address_n) < 2:
         return ()
@@ -69,8 +85,12 @@ def _schemas_from_address_n(
 
 def with_keychain_from_path(
     *patterns: str,
-) -> Callable[[HandlerWithKeychain[MsgInKeychainPath, MsgOut]], Handler[MsgInKeychainPath, MsgOut]]:
-    def decorator(func: HandlerWithKeychain[MsgInKeychainPath, MsgOut]) -> Handler[MsgInKeychainPath, MsgOut]:
+) -> Callable[
+    [HandlerWithKeychain[MsgInKeychainPath, MsgOut]], Handler[MsgInKeychainPath, MsgOut]
+]:
+    def decorator(
+        func: HandlerWithKeychain[MsgInKeychainPath, MsgOut]
+    ) -> Handler[MsgInKeychainPath, MsgOut]:
         async def wrapper(ctx: wire.Context, msg: MsgInKeychainPath) -> MsgOut:
             defs = definitions.get_definitions_from_msg(msg)
             schemas = _schemas_from_address_n(patterns, msg.address_n, defs.network)
@@ -85,8 +105,13 @@ def with_keychain_from_path(
 
 def with_keychain_from_path_and_defs(
     *patterns: str,
-) -> Callable[[HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]], Handler[MsgInKeychainPathDefs, MsgOut]]:
-    def decorator(func: HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]) -> Handler[MsgInKeychainPathDefs, MsgOut]:
+) -> Callable[
+    [HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]],
+    Handler[MsgInKeychainPathDefs, MsgOut],
+]:
+    def decorator(
+        func: HandlerWithKeychainAndDefinitions[MsgInKeychainPathDefs, MsgOut]
+    ) -> Handler[MsgInKeychainPathDefs, MsgOut]:
         async def wrapper(ctx: wire.Context, msg: MsgInKeychainPathDefs) -> MsgOut:
             defs = definitions.get_definitions_from_msg(msg)
             schemas = _schemas_from_address_n(patterns, msg.address_n, defs.network)
@@ -99,7 +124,9 @@ def with_keychain_from_path_and_defs(
     return decorator
 
 
-def _schemas_from_chain_id(network_info: networks.NetworkInfo | None) -> Iterable[paths.PathSchema]:
+def _schemas_from_chain_id(
+    network_info: EthereumNetworkInfo | None,
+) -> Iterable[paths.PathSchema]:
     slip44_id: tuple[int, ...]
     if network_info is None:
         # allow Ethereum or testnet paths for unknown networks

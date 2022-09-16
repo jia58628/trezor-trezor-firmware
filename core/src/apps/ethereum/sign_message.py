@@ -32,7 +32,10 @@ def message_digest(message: bytes) -> bytes:
 
 @with_keychain_from_path_and_defs(*PATTERNS_ADDRESS)
 async def sign_message(
-    ctx: Context, msg: EthereumSignMessage, keychain: Keychain, defs: definitions.EthereumDefinitions
+    ctx: Context,
+    msg: EthereumSignMessage,
+    keychain: Keychain,
+    defs: definitions.EthereumDefinitions,
 ) -> EthereumMessageSignature:
     await paths.validate_path(ctx, keychain, msg.address_n)
 

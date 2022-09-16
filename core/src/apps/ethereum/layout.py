@@ -25,15 +25,15 @@ if TYPE_CHECKING:
 
     from trezor.wire import Context
 
-    from . import tokens
+    from trezor.messages import EthereumNetworkInfo, EthereumTokenInfo
 
 
 def require_confirm_tx(
     ctx: Context,
     to_bytes: bytes,
     value: int,
-    network: networks.NetworkInfo,
-    token: tokens.TokenInfo,
+    network: EthereumNetworkInfo | None,
+    token: EthereumTokenInfo | None,
 ) -> Awaitable[None]:
     if to_bytes:
         to_str = address_from_bytes(to_bytes, network)
@@ -54,8 +54,8 @@ def require_confirm_fee(
     spending: int,
     gas_price: int,
     gas_limit: int,
-    network: networks.NetworkInfo,
-    token: tokens.TokenInfo,
+    network: EthereumNetworkInfo | None,
+    token: EthereumTokenInfo | None,
 ) -> Awaitable[None]:
     return confirm_total_ethereum(
         ctx,
@@ -71,8 +71,8 @@ async def require_confirm_eip1559_fee(
     max_priority_fee: int,
     max_gas_fee: int,
     gas_limit: int,
-    network: networks.NetworkInfo,
-    token: tokens.TokenInfo,
+    network: EthereumNetworkInfo | None,
+    token: EthereumTokenInfo | None,
 ) -> None:
     await confirm_amount(
         ctx,
@@ -240,7 +240,9 @@ async def confirm_typed_value(
 
 
 def format_ethereum_amount(
-    value: int, token: tokens.TokenInfo | None, network_info: networks.NetworkInfo | None
+    value: int,
+    token: EthereumTokenInfo | None,
+    network_info: EthereumNetworkInfo | None,
 ) -> str:
     if token:
         suffix = token.symbol

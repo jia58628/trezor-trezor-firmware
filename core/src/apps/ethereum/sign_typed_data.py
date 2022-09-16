@@ -41,7 +41,10 @@ MAX_VALUE_BYTE_SIZE = 1024
 
 @with_keychain_from_path_and_defs(*PATTERNS_ADDRESS)
 async def sign_typed_data(
-    ctx: Context, msg: EthereumSignTypedData, keychain: Keychain, defs: definitions.EthereumDefinitions
+    ctx: Context,
+    msg: EthereumSignTypedData,
+    keychain: Keychain,
+    defs: definitions.EthereumDefinitions,
 ) -> EthereumTypedDataSignature:
     await paths.validate_path(ctx, keychain, msg.address_n)
 

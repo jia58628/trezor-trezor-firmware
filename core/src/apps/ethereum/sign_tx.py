@@ -9,7 +9,7 @@ from trezor.utils import HashWriter
 
 from apps.common import paths
 
-from . import tokens, definitions
+from . import definitions, tokens
 from .helpers import bytes_from_address
 from .keychain import with_keychain_from_chain_id_and_defs
 from .layout import (
@@ -21,6 +21,7 @@ from .layout import (
 
 if TYPE_CHECKING:
     from apps.common.keychain import Keychain
+    from trezor.messages import EthereumTokenInfo
 
     from .keychain import MsgInKeychainChainIdDefs
 
@@ -33,13 +34,18 @@ MAX_CHAIN_ID = (0xFFFF_FFFF - 36) // 2
 
 @with_keychain_from_chain_id_and_defs
 async def sign_tx(
-    ctx: wire.Context, msg: EthereumSignTx, keychain: Keychain, defs: definitions.EthereumDefinitions
+    ctx: wire.Context,
+    msg: EthereumSignTx,
+    keychain: Keychain,
+    defs: definitions.EthereumDefinitions,
 ) -> EthereumTxRequest:
     check(msg)
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     # Handle ERC20s
-    token, address_bytes, recipient, value = await handle_erc20(ctx, msg, defs.token_dict)
+    token, address_bytes, recipient, value = await handle_erc20(
+        ctx, msg, defs.token_dict
+    )
 
     data_total = msg.data_length
 
@@ -94,8 +100,10 @@ async def sign_tx(
 
 
 async def handle_erc20(
-    ctx: wire.Context, msg: MsgInKeychainChainIdDefs, token_dict: dict[bytes, tokens.TokenInfo]
-) -> tuple[tokens.TokenInfo | None, bytes, bytes, int]:
+    ctx: wire.Context,
+    msg: MsgInKeychainChainIdDefs,  # type: ignore [TypeVar "MsgInKeychainChainIdDefs" appears only once in generic function signature]
+    token_dict: dict[bytes, EthereumTokenInfo],
+) -> tuple[EthereumTokenInfo | None, bytes, bytes, int]:
     token = None
     address_bytes = recipient = bytes_from_address(msg.to)
     value = int.from_bytes(msg.value, "big")
@@ -184,7 +192,7 @@ def check(msg: EthereumSignTx) -> None:
     check_common_fields(msg)
 
 
-def check_common_fields(msg: MsgInKeychainChainIdDefs) -> None:
+def check_common_fields(msg: MsgInKeychainChainIdDefs) -> None:  # type: ignore [TypeVar "MsgInKeychainChainIdDefs" appears only once in generic function signature]
     if msg.data_length > 0:
         if not msg.data_initial_chunk:
             raise wire.DataError("Data length provided, but no initial chunk")
