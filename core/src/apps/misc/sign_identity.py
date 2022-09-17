@@ -1,38 +1,50 @@
 from typing import TYPE_CHECKING
-from ustruct import pack, unpack
 
-from trezor import wire
 from trezor.crypto.hashlib import sha256
-from trezor.messages import SignedIdentity
-from trezor.ui.layouts import confirm_sign_identity
 
 from apps.common import coininfo
-from apps.common.keychain import get_keychain
-from apps.common.paths import HARDENED, AlwaysMatchingSchema
 
 if TYPE_CHECKING:
-    from trezor.messages import IdentityType, SignIdentity
-
-    from apps.common.paths import Bip32Path
+    from trezor.messages import IdentityType, SignIdentity, SignedIdentity
+    from trezor.wire import Context
 
 # This module implements the SLIP-0013 authentication using a deterministic hierarchy, see
 # https://github.com/satoshilabs/slips/blob/master/slip-0013.md.
 
 
-async def sign_identity(ctx: wire.Context, msg: SignIdentity) -> SignedIdentity:
-    if msg.ecdsa_curve_name is None:
-        msg.ecdsa_curve_name = "secp256k1"
+async def sign_identity(ctx: Context, msg: SignIdentity) -> SignedIdentity:
+    from ustruct import pack, unpack
+    from trezor.messages import SignedIdentity
+    from trezor.ui.layouts import confirm_sign_identity
+    from apps.common.keychain import get_keychain
+    from apps.common.paths import HARDENED, AlwaysMatchingSchema
 
-    keychain = await get_keychain(ctx, msg.ecdsa_curve_name, [AlwaysMatchingSchema])
-    identity = serialize_identity(msg.identity)
+    msg_ecdsa_curve_name = msg.ecdsa_curve_name or "secp256k1"  # cache
+    msg_identity = msg.identity  # cache
+    msg_identity_proto = msg_identity.proto  # cache
+    msg_challenge_visual = msg.challenge_visual  # cache
+    msg_challenge_hidden = msg.challenge_hidden  # cache
 
-    await require_confirm_sign_identity(ctx, msg.identity, msg.challenge_visual)
+    keychain = await get_keychain(ctx, msg_ecdsa_curve_name, [AlwaysMatchingSchema])
+    identity = serialize_identity(msg_identity)
 
-    address_n = get_identity_path(identity, msg.identity.index or 0)
+    # require_confirm_sign_identity
+    proto = msg_identity_proto.upper() if msg_identity_proto else "identity"
+    await confirm_sign_identity(
+        ctx, proto, serialize_identity_without_proto(msg_identity), msg_challenge_visual
+    )
+    # END require_confirm_sign_identity
+
+    # get_identity_path
+    index = msg_identity.index or 0
+    identity_hash = sha256(pack("<I", index) + identity.encode()).digest()
+    address_n = [HARDENED | x for x in (13,) + unpack("<IIII", identity_hash[:16])]
+    # END get_identity_path
+
     node = keychain.derive(address_n)
 
     coin = coininfo.by_name("Bitcoin")
-    if msg.ecdsa_curve_name == "secp256k1":
+    if msg_ecdsa_curve_name == "secp256k1":
         # hardcoded bitcoin address type
         address: str | None = node.address(coin.address_type)
     else:
@@ -42,49 +54,40 @@ async def sign_identity(ctx: wire.Context, msg: SignIdentity) -> SignedIdentity:
         pubkey = b"\x00" + pubkey[1:]
     seckey = node.private_key()
 
-    if msg.identity.proto == "gpg":
+    if msg_identity_proto == "gpg":
         signature = sign_challenge(
             seckey,
-            msg.challenge_hidden,
-            msg.challenge_visual,
+            msg_challenge_hidden,
+            msg_challenge_visual,
             "gpg",
-            msg.ecdsa_curve_name,
+            msg_ecdsa_curve_name,
         )
-    elif msg.identity.proto == "signify":
+    elif msg_identity_proto == "signify":
         signature = sign_challenge(
             seckey,
-            msg.challenge_hidden,
-            msg.challenge_visual,
+            msg_challenge_hidden,
+            msg_challenge_visual,
             "signify",
-            msg.ecdsa_curve_name,
+            msg_ecdsa_curve_name,
         )
-    elif msg.identity.proto == "ssh":
+    elif msg_identity_proto == "ssh":
         signature = sign_challenge(
             seckey,
-            msg.challenge_hidden,
-            msg.challenge_visual,
+            msg_challenge_hidden,
+            msg_challenge_visual,
             "ssh",
-            msg.ecdsa_curve_name,
+            msg_ecdsa_curve_name,
         )
     else:
         signature = sign_challenge(
             seckey,
-            msg.challenge_hidden,
-            msg.challenge_visual,
+            msg_challenge_hidden,
+            msg_challenge_visual,
             coin,
-            msg.ecdsa_curve_name,
+            msg_ecdsa_curve_name,
         )
 
     return SignedIdentity(address=address, public_key=pubkey, signature=signature)
-
-
-async def require_confirm_sign_identity(
-    ctx: wire.Context, identity: IdentityType, challenge_visual: str | None
-) -> None:
-    proto = identity.proto.upper() if identity.proto else "identity"
-    await confirm_sign_identity(
-        ctx, proto, serialize_identity_without_proto(identity), challenge_visual
-    )
 
 
 def serialize_identity(identity: IdentityType) -> str:
@@ -110,14 +113,6 @@ def serialize_identity_without_proto(identity: IdentityType) -> str:
     return s
 
 
-def get_identity_path(identity: str, index: int) -> Bip32Path:
-    identity_hash = sha256(pack("<I", index) + identity.encode()).digest()
-
-    address_n = [HARDENED | x for x in (13,) + unpack("<IIII", identity_hash[:16])]
-
-    return address_n
-
-
 def sign_challenge(
     seckey: bytes,
     challenge_hidden: bytes,
@@ -126,12 +121,13 @@ def sign_challenge(
     curve: str,
 ) -> bytes:
     from apps.common.signverify import message_digest
+    from trezor.wire import DataError
 
     if sigtype == "gpg":
         data = challenge_hidden
     elif sigtype == "signify":
         if curve != "ed25519":
-            raise wire.DataError("Unsupported curve")
+            raise DataError("Unsupported curve")
         data = challenge_hidden
     elif sigtype == "ssh":
         if curve != "ed25519":
@@ -146,7 +142,7 @@ def sign_challenge(
         )
         data = message_digest(sigtype, challenge)
     else:
-        raise wire.DataError("Unsupported sigtype")
+        raise DataError("Unsupported sigtype")
 
     if curve == "secp256k1":
         from trezor.crypto.curve import secp256k1
@@ -161,7 +157,7 @@ def sign_challenge(
 
         signature = ed25519.sign(seckey, data)
     else:
-        raise wire.DataError("Unknown curve")
+        raise DataError("Unknown curve")
 
     if curve == "ed25519":
         signature = b"\x00" + signature
