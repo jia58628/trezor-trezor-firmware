@@ -1,10 +1,12 @@
 import storage.cache
-from trezor import loop, res, ui, wire
+from trezor import loop, ui
 
 from . import HomescreenBase
 
 
 async def lockscreen() -> None:
+    from trezor import wire
+
     from apps.common.request_pin import can_lock_device
     from apps.base import unlock_device
 
@@ -37,24 +39,31 @@ class Lockscreen(HomescreenBase):
         super().__init__()
 
     def do_render(self) -> None:
+        from trezor import res
+
+        local_ui = ui  # cache
+        display = local_ui.display  # cache
+        title_grey = local_ui.TITLE_GREY  # cache
+        bg = local_ui.BG  # cache
+
         # homescreen with label text on top
-        ui.display.text_center(
-            ui.WIDTH // 2, 35, self.label, ui.BOLD, ui.TITLE_GREY, ui.BG
+        display.text_center(
+            local_ui.WIDTH // 2, 35, self.label, local_ui.BOLD, title_grey, bg
         )
-        ui.display.avatar(48, 48, self.get_image(), ui.WHITE, ui.BLACK)
+        display.avatar(48, 48, self.get_image(), local_ui.WHITE, local_ui.BLACK)
 
         # lock bar
-        ui.display.bar_radius(40, 100, 160, 40, ui.TITLE_GREY, ui.BG, 4)
-        ui.display.bar_radius(42, 102, 156, 36, ui.BG, ui.TITLE_GREY, 4)
-        ui.display.text_center(
-            ui.WIDTH // 2, 128, self.lock_label, ui.BOLD, ui.TITLE_GREY, ui.BG
+        display.bar_radius(40, 100, 160, 40, title_grey, bg, 4)
+        display.bar_radius(42, 102, 156, 36, bg, title_grey, 4)
+        display.text_center(
+            local_ui.WIDTH // 2, 128, self.lock_label, local_ui.BOLD, title_grey, bg
         )
 
         # "tap to unlock"
-        ui.display.text_center(
-            ui.WIDTH // 2 + 10, 220, self.tap_label, ui.BOLD, ui.TITLE_GREY, ui.BG
+        display.text_center(
+            local_ui.WIDTH // 2 + 10, 220, self.tap_label, local_ui.BOLD, title_grey, bg
         )
-        ui.display.icon(45, 202, res.load(ui.ICON_CLICK), ui.TITLE_GREY, ui.BG)
+        display.icon(45, 202, res.load(local_ui.ICON_CLICK), title_grey, bg)
 
     def on_touch_end(self, _x: int, _y: int) -> None:
         raise ui.Result(None)
