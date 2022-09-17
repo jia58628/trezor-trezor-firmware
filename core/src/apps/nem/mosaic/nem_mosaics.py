@@ -2,6 +2,9 @@
 # (by running `make templates` in `core`)
 # do not edit manually!
 
+# NOTE: not supplying the kwargs saves 120 bytes of code size
+# `networks` needs kwarg as `levy` above is optional
+
 from typing import Iterator
 
 from trezor.enums import NEMMosaicLevy
@@ -43,61 +46,61 @@ class Mosaic:
 
 def mosaics_iterator() -> Iterator[Mosaic]:
     yield Mosaic(
-        name="NEM",
-        ticker=" XEM",
-        namespace="nem",
-        mosaic="xem",
-        divisibility=6,
+        "NEM",  # name
+        " XEM",  # ticker
+        "nem",  # namespace
+        "xem",  # mosaic
+        6,  # divisibility
     )
     yield Mosaic(
-        name="DIMCOIN",
-        ticker=" DIM",
-        namespace="dim",
-        mosaic="coin",
-        divisibility=6,
-        levy=MosaicLevy(
-            type=NEMMosaicLevy.MosaicLevy_Percentile,
-            fee=10,
-            namespace="dim",
-            mosaic="coin",
+        "DIMCOIN",  # name
+        " DIM",  # ticker
+        "dim",  # namespace
+        "coin",  # mosaic
+        6,  # divisibility
+        MosaicLevy(  # levy
+            NEMMosaicLevy.MosaicLevy_Percentile,  # type
+            10,  # fee
+            "dim",  # namespace
+            "coin",  # mosaic
         ),
         networks=(104,),
     )
     yield Mosaic(
-        name="DIM TOKEN",
-        ticker=" DIMTOK",
-        namespace="dim",
-        mosaic="token",
-        divisibility=6,
+        "DIM TOKEN",  # name
+        " DIMTOK",  # ticker
+        "dim",  # namespace
+        "token",  # mosaic
+        6,  # divisibility
         networks=(104,),
     )
     yield Mosaic(
-        name="Breeze Token",
-        ticker=" BREEZE",
-        namespace="breeze",
-        mosaic="breeze-token",
-        divisibility=0,
+        "Breeze Token",  # name
+        " BREEZE",  # ticker
+        "breeze",  # namespace
+        "breeze-token",  # mosaic
+        0,  # divisibility
         networks=(104,),
     )
     yield Mosaic(
-        name="PacNEM Game Credits",
-        ticker=" PAC:HRT",
-        namespace="pacnem",
-        mosaic="heart",
-        divisibility=0,
+        "PacNEM Game Credits",  # name
+        " PAC:HRT",  # ticker
+        "pacnem",  # namespace
+        "heart",  # mosaic
+        0,  # divisibility
         networks=(104,),
     )
     yield Mosaic(
-        name="PacNEM Score Tokens",
-        ticker=" PAC:CHS",
-        namespace="pacnem",
-        mosaic="cheese",
-        divisibility=6,
-        levy=MosaicLevy(
-            type=NEMMosaicLevy.MosaicLevy_Percentile,
-            fee=100,
-            namespace="nem",
-            mosaic="xem",
+        "PacNEM Score Tokens",  # name
+        " PAC:CHS",  # ticker
+        "pacnem",  # namespace
+        "cheese",  # mosaic
+        6,  # divisibility
+        MosaicLevy(  # levy
+            NEMMosaicLevy.MosaicLevy_Percentile,  # type
+            100,  # fee
+            "nem",  # namespace
+            "xem",  # mosaic
         ),
         networks=(104,),
     )

@@ -15,15 +15,17 @@ def serialize_tx_common(
 ) -> bytearray:
     w = bytearray()
 
-    write_uint32_le(w, transaction_type)
+    write_uint32_le_local = write_uint32_le  # cache
+
+    write_uint32_le_local(w, transaction_type)
     if version is None:
         version = common.network << 24 | 1
-    write_uint32_le(w, version)
-    write_uint32_le(w, common.timestamp)
+    write_uint32_le_local(w, version)
+    write_uint32_le_local(w, common.timestamp)
 
     write_bytes_with_len(w, public_key)
     write_uint64_le(w, common.fee)
-    write_uint32_le(w, common.deadline)
+    write_uint32_le_local(w, common.deadline)
 
     return w
 
