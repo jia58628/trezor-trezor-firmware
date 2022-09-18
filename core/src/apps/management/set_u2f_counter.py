@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from trezor.messages import SetU2FCounter, Success
     from trezor.wire import Context

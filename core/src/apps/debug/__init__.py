@@ -83,21 +83,24 @@ if __debug__:
         else:
             from trezor.ui.components.tt import confirm
 
-        if msg.button is not None:
-            if msg.button == DebugButton.NO:
+        msg_button = msg.button  # cache
+        msg_swipe = msg.swipe  # cache
+
+        if msg_button is not None:
+            if msg_button == DebugButton.NO:
                 await confirm_chan.put(Result(confirm.CANCELLED))
-            elif msg.button == DebugButton.YES:
+            elif msg_button == DebugButton.YES:
                 await confirm_chan.put(Result(confirm.CONFIRMED))
-            elif msg.button == DebugButton.INFO:
+            elif msg_button == DebugButton.INFO:
                 await confirm_chan.put(Result(confirm.INFO))
-        if msg.swipe is not None:
-            if msg.swipe == DebugSwipeDirection.UP:
+        if msg_swipe is not None:
+            if msg_swipe == DebugSwipeDirection.UP:
                 await swipe_chan.put(SWIPE_UP)
-            elif msg.swipe == DebugSwipeDirection.DOWN:
+            elif msg_swipe == DebugSwipeDirection.DOWN:
                 await swipe_chan.put(SWIPE_DOWN)
-            elif msg.swipe == DebugSwipeDirection.LEFT:
+            elif msg_swipe == DebugSwipeDirection.LEFT:
                 await swipe_chan.put(SWIPE_LEFT)
-            elif msg.swipe == DebugSwipeDirection.RIGHT:
+            elif msg_swipe == DebugSwipeDirection.RIGHT:
                 await swipe_chan.put(SWIPE_RIGHT)
         if msg.input is not None:
             await input_chan.put(Result(msg.input))
@@ -144,12 +147,15 @@ if __debug__:
         if debuglink_decision_chan.putters:
             log.warning(__name__, "DebugLinkDecision queue is not empty")
 
-        if msg.x is not None and msg.y is not None:
-            evt_down = io.TOUCH_START, msg.x, msg.y
-            evt_up = io.TOUCH_END, msg.x, msg.y
+        msg_x = msg.x  # cache
+        msg_y = msg.y  # cache
+
+        if msg_x is not None and msg_y is not None:
+            evt_down = io.TOUCH_START, msg_x, msg_y
+            evt_up = io.TOUCH_END, msg_x, msg_y
             loop.synthetic_events.append((io.TOUCH, evt_down))
             if msg.hold_ms is not None:
-                loop.schedule(touch_hold(msg.x, msg.y, msg.hold_ms))
+                loop.schedule(touch_hold(msg_x, msg_y, msg.hold_ms))
             else:
                 loop.synthetic_events.append((io.TOUCH, evt_up))
         else:
@@ -212,36 +218,40 @@ if __debug__:
     ) -> Success:
         from trezor import io
 
+        io_sdcard = io.sdcard  # cache
+
         try:
-            io.sdcard.power_on()
+            io_sdcard.power_on()
             if msg.format:
                 io.fatfs.mkfs()
             else:
                 # trash first 1 MB of data to destroy the FAT filesystem
-                assert io.sdcard.capacity() >= 1024 * 1024
-                empty_block = bytes([0xFF] * io.sdcard.BLOCK_SIZE)
-                for i in range(1024 * 1024 // io.sdcard.BLOCK_SIZE):
-                    io.sdcard.write(i, empty_block)
+                assert io_sdcard.capacity() >= 1024 * 1024
+                empty_block = bytes([0xFF] * io_sdcard.BLOCK_SIZE)
+                for i in range(1024 * 1024 // io_sdcard.BLOCK_SIZE):
+                    io_sdcard.write(i, empty_block)
 
         except OSError:
             raise wire.ProcessError("SD card operation failed")
         finally:
-            io.sdcard.power_off()
+            io_sdcard.power_off()
         return Success()
 
     def boot() -> None:
-        workflow_handlers.register(MessageType.DebugLinkDecision, dispatch_DebugLinkDecision)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkDecision) -> Coroutine[Any, Any, None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]
-        workflow_handlers.register(MessageType.DebugLinkGetState, dispatch_DebugLinkGetState)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkGetState) -> Coroutine[Any, Any, DebugLinkState | None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]
-        workflow_handlers.register(
+        workflow_handlers_register = workflow_handlers.register  # cache
+
+        workflow_handlers_register(MessageType.DebugLinkDecision, dispatch_DebugLinkDecision)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkDecision) -> Coroutine[Any, Any, None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]
+        workflow_handlers_register(MessageType.DebugLinkGetState, dispatch_DebugLinkGetState)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkGetState) -> Coroutine[Any, Any, DebugLinkState | None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]
+        workflow_handlers_register(
             MessageType.DebugLinkReseedRandom, dispatch_DebugLinkReseedRandom
         )
-        workflow_handlers.register(
+        workflow_handlers_register(
             MessageType.DebugLinkRecordScreen, dispatch_DebugLinkRecordScreen
         )
-        workflow_handlers.register(
+        workflow_handlers_register(
             MessageType.DebugLinkEraseSdCard, dispatch_DebugLinkEraseSdCard
         )
-        workflow_handlers.register(
+        workflow_handlers_register(
             MessageType.DebugLinkWatchLayout, dispatch_DebugLinkWatchLayout
         )
 
