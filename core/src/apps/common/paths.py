@@ -198,22 +198,24 @@ class PathSchema:
             # optionally replace a keyword
             component = cls.REPLACEMENTS.get(component, component)
 
+            schema_append = schema.append  # cache
+
             if "-" in component:
                 # parse as a range
                 a, b = [parse(s) for s in component.split("-", 1)]
-                schema.append(Interval(a, b))
+                schema_append(Interval(a, b))
 
             elif "," in component:
                 # parse as a list of values
-                schema.append(set(parse(s) for s in component.split(",")))
+                schema_append(set(parse(s) for s in component.split(",")))
 
             elif component == "coin_type":
                 # substitute SLIP-44 ids
-                schema.append(set(parse(s) for s in slip44_id))
+                schema_append(set(parse(s) for s in slip44_id))
 
             else:
                 # plain constant
-                schema.append((parse(component),))
+                schema_append((parse(component),))
 
         return cls(schema, trailing_components, compact=True)
 
@@ -259,17 +261,19 @@ class PathSchema:
         is returned.
         """
 
+        self_schema = self.schema  # cache
+
         for i, value in enumerate(path):
-            if i < len(self.schema):
+            if i < len(self_schema):
                 # Ensure that the path is a prefix of the schema.
-                if value not in self.schema[i]:
+                if value not in self_schema[i]:
                     self.set_never_matching()
                     return False
 
                 # Restrict the schema component if there are multiple choices.
-                component = self.schema[i]
+                component = self_schema[i]
                 if not isinstance(component, tuple) or len(component) != 1:
-                    self.schema[i] = (value,)
+                    self_schema[i] = (value,)
             else:
                 # The path is longer than the schema. We need to restrict the
                 # trailing components.
@@ -278,7 +282,7 @@ class PathSchema:
                     self.set_never_matching()
                     return False
 
-                self.schema.append((value,))
+                self_schema.append((value,))
 
         return True
 
@@ -286,6 +290,7 @@ class PathSchema:
 
         def __repr__(self) -> str:
             components = ["m"]
+            components_append = components.append  # cache
 
             def unharden(item: int) -> int:
                 return item ^ (item & HARDENED)
@@ -294,7 +299,7 @@ class PathSchema:
                 if isinstance(component, Interval):
                     a, b = component.min, component.max
                     prime = "'" if a & HARDENED else ""
-                    components.append(f"[{unharden(a)}-{unharden(b)}]{prime}")
+                    components_append(f"[{unharden(a)}-{unharden(b)}]{prime}")
                 else:
                     # typechecker thinks component is a Contanier but we're using it
                     # as a Collection.
@@ -307,15 +312,15 @@ class PathSchema:
                         component_str = "[" + component_str + "]"
                     if next(iter(collection)) & HARDENED:
                         component_str += "'"
-                    components.append(component_str)
+                    components_append(component_str)
 
             if self.trailing_components:
                 for key, val in self.WILDCARD_RANGES.items():
                     if self.trailing_components is val:
-                        components.append(key)
+                        components_append(key)
                         break
                 else:
-                    components.append("???")
+                    components_append("???")
 
             return "<schema:" + "/".join(components) + ">"
 

@@ -22,44 +22,36 @@ def write_uint16_le(w: Writer, n: int) -> int:
 def write_uint32_le(w: Writer, n: int) -> int:
     ensure(0 <= n <= 0xFFFF_FFFF)
     w.append(n & 0xFF)
-    w.append((n >> 8) & 0xFF)
-    w.append((n >> 16) & 0xFF)
-    w.append((n >> 24) & 0xFF)
+    for num in (8, 16, 24):
+        w.append((n >> num) & 0xFF)
     return 4
 
 
 def write_uint32_be(w: Writer, n: int) -> int:
     ensure(0 <= n <= 0xFFFF_FFFF)
-    w.append((n >> 24) & 0xFF)
-    w.append((n >> 16) & 0xFF)
-    w.append((n >> 8) & 0xFF)
+    for num in (24, 16, 8):
+        w.append((n >> num) & 0xFF)
     w.append(n & 0xFF)
     return 4
 
 
 def write_uint64_le(w: Writer, n: int) -> int:
     ensure(0 <= n <= 0xFFFF_FFFF_FFFF_FFFF)
+
     w.append(n & 0xFF)
-    w.append((n >> 8) & 0xFF)
-    w.append((n >> 16) & 0xFF)
-    w.append((n >> 24) & 0xFF)
-    w.append((n >> 32) & 0xFF)
-    w.append((n >> 40) & 0xFF)
-    w.append((n >> 48) & 0xFF)
-    w.append((n >> 56) & 0xFF)
+    for num in (8, 16, 24, 32, 40, 48, 56):
+        w.append((n >> num) & 0xFF)
+
     return 8
 
 
 def write_uint64_be(w: Writer, n: int) -> int:
     ensure(0 <= n <= 0xFFFF_FFFF_FFFF_FFFF)
-    w.append((n >> 56) & 0xFF)
-    w.append((n >> 48) & 0xFF)
-    w.append((n >> 40) & 0xFF)
-    w.append((n >> 32) & 0xFF)
-    w.append((n >> 24) & 0xFF)
-    w.append((n >> 16) & 0xFF)
-    w.append((n >> 8) & 0xFF)
+
+    for num in (56, 48, 40, 32, 24, 16, 8):
+        w.append((n >> num) & 0xFF)
     w.append(n & 0xFF)
+
     return 8
 
 
@@ -82,16 +74,19 @@ def write_bytes_reversed(w: Writer, b: bytes, length: int) -> int:
 
 def write_compact_size(w: Writer, n: int) -> None:
     ensure(0 <= n <= 0xFFFF_FFFF)
+
+    w_append = w.append  # cache
+
     if n < 253:
-        w.append(n & 0xFF)
+        w_append(n & 0xFF)
     elif n < 0x1_0000:
-        w.append(253)
+        w_append(253)
         write_uint16_le(w, n)
     elif n < 0x1_0000_0000:
-        w.append(254)
+        w_append(254)
         write_uint32_le(w, n)
     else:
-        w.append(255)
+        w_append(255)
         write_uint64_le(w, n)
 
 
