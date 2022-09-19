@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING
-from ubinascii import hexlify, unhexlify
-
-from trezor import wire
-from trezor.enums import EthereumDataType
+from ubinascii import hexlify
 
 if TYPE_CHECKING:
     from trezor.messages import EthereumFieldType
@@ -43,6 +40,9 @@ def address_from_bytes(address_bytes: bytes, network: NetworkInfo | None = None)
 
 
 def bytes_from_address(address: str) -> bytes:
+    from ubinascii import unhexlify
+    from trezor import wire
+
     if len(address) == 40:
         return unhexlify(address)
 
@@ -59,6 +59,8 @@ def bytes_from_address(address: str) -> bytes:
 
 def get_type_name(field: EthereumFieldType) -> str:
     """Create a string from type definition (like uint256 or bytes16)."""
+    from trezor.enums import EthereumDataType
+
     data_type = field.data_type
     size = field.size
 
@@ -109,12 +111,12 @@ def decode_typed_data(data: bytes, type_name: str) -> str:
         return str(int.from_bytes(data, "big"))
     elif type_name.startswith("int"):
         # Micropython does not implement "signed" arg in int.from_bytes()
-        return str(from_bytes_bigendian_signed(data))
+        return str(_from_bytes_bigendian_signed(data))
 
     raise ValueError  # Unsupported data type for direct field decoding
 
 
-def from_bytes_bigendian_signed(b: bytes) -> int:
+def _from_bytes_bigendian_signed(b: bytes) -> int:
     negative = b[0] & 0x80
     if negative:
         neg_b = bytearray(b)
