@@ -1,11 +1,11 @@
 import ustruct
 from micropython import const
-from typing import Iterable
+from typing import TYPE_CHECKING
 from ubinascii import hexlify
 
-import storage.device
-from trezor import log, utils
-from trezor.crypto import bip32, chacha20poly1305, der, hashlib, hmac, random
+import storage.device as storage_device
+from trezor import utils
+from trezor.crypto import chacha20poly1305, der, hashlib, hmac, random
 from trezor.crypto.curve import ed25519, nist256p1
 
 from apps.common import cbor, seed
@@ -13,9 +13,19 @@ from apps.common.paths import HARDENED
 
 from . import common
 
+if TYPE_CHECKING:
+    from typing import Iterable
+    from trezor.crypto import bip32
+
+
+COSE_CURVE_P256 = common.COSE_CURVE_P256  # cache
+COSE_CURVE_ED25519 = common.COSE_CURVE_ED25519  # cache
+COSE_ALG_ES256 = common.COSE_ALG_ES256  # cache
+
+
 # Credential ID values
 _CRED_ID_VERSION = b"\xf1\xd0\x02\x00"
-CRED_ID_MIN_LENGTH = const(33)
+_CRED_ID_MIN_LENGTH = const(33)
 CRED_ID_MAX_LENGTH = const(1024)
 _KEY_HANDLE_LENGTH = const(64)
 
@@ -24,7 +34,7 @@ _USER_ID_MAX_LENGTH = const(64)
 
 # Maximum supported length of the RP name, user name or user displayName in bytes.
 # Note: The WebAuthn spec allows authenticators to truncate to 64 bytes or more.
-NAME_MAX_LENGTH = const(100)
+_NAME_MAX_LENGTH = const(100)
 
 # Credential ID keys
 _CRED_ID_RP_ID = const(1)
@@ -39,13 +49,13 @@ _CRED_ID_ALGORITHM = const(9)
 _CRED_ID_CURVE = const(10)
 
 # Defaults
-_DEFAULT_ALGORITHM = common.COSE_ALG_ES256
-_DEFAULT_CURVE = common.COSE_CURVE_P256
+_DEFAULT_ALGORITHM = COSE_ALG_ES256
+_DEFAULT_CURVE = COSE_CURVE_P256
 
 # Curves
 _CURVE_NAME = {
-    common.COSE_CURVE_ED25519: "ed25519",
-    common.COSE_CURVE_P256: "nist256p1",
+    COSE_CURVE_ED25519: "ed25519",
+    COSE_CURVE_P256: "nist256p1",
 }
 
 # Key paths
@@ -92,7 +102,7 @@ class Credential:
         return None
 
     def next_signature_counter(self) -> int:
-        return storage.device.next_u2f_counter() or 0
+        return storage_device.next_u2f_counter() or 0
 
     @staticmethod
     def from_bytes(data: bytes, rp_id_hash: bytes) -> "Credential":
@@ -128,7 +138,7 @@ class Fido2Credential(Credential):
         return True
 
     def generate_id(self) -> None:
-        self.creation_time = storage.device.next_u2f_counter() or 0
+        self.creation_time = storage_device.next_u2f_counter() or 0
 
         if not self.check_required_fields():
             raise AssertionError
@@ -169,7 +179,7 @@ class Fido2Credential(Credential):
     def from_cred_id(
         cls, cred_id: bytes, rp_id_hash: bytes | None
     ) -> "Fido2Credential":
-        if len(cred_id) < CRED_ID_MIN_LENGTH or cred_id[0:4] != _CRED_ID_VERSION:
+        if len(cred_id) < _CRED_ID_MIN_LENGTH or cred_id[0:4] != _CRED_ID_VERSION:
             raise ValueError  # invalid length or version
 
         key = seed.derive_slip21_node_without_passphrase(
@@ -202,18 +212,20 @@ class Fido2Credential(Credential):
         if not isinstance(data, dict):
             raise ValueError  # invalid CBOR data
 
+        data_get = data.get  # cache
+
         cred = cls()
-        cred.rp_id = data.get(_CRED_ID_RP_ID, None)
+        cred.rp_id = data_get(_CRED_ID_RP_ID, None)
         cred.rp_id_hash = rp_id_hash
-        cred.rp_name = data.get(_CRED_ID_RP_NAME, None)
-        cred.user_id = data.get(_CRED_ID_USER_ID, None)
-        cred.user_name = data.get(_CRED_ID_USER_NAME, None)
-        cred.user_display_name = data.get(_CRED_ID_USER_DISPLAY_NAME, None)
-        cred.creation_time = data.get(_CRED_ID_CREATION_TIME, 0)
-        cred.hmac_secret = data.get(_CRED_ID_HMAC_SECRET, False)
-        cred.use_sign_count = data.get(_CRED_ID_USE_SIGN_COUNT, False)
-        cred.algorithm = data.get(_CRED_ID_ALGORITHM, _DEFAULT_ALGORITHM)
-        cred.curve = data.get(_CRED_ID_CURVE, _DEFAULT_CURVE)
+        cred.rp_name = data_get(_CRED_ID_RP_NAME, None)
+        cred.user_id = data_get(_CRED_ID_USER_ID, None)
+        cred.user_name = data_get(_CRED_ID_USER_NAME, None)
+        cred.user_display_name = data_get(_CRED_ID_USER_DISPLAY_NAME, None)
+        cred.creation_time = data_get(_CRED_ID_CREATION_TIME, 0)
+        cred.hmac_secret = data_get(_CRED_ID_HMAC_SECRET, False)
+        cred.use_sign_count = data_get(_CRED_ID_USE_SIGN_COUNT, False)
+        cred.algorithm = data_get(_CRED_ID_ALGORITHM, _DEFAULT_ALGORITHM)
+        cred.curve = data_get(_CRED_ID_CURVE, _DEFAULT_CURVE)
         cred.id = cred_id
 
         if (
@@ -228,14 +240,14 @@ class Fido2Credential(Credential):
 
     def truncate_names(self) -> None:
         if self.rp_name:
-            self.rp_name = utils.truncate_utf8(self.rp_name, NAME_MAX_LENGTH)
+            self.rp_name = utils.truncate_utf8(self.rp_name, _NAME_MAX_LENGTH)
 
         if self.user_name:
-            self.user_name = utils.truncate_utf8(self.user_name, NAME_MAX_LENGTH)
+            self.user_name = utils.truncate_utf8(self.user_name, _NAME_MAX_LENGTH)
 
         if self.user_display_name:
             self.user_display_name = utils.truncate_utf8(
-                self.user_display_name, NAME_MAX_LENGTH
+                self.user_display_name, _NAME_MAX_LENGTH
             )
 
     def check_required_fields(self) -> bool:
@@ -288,38 +300,41 @@ class Fido2Credential(Credential):
         return node.private_key()
 
     def public_key(self) -> bytes:
-        if self.curve == common.COSE_CURVE_P256:
+        self_curve = self.curve  # cache
+        _common = common  # cache
+
+        if self_curve == COSE_CURVE_P256:
             pubkey = nist256p1.publickey(self._private_key(), False)
             return cbor.encode(
                 {
-                    common.COSE_KEY_ALG: self.algorithm,
-                    common.COSE_KEY_KTY: common.COSE_KEYTYPE_EC2,
-                    common.COSE_KEY_CRV: self.curve,
-                    common.COSE_KEY_X: pubkey[1:33],
-                    common.COSE_KEY_Y: pubkey[33:],
+                    _common.COSE_KEY_ALG: self.algorithm,
+                    _common.COSE_KEY_KTY: _common.COSE_KEYTYPE_EC2,
+                    _common.COSE_KEY_CRV: self_curve,
+                    _common.COSE_KEY_X: pubkey[1:33],
+                    _common.COSE_KEY_Y: pubkey[33:],
                 }
             )
-        elif self.curve == common.COSE_CURVE_ED25519:
+        elif self_curve == COSE_CURVE_ED25519:
             pubkey = ed25519.publickey(self._private_key())
             return cbor.encode(
                 {
-                    common.COSE_KEY_ALG: self.algorithm,
-                    common.COSE_KEY_KTY: common.COSE_KEYTYPE_OKP,
-                    common.COSE_KEY_CRV: self.curve,
-                    common.COSE_KEY_X: pubkey,
+                    _common.COSE_KEY_ALG: self.algorithm,
+                    _common.COSE_KEY_KTY: _common.COSE_KEYTYPE_OKP,
+                    _common.COSE_KEY_CRV: self_curve,
+                    _common.COSE_KEY_X: pubkey,
                 }
             )
         raise TypeError
 
     def sign(self, data: Iterable[bytes]) -> bytes:
         if (self.algorithm, self.curve) == (
-            common.COSE_ALG_ES256,
-            common.COSE_CURVE_P256,
+            COSE_ALG_ES256,
+            COSE_CURVE_P256,
         ):
             return self._u2f_sign(data)
         elif (self.algorithm, self.curve) == (
             common.COSE_ALG_EDDSA,
-            common.COSE_CURVE_ED25519,
+            COSE_CURVE_ED25519,
         ):
             return ed25519.sign(
                 self._private_key(), b"".join(segment for segment in data)
@@ -329,13 +344,13 @@ class Fido2Credential(Credential):
 
     def bogus_signature(self) -> bytes:
         if (self.algorithm, self.curve) == (
-            common.COSE_ALG_ES256,
-            common.COSE_CURVE_P256,
+            COSE_ALG_ES256,
+            COSE_CURVE_P256,
         ):
             return der.encode_seq((b"\x0a" * 32, b"\x0a" * 32))
         elif (self.algorithm, self.curve) == (
             common.COSE_ALG_EDDSA,
-            common.COSE_CURVE_ED25519,
+            COSE_CURVE_ED25519,
         ):
             return b"\x0a" * 64
 
@@ -440,6 +455,8 @@ class U2fCredential(Credential):
     def _node_from_key_handle(
         rp_id_hash: bytes, keyhandle: bytes, pathformat: str
     ) -> bip32.HDNode | None:
+        from trezor import log
+
         # unpack the keypath from the first half of keyhandle
         keypath = keyhandle[:32]
         path = ustruct.unpack(pathformat, keypath)
