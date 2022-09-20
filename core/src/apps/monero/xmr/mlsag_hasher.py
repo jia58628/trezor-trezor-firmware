@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING
 
-from apps.monero.xmr import crypto_helpers
-from apps.monero.xmr.keccak_hasher import KeccakXmrArchive
-
 if TYPE_CHECKING:
     from trezor.utils import HashContext
     from .serialize_messages.tx_rsig_bulletproof import Bulletproof, BulletproofPlus
@@ -14,6 +11,9 @@ class PreMlsagHasher:
     """
 
     def __init__(self) -> None:
+        from apps.monero.xmr import crypto_helpers
+        from apps.monero.xmr.keccak_hasher import KeccakXmrArchive
+
         self.state = 0
         self.kc_master: HashContext = crypto_helpers.get_keccak()
         self.rsig_hasher: HashContext = crypto_helpers.get_keccak()
@@ -62,6 +62,8 @@ class PreMlsagHasher:
         if self.state == 8:
             raise ValueError("State error")
 
+        self_rsig_hasher_update = self.rsig_hasher.update  # cache
+
         if raw:
             # Avoiding problem with the memory fragmentation.
             # If the range proof is passed as a list, hash each element
@@ -69,10 +71,10 @@ class PreMlsagHasher:
             # preserving the byte ordering
             if isinstance(p, list):
                 for x in p:
-                    self.rsig_hasher.update(x)
+                    self_rsig_hasher_update(x)
             else:
                 assert isinstance(p, bytes)
-                self.rsig_hasher.update(p)
+                self_rsig_hasher_update(p)
             return
 
         from .serialize_messages.tx_rsig_bulletproof import Bulletproof, BulletproofPlus
@@ -87,18 +89,18 @@ class PreMlsagHasher:
             else (p.A, p.S, p.T1, p.T2, p.taux, p.mu)
         )
         for fld in fields:
-            self.rsig_hasher.update(fld)
+            self_rsig_hasher_update(fld)
 
         del (fields,)
         for i in range(len(p.L)):
-            self.rsig_hasher.update(p.L[i])
+            self_rsig_hasher_update(p.L[i])
         for i in range(len(p.R)):
-            self.rsig_hasher.update(p.R[i])
+            self_rsig_hasher_update(p.R[i])
 
         if not is_plus:
-            self.rsig_hasher.update(p.a)
-            self.rsig_hasher.update(p.b)
-            self.rsig_hasher.update(p.t)
+            self_rsig_hasher_update(p.a)
+            self_rsig_hasher_update(p.b)
+            self_rsig_hasher_update(p.t)
 
     def get_digest(self) -> bytes:
         if self.state != 6:

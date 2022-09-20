@@ -65,10 +65,11 @@ async def require_confirm_live_refresh(ctx: Context) -> None:
 
 
 async def require_confirm_tx_key(ctx: Context, export_key: bool = False) -> None:
-    if export_key:
-        description = "Do you really want to export tx_key?"
-    else:
-        description = "Do you really want to export tx_der\nfor tx_proof?"
+    description = (
+        "Do you really want to export tx_key?"
+        if export_key
+        else "Do you really want to export tx_der\nfor tx_proof?"
+    )
     await confirm_action(
         ctx,
         "export_tx_key",
@@ -94,6 +95,8 @@ async def require_confirm_transaction(
     outputs = tsx_data.outputs
     change_idx = get_change_addr_idx(outputs, tsx_data.change_dts)
 
+    payment_id = tsx_data.payment_id  # cache
+
     if tsx_data.unlock_time != 0:
         await _require_confirm_unlock_time(ctx, tsx_data.unlock_time)
 
@@ -105,17 +108,17 @@ async def require_confirm_transaction(
         if is_dummy:
             continue  # Dummy output does not need confirmation
         if tsx_data.integrated_indices and idx in tsx_data.integrated_indices:
-            cur_payment = tsx_data.payment_id
+            cur_payment = payment_id
         else:
             cur_payment = None
         await _require_confirm_output(ctx, dst, network_type, cur_payment)
 
     if (
-        tsx_data.payment_id
+        payment_id
         and not tsx_data.integrated_indices
-        and tsx_data.payment_id != DUMMY_PAYMENT_ID
+        and payment_id != DUMMY_PAYMENT_ID
     ):
-        await _require_confirm_payment_id(ctx, tsx_data.payment_id)
+        await _require_confirm_payment_id(ctx, payment_id)
 
     await _require_confirm_fee(ctx, tsx_data.fee)
     await transaction_step(state, 0)
@@ -140,9 +143,9 @@ async def _require_confirm_output(
 
     await confirm_output(
         ctx,
-        address=addr,
-        amount=_format_amount(dst.amount),
-        font_amount=ui.BOLD,
+        addr,
+        _format_amount(dst.amount),
+        ui.BOLD,
         br_code=ButtonRequestType.SignTx,
     )
 
@@ -151,8 +154,8 @@ async def _require_confirm_payment_id(ctx: Context, payment_id: bytes) -> None:
     await confirm_blob(
         ctx,
         "confirm_payment_id",
-        title="Payment ID",
-        data=payment_id,
+        "Payment ID",
+        payment_id,
         br_code=ButtonRequestType.SignTx,
     )
 
@@ -161,9 +164,9 @@ async def _require_confirm_fee(ctx: Context, fee: int) -> None:
     await confirm_metadata(
         ctx,
         "confirm_final",
-        title="Confirm fee",
-        content="{}",
-        param=_format_amount(fee),
+        "Confirm fee",
+        "{}",
+        _format_amount(fee),
         hide_continue=True,
         hold=True,
     )
@@ -176,7 +179,7 @@ async def _require_confirm_unlock_time(ctx: Context, unlock_time: int) -> None:
         "Confirm unlock time",
         "Unlock time for this transaction is set to {}",
         str(unlock_time),
-        br_code=ButtonRequestType.SignTx,
+        ButtonRequestType.SignTx,
     )
 
 
@@ -217,12 +220,14 @@ class LiveRefreshStep(ui.Component):
         self.current = current
 
     def on_render(self) -> None:
+        _ui = ui  # cache
+
         current = self.current
-        ui.header("Refreshing", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
+        _ui.header("Refreshing", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE)
         p = (1000 * current // 8) % 1000
-        ui.display.loader(p, True, 18, ui.WHITE, ui.BG)
-        ui.display.text_center(
-            ui.WIDTH // 2, 145, str(current), ui.NORMAL, ui.FG, ui.BG
+        _ui.display.loader(p, True, 18, _ui.WHITE, _ui.BG)
+        _ui.display.text_center(
+            _ui.WIDTH // 2, 145, str(current), _ui.NORMAL, _ui.FG, _ui.BG
         )
 
 

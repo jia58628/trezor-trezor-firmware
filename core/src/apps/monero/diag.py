@@ -45,28 +45,32 @@ if __debug__:
         return Failure(**kwargs)
 
     async def diag(ctx, msg, **kwargs) -> Failure:
-        log.debug(__name__, "----diagnostics")
+        msg_ins = msg.ins  # cache
+        mem_check = check_mem  # cache
+        log_debug = log.debug  # cache
+
+        log_debug(__name__, "----diagnostics")
         gc.collect()
 
-        if msg.ins == 0:
-            check_mem(0)
+        if msg_ins == 0:
+            mem_check(0)
             return retit()
 
-        elif msg.ins == 1:
-            check_mem(1)
+        elif msg_ins == 1:
+            mem_check(1)
             micropython.mem_info(1)
             return retit()
 
-        elif msg.ins == 2:
-            log.debug(__name__, "_____________________________________________")
-            log.debug(__name__, "_____________________________________________")
-            log.debug(__name__, "_____________________________________________")
+        elif msg_ins == 2:
+            log_debug(__name__, "_____________________________________________")
+            log_debug(__name__, "_____________________________________________")
+            log_debug(__name__, "_____________________________________________")
             return retit()
 
-        elif msg.ins == 3:
+        elif msg_ins == 3:
             pass
 
-        elif msg.ins == 4:
+        elif msg_ins == 4:
             total = 0
             monero = 0
 
@@ -78,14 +82,14 @@ if __debug__:
             log.info(__name__, "Total modules: %s, Monero modules: %s", total, monero)
             return retit()
 
-        elif msg.ins in [5, 6, 7]:
-            check_mem()
+        elif msg_ins in [5, 6, 7]:
+            mem_check()
             from apps.monero.xmr import bulletproof as bp
 
-            check_mem("BP Imported")
+            mem_check("BP Imported")
             from apps.monero.xmr import crypto
 
-            check_mem("Crypto Imported")
+            mem_check("Crypto Imported")
 
             bpi = bp.BulletProofBuilder()
             bpi.gc_fnc = gc.collect
@@ -93,25 +97,25 @@ if __debug__:
 
             vals = [crypto.Scalar((1 << 30) - 1 + 16), crypto.Scalar(22222)]
             masks = [crypto.random_scalar(), crypto.random_scalar()]
-            check_mem("BP pre input")
+            mem_check("BP pre input")
 
-            if msg.ins == 5:
+            if msg_ins == 5:
                 bp_res = bpi.prove_testnet(vals[0], masks[0])
-                check_mem("BP post prove")
+                mem_check("BP post prove")
                 bpi.verify_testnet(bp_res)
-                check_mem("BP post verify")
+                mem_check("BP post verify")
 
-            elif msg.ins == 6:
+            elif msg_ins == 6:
                 bp_res = bpi.prove(vals[0], masks[0])
-                check_mem("BP post prove")
+                mem_check("BP post prove")
                 bpi.verify(bp_res)
-                check_mem("BP post verify")
+                mem_check("BP post verify")
 
-            elif msg.ins == 7:
+            elif msg_ins == 7:
                 bp_res = bpi.prove_batch(vals, masks)
-                check_mem("BP post prove")
+                mem_check("BP post prove")
                 bpi.verify(bp_res)
-                check_mem("BP post verify")
+                mem_check("BP post verify")
 
             return retit()
 

@@ -59,15 +59,17 @@ class MemoryReaderWriter:
         return nread
 
     def write(self, buf: bytes) -> None:
-        assert isinstance(self.buffer, bytearray)
+        self_buffer = self.buffer  # cache
+
+        assert isinstance(self_buffer, bytearray)
         nwritten = len(buf)
-        nall = len(self.buffer)
+        nall = len(self_buffer)
         towrite = nwritten
         bufoff = 0
 
         # Fill existing place in the buffer
         while towrite > 0 and nall - self.woffset > 0:
-            self.buffer[self.woffset] = buf[bufoff]
+            self_buffer[self.woffset] = buf[bufoff]
             self.woffset += 1
             bufoff += 1
             towrite -= 1
@@ -83,7 +85,7 @@ class MemoryReaderWriter:
                 bufoff += 1
                 towrite -= 1
 
-            self.buffer.extend(chunk)
+            self_buffer.extend(chunk)
             if self.do_gc:
                 chunk = None  # dereference
                 gc.collect()

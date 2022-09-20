@@ -2,11 +2,10 @@
 Initializes a new transaction.
 """
 
-import gc
+
 from typing import TYPE_CHECKING
 
-from apps.monero import layout, misc, signing
-from apps.monero.signing.state import State
+from apps.monero import signing
 from apps.monero.xmr import crypto, crypto_helpers, monero
 
 if TYPE_CHECKING:
@@ -18,6 +17,8 @@ if TYPE_CHECKING:
         MoneroTransactionRsigData,
     )
 
+    from apps.monero.signing.state import State
+
 
 async def init_transaction(
     state: State,
@@ -26,8 +27,10 @@ async def init_transaction(
     tsx_data: MoneroTransactionData,
     keychain,
 ) -> MoneroTransactionInitAck:
+    import gc
     from apps.monero.signing import offloading_keys
     from apps.common import paths
+    from apps.monero import layout, misc
 
     await paths.validate_path(state.ctx, keychain, address_n)
 
@@ -94,7 +97,13 @@ async def init_transaction(
 
     # Sub address precomputation
     if tsx_data.account is not None and tsx_data.minor_indices:
-        _precompute_subaddr(state, tsx_data.account, tsx_data.minor_indices)
+        # _precompute_subaddr
+        # Precomputes subaddresses for account (major) and list of indices (minors)
+        # Subaddresses have to be stored in encoded form - unique representation.
+        # Single point can have multiple extended coordinates representation - would not match during subaddress search.
+        monero.compute_subaddresses(
+            state.creds, tsx_data.account, tsx_data.minor_indices, state.subaddresses
+        )
     state.mem_trace(5, True)
 
     # HMACs all outputs to disallow tampering.
@@ -215,16 +224,12 @@ def _check_rsig_data(state: State, rsig_data: MoneroTransactionRsigData) -> None
     if state.output_count > 2:
         state.rsig_offload = True
 
-    _check_grouping(state)
-
-
-def _check_grouping(state: State) -> None:
+    # _check_grouping
     acc = 0
     for x in state.rsig_grouping:
         if x is None or x <= 0:
             raise ValueError("Invalid grouping batch")
         acc += x
-
     if acc != state.output_count:
         raise ValueError("Invalid grouping")
 
@@ -285,24 +290,17 @@ def _compute_sec_keys(state: State, tsx_data: MoneroTransactionData) -> None:
     from trezor import protobuf
     from apps.monero.xmr.keccak_hasher import get_keccak_writer
 
+    c_h = crypto_helpers  # cache
+
     writer = get_keccak_writer()
     writer.write(protobuf.dump_message_buffer(tsx_data))
-    writer.write(crypto_helpers.encodeint(state.tx_priv))
+    writer.write(c_h.encodeint(state.tx_priv))
 
-    master_key = crypto_helpers.keccak_2hash(
-        writer.get_digest() + crypto_helpers.encodeint(crypto.random_scalar())
+    master_key = c_h.keccak_2hash(
+        writer.get_digest() + c_h.encodeint(crypto.random_scalar())
     )
-    state.key_hmac = crypto_helpers.keccak_2hash(b"hmac" + master_key)
-    state.key_enc = crypto_helpers.keccak_2hash(b"enc" + master_key)
-
-
-def _precompute_subaddr(state: State, account: int, indices: list[int]) -> None:
-    """
-    Precomputes subaddresses for account (major) and list of indices (minors)
-    Subaddresses have to be stored in encoded form - unique representation.
-    Single point can have multiple extended coordinates representation - would not match during subaddress search.
-    """
-    monero.compute_subaddresses(state.creds, account, indices, state.subaddresses)
+    state.key_hmac = c_h.keccak_2hash(b"hmac" + master_key)
+    state.key_enc = c_h.keccak_2hash(b"enc" + master_key)
 
 
 def _process_payment_id(state: State, tsx_data: MoneroTransactionData) -> None:

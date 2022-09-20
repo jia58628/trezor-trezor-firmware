@@ -13,14 +13,15 @@ key derived for exactly this purpose.
 """
 from typing import TYPE_CHECKING
 
-from apps.monero import layout
-from apps.monero.xmr import crypto, crypto_helpers, monero, serialize
-
-from .state import State
+from apps.monero.xmr import crypto_helpers
 
 if TYPE_CHECKING:
-    from trezor.messages import MoneroTransactionSourceEntry
-    from trezor.messages import MoneroTransactionSetInputAck
+    from .state import State
+    from trezor.messages import (
+        MoneroTransactionSourceEntry,
+        MoneroTransactionSetInputAck,
+    )
+    from apps.monero.xmr import crypto
 
 
 async def set_input(
@@ -30,14 +31,19 @@ async def set_input(
     from apps.monero.xmr import chacha_poly
     from apps.monero.xmr.serialize_messages.tx_prefix import TxinToKey
     from apps.monero.signing import offloading_keys
+    from apps.monero import layout
+    from apps.monero.xmr import monero, serialize
+
+    c_h = crypto_helpers  # cache
 
     state.current_input_index += 1
+    current_input_index = state.current_input_index  # cache
 
-    await layout.transaction_step(state, state.STEP_INP, state.current_input_index)
+    await layout.transaction_step(state, state.STEP_INP, current_input_index)
 
     if state.last_step > state.STEP_INP:
         raise ValueError("Invalid state transition")
-    if state.current_input_index >= state.input_count:
+    if current_input_index >= state.input_count:
         raise ValueError("Too many inputs")
     # real_output denotes which output in outputs is the real one (ours)
     if src_entr.real_output >= len(src_entr.outputs):
@@ -48,11 +54,9 @@ async def set_input(
 
     # Secrets derivation
     # the UTXO's one-time address P
-    out_key = crypto_helpers.decodepoint(
-        src_entr.outputs[src_entr.real_output].key.dest
-    )
+    out_key = c_h.decodepoint(src_entr.outputs[src_entr.real_output].key.dest)
     # the tx_pub of our UTXO stored inside its transaction
-    tx_key = crypto_helpers.decodepoint(src_entr.real_out_tx_key)
+    tx_key = c_h.decodepoint(src_entr.real_out_tx_key)
     additional_tx_pub_key = _get_additional_public_key(src_entr)
 
     # Calculates `derivation = Ra`, private spend key `x = H(Ra||i) + b` to be able
@@ -71,7 +75,7 @@ async def set_input(
 
     # Construct tx.vin
     # If multisig is used then ki in vini should be src_entr.multisig_kLRki.ki
-    vini = TxinToKey(amount=src_entr.amount, k_image=crypto_helpers.encodepoint(ki))
+    vini = TxinToKey(amount=src_entr.amount, k_image=c_h.encodepoint(ki))
     vini.key_offsets = _absolute_output_offsets_to_relative(
         [x.idx for x in src_entr.outputs]
     )
@@ -87,32 +91,32 @@ async def set_input(
 
     # HMAC(T_in,i || vin_i)
     hmac_vini = offloading_keys.gen_hmac_vini(
-        state.key_hmac, src_entr, vini_bin, state.current_input_index
+        state.key_hmac, src_entr, vini_bin, current_input_index
     )
     state.mem_trace(3, True)
 
     # PseudoOuts commitment, alphas stored to state
     alpha, pseudo_out = _gen_commitment(state, src_entr.amount)
-    pseudo_out = crypto_helpers.encodepoint(pseudo_out)
+    pseudo_out = c_h.encodepoint(pseudo_out)
 
     # The alpha is encrypted and passed back for storage
-    pseudo_out_hmac = crypto_helpers.compute_hmac(
-        offloading_keys.hmac_key_txin_comm(state.key_hmac, state.current_input_index),
+    pseudo_out_hmac = c_h.compute_hmac(
+        offloading_keys.hmac_key_txin_comm(state.key_hmac, current_input_index),
         pseudo_out,
     )
 
     alpha_enc = chacha_poly.encrypt_pack(
-        offloading_keys.enc_key_txin_alpha(state.key_enc, state.current_input_index),
-        crypto_helpers.encodeint(alpha),
+        offloading_keys.enc_key_txin_alpha(state.key_enc, current_input_index),
+        c_h.encodeint(alpha),
     )
 
     spend_enc = chacha_poly.encrypt_pack(
-        offloading_keys.enc_key_spend(state.key_enc, state.current_input_index),
-        crypto_helpers.encodeint(xi),
+        offloading_keys.enc_key_spend(state.key_enc, current_input_index),
+        c_h.encodeint(xi),
     )
 
     state.last_step = state.STEP_INP
-    if state.current_input_index + 1 == state.input_count:
+    if current_input_index + 1 == state.input_count:
         # When we finish the inputs processing, we no longer need
         # the precomputed subaddresses so we clear them to save memory.
         state.subaddresses = None
@@ -139,6 +143,8 @@ def _gen_commitment(state: State, in_amount: int) -> tuple[crypto.Scalar, crypto
     and the last A mask is computed in this special way.
     Returns pseudo_out
     """
+    from apps.monero.xmr import crypto
+
     alpha = crypto.random_scalar()
     state.sumpouts_alphas = crypto.sc_add_into(None, state.sumpouts_alphas, alpha)
     return alpha, crypto.gen_commitment_into(None, alpha, in_amount)
