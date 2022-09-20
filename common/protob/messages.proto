@@ -357,4 +357,16 @@ enum MessageType {
     MessageType_WebAuthnCredentials = 801 [(wire_out) = true];
     MessageType_WebAuthnAddResidentCredential = 802 [(wire_in) = true];
     MessageType_WebAuthnRemoveResidentCredential = 803 [(wire_in) = true];
+
+    // Zcash
+    MessageType_ZcashGetFullViewingKey = 893 [(wire_in) = true];
+    MessageType_ZcashFullViewingKey = 894 [(wire_out) = true];
+    MessageType_ZcashGetIncomingViewingKey = 895 [(wire_in) = true];
+    MessageType_ZcashIncomingViewingKey = 896[(wire_out) = true];
+    MessageType_ZcashGetAddress = 897 [(wire_in) = true];
+    MessageType_ZcashAddress = 898 [(wire_out) = true];
+    MessageType_ZcashOrchardBundleInfo = 899 [(wire_in) = true];
+    MessageType_ZcashOrchardInput = 900 [(wire_in) = true];
+    MessageType_ZcashOrchardOutput = 901 [(wire_in) = true];
+    MessageType_ZcashAck = 907 [(wire_in) = true];
 }

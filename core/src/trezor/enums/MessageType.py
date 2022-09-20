@@ -231,3 +231,13 @@ if not utils.BITCOIN_ONLY:
     WebAuthnCredentials = 801
     WebAuthnAddResidentCredential = 802
     WebAuthnRemoveResidentCredential = 803
+    ZcashGetFullViewingKey = 893
+    ZcashFullViewingKey = 894
+    ZcashGetIncomingViewingKey = 895
+    ZcashIncomingViewingKey = 896
+    ZcashGetAddress = 897
+    ZcashAddress = 898
+    ZcashOrchardBundleInfo = 899
+    ZcashOrchardInput = 900
+    ZcashOrchardOutput = 901
+    ZcashAck = 907

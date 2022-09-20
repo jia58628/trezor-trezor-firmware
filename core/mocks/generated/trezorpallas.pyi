@@ -1,22 +1,19 @@
 from typing import *
-# https://zips.z.cash/protocol/protocol.pdf#orchardkeycomponents
 
 
 # rust/src/zcash_primitives/pallas/mod.rs
 def to_base(x: bytes) -> Fp:
-    ...
-# https://zips.z.cash/protocol/protocol.pdf#orchardkeycomponents
+    """https://zips.z.cash/protocol/protocol.pdf#orchardkeycomponents"""
 
 
 # rust/src/zcash_primitives/pallas/mod.rs
 def to_scalar(x: bytes) -> Scalar:
-    ...
-# https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta
+    """https://zips.z.cash/protocol/protocol.pdf#orchardkeycomponents"""
 
 
 # rust/src/zcash_primitives/pallas/mod.rs
 def group_hash(domain: str, message: bytes) -> Point:
-    ...
+    """https://zips.z.cash/protocol/protocol.pdf#concretegrouphashpallasandvesta"""
 
 
 # rust/src/zcash_primitives/pallas/mod.rs
@@ -34,23 +31,6 @@ class Fp:
 
 
 # rust/src/zcash_primitives/pallas/mod.rs
-class Scalar:
-    """Pallas scalar field."""
-    def __init__(self, repr: bytes) -> None:
-        ...
-    def to_bytes(self) -> bytes:
-        ...
-    def is_not_zero(self) -> bool:
-        ...
-    def __mul__(self, other: Point) -> Point:
-        ...
-    def __add__(self, other: Scalar) -> Scalar:
-        ...
-    def __neg__(self) -> Point:
-        ...
-
-
-# rust/src/zcash_primitives/pallas/mod.rs
 class Point:
     """Pallas point."""
     def __init__(self, repr: bytes) -> None:
@@ -64,4 +44,25 @@ class Point:
     def __add__(self, other: Point) -> Point:
         ...
     def __neg__(self) -> Point:
+        ...
+PointOrScalar = TypeVar("PointOrScalar", Point, Scalar)
+
+
+# rust/src/zcash_primitives/pallas/mod.rs
+class Scalar:
+    """Pallas scalar field."""
+    def __init__(self, repr: bytes) -> None:
+        ...
+    def to_bytes(self) -> bytes:
+        ...
+    def is_not_zero(self) -> bool:
+        ...
+    def __mul__(self, other: PointOrScalar) -> PointOrScalar:
+        ...
+        # if isinstance(other, Point) then isinstance(result, Point)
+        # if isinstance(other, Scalar) then isinstance(result, Scalar)
+        return other  # just for typechecker! inner implementation differs
+    def __add__(self, other: Scalar) -> Scalar:
+        ...
+    def __neg__(self) -> Scalar:
         ...

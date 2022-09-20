@@ -152,4 +152,3 @@ message BinanceSignedTx {
 	required bytes signature = 1;
     required bytes public_key = 2;
 }
-
