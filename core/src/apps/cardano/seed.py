@@ -6,7 +6,7 @@ from trezor.crypto import bip32, cardano
 from trezor.enums import CardanoDerivationType
 
 from apps.common import mnemonic
-from apps.common.seed import derive_and_store_roots, get_seed
+from apps.common.seed import get_seed
 
 from .helpers import paths
 
@@ -135,18 +135,11 @@ def derive_and_store_secrets(passphrase: str) -> None:
     cache.set(cache.APP_CARDANO_ICARUS_TREZOR_SECRET, icarus_trezor_secret)
 
 
-async def _get_secret(ctx: wire.Context, cache_entry: int) -> bytes:
-    secret = cache.get(cache_entry)
-    if secret is None:
-        await derive_and_store_roots(ctx)
-        secret = cache.get(cache_entry)
-        assert secret is not None
-    return secret
-
-
 async def _get_keychain_bip39(
     ctx: wire.Context, derivation_type: CardanoDerivationType
 ) -> Keychain:
+    from apps.common.seed import derive_and_store_roots
+
     if not device.is_initialized():
         raise wire.NotInitialized("Device is not initialized")
 
@@ -162,12 +155,18 @@ async def _get_keychain_bip39(
     else:
         cache_entry = cache.APP_CARDANO_ICARUS_TREZOR_SECRET
 
-    secret = await _get_secret(ctx, cache_entry)
+    # _get_secret
+    secret = cache.get(cache_entry)
+    if secret is None:
+        await derive_and_store_roots(ctx)
+        secret = cache.get(cache_entry)
+        assert secret is not None
+
     root = cardano.from_secret(secret)
     return Keychain(root)
 
 
-async def get_keychain(
+async def _get_keychain(
     ctx: wire.Context, derivation_type: CardanoDerivationType
 ) -> Keychain:
     if mnemonic.is_bip39():
@@ -180,7 +179,7 @@ async def get_keychain(
 
 def with_keychain(func: HandlerWithKeychain[MsgIn, MsgOut]) -> Handler[MsgIn, MsgOut]:
     async def wrapper(ctx: wire.Context, msg: MsgIn) -> MsgOut:
-        keychain = await get_keychain(ctx, msg.derivation_type)
+        keychain = await _get_keychain(ctx, msg.derivation_type)
         return await func(ctx, msg, keychain)
 
     return wrapper

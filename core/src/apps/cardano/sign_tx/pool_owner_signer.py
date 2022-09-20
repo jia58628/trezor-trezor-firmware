@@ -1,9 +1,11 @@
-from trezor import messages, wire
-from trezor.enums import CardanoCertificateType
+from typing import TYPE_CHECKING
 
-from .. import layout
-from ..helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
+from trezor.wire import ProcessError
+
 from .signer import Signer
+
+if TYPE_CHECKING:
+    from trezor import messages
 
 
 class PoolOwnerSigner(Signer):
@@ -22,18 +24,25 @@ class PoolOwnerSigner(Signer):
     SIGNING_MODE_TITLE = "Confirming pool registration as owner."
 
     def _validate_tx_init(self) -> None:
+        self_msg = self.msg  # cache
+
         super()._validate_tx_init()
-        self._assert_tx_init_cond(self.msg.certificates_count == 1)
-        self._assert_tx_init_cond(self.msg.withdrawals_count == 0)
-        self._assert_tx_init_cond(self.msg.minting_asset_groups_count == 0)
-        self._assert_tx_init_cond(self.msg.script_data_hash is None)
-        self._assert_tx_init_cond(self.msg.collateral_inputs_count == 0)
-        self._assert_tx_init_cond(self.msg.required_signers_count == 0)
-        self._assert_tx_init_cond(not self.msg.has_collateral_return)
-        self._assert_tx_init_cond(self.msg.total_collateral is None)
-        self._assert_tx_init_cond(self.msg.reference_inputs_count == 0)
+        for condition in (
+            self_msg.certificates_count == 1,
+            self_msg.withdrawals_count == 0,
+            self_msg.minting_asset_groups_count == 0,
+            self_msg.script_data_hash is None,
+            self_msg.collateral_inputs_count == 0,
+            self_msg.required_signers_count == 0,
+            not self_msg.has_collateral_return,
+            self_msg.total_collateral is None,
+            self_msg.reference_inputs_count == 0,
+        ):
+            self._assert_tx_init_cond(condition)
 
     async def _confirm_tx(self, tx_hash: bytes) -> None:
+        from .. import layout
+
         # super() omitted intentionally
         await layout.confirm_stake_pool_registration_final(
             self.ctx,
@@ -50,7 +59,7 @@ class PoolOwnerSigner(Signer):
             or output.inline_datum_size > 0
             or output.reference_script_size > 0
         ):
-            raise wire.ProcessError("Invalid output")
+            raise ProcessError("Invalid output")
 
     def _should_show_output(self, output: messages.CardanoTxOutput) -> bool:
         # super() omitted intentionally
@@ -58,16 +67,20 @@ class PoolOwnerSigner(Signer):
         return False
 
     def _validate_certificate(self, certificate: messages.CardanoTxCertificate) -> None:
+        from trezor.enums import CardanoCertificateType
+
         super()._validate_certificate(certificate)
         if certificate.type != CardanoCertificateType.STAKE_POOL_REGISTRATION:
-            raise wire.ProcessError("Invalid certificate")
+            raise ProcessError("Invalid certificate")
 
     def _validate_witness_request(
         self, witness_request: messages.CardanoTxWitnessRequest
     ) -> None:
+        from ..helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
+
         super()._validate_witness_request(witness_request)
         if not SCHEMA_STAKING_ANY_ACCOUNT.match(witness_request.path):
-            raise wire.ProcessError(
+            raise ProcessError(
                 "Stakepool registration transaction can only contain staking witnesses"
             )
 

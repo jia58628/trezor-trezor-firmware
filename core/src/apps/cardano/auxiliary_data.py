@@ -1,18 +1,13 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor import messages, wire
+from trezor import messages
 from trezor.crypto import hashlib
-from trezor.crypto.curve import ed25519
-from trezor.enums import CardanoAddressType, CardanoTxAuxiliaryDataSupplementType
+from trezor.wire import ProcessError
 
 from apps.common import cbor
 
 from . import addresses
-from .helpers import bech32
-from .helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
-from .helpers.utils import derive_public_key
-from .layout import confirm_catalyst_registration, show_auxiliary_data_hash
 
 if TYPE_CHECKING:
     CatalystRegistrationPayload = dict[int, bytes | int]
@@ -21,6 +16,8 @@ if TYPE_CHECKING:
     CatalystRegistration = dict[
         int, CatalystRegistrationPayload | CatalystRegistrationSignature
     ]
+
+    from trezor.wire import Context
 
     from . import seed
 
@@ -36,7 +33,9 @@ def validate(auxiliary_data: messages.CardanoTxAuxiliaryData) -> None:
     fields_provided = 0
     if auxiliary_data.hash:
         fields_provided += 1
-        _validate_hash(auxiliary_data.hash)
+        # _validate_hash
+        if len(auxiliary_data.hash) != _AUXILIARY_DATA_HASH_SIZE:
+            raise ProcessError("Invalid auxiliary data")
     if auxiliary_data.catalyst_registration_parameters:
         fields_provided += 1
         _validate_catalyst_registration_parameters(
@@ -44,37 +43,35 @@ def validate(auxiliary_data: messages.CardanoTxAuxiliaryData) -> None:
         )
 
     if fields_provided != 1:
-        raise wire.ProcessError("Invalid auxiliary data")
-
-
-def _validate_hash(auxiliary_data_hash: bytes) -> None:
-    if len(auxiliary_data_hash) != _AUXILIARY_DATA_HASH_SIZE:
-        raise wire.ProcessError("Invalid auxiliary data")
+        raise ProcessError("Invalid auxiliary data")
 
 
 def _validate_catalyst_registration_parameters(
     catalyst_registration_parameters: messages.CardanoCatalystRegistrationParametersType,
 ) -> None:
+    from trezor.enums import CardanoAddressType
+    from .helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
+
     if (
         len(catalyst_registration_parameters.voting_public_key)
         != _CATALYST_VOTING_PUBLIC_KEY_LENGTH
     ):
-        raise wire.ProcessError("Invalid auxiliary data")
+        raise ProcessError("Invalid auxiliary data")
 
     if not SCHEMA_STAKING_ANY_ACCOUNT.match(
         catalyst_registration_parameters.staking_path
     ):
-        raise wire.ProcessError("Invalid auxiliary data")
+        raise ProcessError("Invalid auxiliary data")
 
     address_parameters = catalyst_registration_parameters.reward_address_parameters
     if address_parameters.address_type == CardanoAddressType.BYRON:
-        raise wire.ProcessError("Invalid auxiliary data")
+        raise ProcessError("Invalid auxiliary data")
 
     addresses.validate_address_parameters(address_parameters)
 
 
 async def show(
-    ctx: wire.Context,
+    ctx: Context,
     keychain: seed.Keychain,
     auxiliary_data_hash: bytes,
     catalyst_registration_parameters: messages.CardanoCatalystRegistrationParametersType
@@ -83,6 +80,8 @@ async def show(
     network_id: int,
     should_show_details: bool,
 ) -> None:
+    from .layout import show_auxiliary_data_hash
+
     if catalyst_registration_parameters:
         await _show_catalyst_registration(
             ctx,
@@ -97,12 +96,15 @@ async def show(
 
 
 async def _show_catalyst_registration(
-    ctx: wire.Context,
+    ctx: Context,
     keychain: seed.Keychain,
     catalyst_registration_parameters: messages.CardanoCatalystRegistrationParametersType,
     protocol_magic: int,
     network_id: int,
 ) -> None:
+    from .helpers import bech32
+    from .layout import confirm_catalyst_registration
+
     public_key = catalyst_registration_parameters.voting_public_key
     encoded_public_key = bech32.encode(bech32.HRP_JORMUN_PUBLIC_KEY, public_key)
     staking_path = catalyst_registration_parameters.staking_path
@@ -125,6 +127,8 @@ def get_hash_and_supplement(
     protocol_magic: int,
     network_id: int,
 ) -> tuple[bytes, messages.CardanoTxAuxiliaryDataSupplement]:
+    from trezor.enums import CardanoTxAuxiliaryDataSupplementType
+
     if parameters := auxiliary_data.catalyst_registration_parameters:
         (
             catalyst_registration_payload,
@@ -152,23 +156,25 @@ def _get_catalyst_registration_hash(
     catalyst_registration_payload: CatalystRegistrationPayload,
     catalyst_registration_payload_signature: bytes,
 ) -> bytes:
-    cborized_catalyst_registration = _cborize_catalyst_registration(
-        catalyst_registration_payload,
-        catalyst_registration_payload_signature,
-    )
-    return _get_hash(cbor.encode(_wrap_metadata(cborized_catalyst_registration)))
-
-
-def _cborize_catalyst_registration(
-    catalyst_registration_payload: CatalystRegistrationPayload,
-    catalyst_registration_payload_signature: bytes,
-) -> CatalystRegistration:
+    # _cborize_catalyst_registration
     catalyst_registration_signature = {1: catalyst_registration_payload_signature}
-
-    return {
+    cborized_catalyst_registration = {
         _METADATA_KEY_CATALYST_REGISTRATION: catalyst_registration_payload,
         _METADATA_KEY_CATALYST_REGISTRATION_SIGNATURE: catalyst_registration_signature,
     }
+
+    # _get_hash
+    # _wrap_metadata
+    # A new structure of metadata is used after Cardano Mary era. The metadata
+    # is wrapped in a tuple and auxiliary_scripts may follow it. Cardano
+    # tooling uses this new format of "wrapped" metadata even if no
+    # auxiliary_scripts are included. So we do the same here.
+    # https://github.com/input-output-hk/cardano-ledger-specs/blob/f7deb22be14d31b535f56edc3ca542c548244c67/shelley-ma/shelley-ma-test/cddl-files/shelley-ma.cddl#L212
+    metadata = (cborized_catalyst_registration, ())
+    auxiliary_data = cbor.encode(metadata)
+    return hashlib.blake2b(
+        data=auxiliary_data, outlen=_AUXILIARY_DATA_HASH_SIZE
+    ).digest()
 
 
 def _get_signed_catalyst_registration_payload(
@@ -177,6 +183,8 @@ def _get_signed_catalyst_registration_payload(
     protocol_magic: int,
     network_id: int,
 ) -> SignedCatalystRegistrationPayload:
+    from .helpers.utils import derive_public_key
+
     staking_key = derive_public_key(
         keychain, catalyst_registration_parameters.staking_path
     )
@@ -207,6 +215,8 @@ def _create_catalyst_registration_payload_signature(
     catalyst_registration_payload: CatalystRegistrationPayload,
     path: list[int],
 ) -> bytes:
+    from trezor.crypto.curve import ed25519
+
     node = keychain.derive(path)
 
     encoded_catalyst_registration = cbor.encode(
@@ -221,21 +231,3 @@ def _create_catalyst_registration_payload_signature(
     return ed25519.sign_ext(
         node.private_key(), node.private_key_ext(), catalyst_registration_hash
     )
-
-
-def _wrap_metadata(metadata: dict) -> tuple[dict, tuple]:
-    """
-    A new structure of metadata is used after Cardano Mary era. The metadata
-    is wrapped in a tuple and auxiliary_scripts may follow it. Cardano
-    tooling uses this new format of "wrapped" metadata even if no
-    auxiliary_scripts are included. So we do the same here.
-
-    https://github.com/input-output-hk/cardano-ledger-specs/blob/f7deb22be14d31b535f56edc3ca542c548244c67/shelley-ma/shelley-ma-test/cddl-files/shelley-ma.cddl#L212
-    """
-    return metadata, ()
-
-
-def _get_hash(auxiliary_data: bytes) -> bytes:
-    return hashlib.blake2b(
-        data=auxiliary_data, outlen=_AUXILIARY_DATA_HASH_SIZE
-    ).digest()
