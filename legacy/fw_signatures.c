@@ -51,63 +51,6 @@ static const uint8_t * const pubkey[PUBKEYS] = {
 #define FLASH_META_SIG2 (FLASH_META_START + 0x0080)
 #define FLASH_META_SIG3 (FLASH_META_START + 0x00C0)
 
-bool firmware_present_old(void) {
-  if (memcmp(FLASH_PTR(FLASH_META_START), &FIRMWARE_MAGIC_OLD,
-             4)) {  // magic does not match
-    return false;
-  }
-  if (*((const uint32_t *)FLASH_PTR(FLASH_META_CODELEN)) <
-      8192) {  // firmware reports smaller size than 8192
-    return false;
-  }
-  if (*((const uint32_t *)FLASH_PTR(FLASH_META_CODELEN)) >
-      FLASH_APP_LEN) {  // firmware reports bigger size than flash size
-    return false;
-  }
-
-  return true;
-}
-
-int signatures_old_ok(void) {
-  const uint32_t codelen = *((const uint32_t *)FLASH_META_CODELEN);
-  const uint8_t sigindex1 = *((const uint8_t *)FLASH_META_SIGINDEX1);
-  const uint8_t sigindex2 = *((const uint8_t *)FLASH_META_SIGINDEX2);
-  const uint8_t sigindex3 = *((const uint8_t *)FLASH_META_SIGINDEX3);
-
-  if (codelen > FLASH_APP_LEN) {
-    return false;
-  }
-
-  uint8_t hash[32] = {0};
-  sha256_Raw(FLASH_PTR(FLASH_OLD_APP_START), codelen, hash);
-
-  if (sigindex1 < 1 || sigindex1 > PUBKEYS) return SIG_FAIL;  // invalid index
-  if (sigindex2 < 1 || sigindex2 > PUBKEYS) return SIG_FAIL;  // invalid index
-  if (sigindex3 < 1 || sigindex3 > PUBKEYS) return SIG_FAIL;  // invalid index
-
-  if (sigindex1 == sigindex2) return SIG_FAIL;  // duplicate use
-  if (sigindex1 == sigindex3) return SIG_FAIL;  // duplicate use
-  if (sigindex2 == sigindex3) return SIG_FAIL;  // duplicate use
-
-  if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex1 - 1],
-                               (const uint8_t *)FLASH_META_SIG1,
-                               hash)) {  // failure
-    return SIG_FAIL;
-  }
-  if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex2 - 1],
-                               (const uint8_t *)FLASH_META_SIG2,
-                               hash)) {  // failure
-    return SIG_FAIL;
-  }
-  if (0 != ecdsa_verify_digest(&secp256k1, pubkey[sigindex3 - 1],
-                               (const uint8_t *)FLASH_META_SIG3,
-                               hash)) {  // failure
-    return SIG_FAIL;
-  }
-
-  return SIG_OK;
-}
-
 void compute_firmware_fingerprint(const image_header *hdr, uint8_t hash[32]) {
   image_header copy = {0};
   memcpy(&copy, hdr, sizeof(image_header));

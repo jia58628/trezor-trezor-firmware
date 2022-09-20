@@ -190,9 +190,6 @@ static int should_keep_storage(int old_was_signed,
   // if the new header hashes don't match flash contents, erase storage
   if (SIG_OK != check_firmware_hashes(new_hdr)) return SIG_FAIL;
 
-  // going from old-style header to new-style is always an upgrade, keep storage
-  if (firmware_present_old()) return SIG_OK;
-
   // if the current fix_version is higher than the new one, erase storage
   if (version_compare(new_hdr->version, fix_version_current) < 0) {
     return SIG_FAIL;
@@ -282,9 +279,6 @@ static void rx_callback(usbd_device *dev, uint8_t ep) {
           old_was_signed =
               signatures_new_ok(hdr, NULL) & check_firmware_hashes(hdr);
           fix_version_current = hdr->fix_version;
-        } else if (firmware_present_old()) {
-          old_was_signed = signatures_old_ok();
-          fix_version_current = 0;
         } else {
           old_was_signed = SIG_FAIL;
           fix_version_current = 0xffffffff;
