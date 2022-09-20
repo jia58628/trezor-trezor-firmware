@@ -68,4 +68,24 @@ static void _librust_qstrs(void) {
   MP_QSTR_total_amount;
   MP_QSTR_total_fee_new;
   MP_QSTR_user_fee_change;
+
+  // pallas
+#ifdef ZCASH_SHIELDED
+  MP_QSTR_trezorpallas;
+  MP_QSTR_Fp;
+  MP_QSTR_Scalar;
+  MP_QSTR_Point;
+  MP_QSTR_to_bytes;
+  MP_QSTR_extract;
+  MP_QSTR_is_identity;
+  MP_QSTR_to_base;
+  MP_QSTR_to_scalar;
+  MP_QSTR_group_hash;
+  MP_QSTR_scalar_from_i64;
+  MP_QSTR_is_not_zero;
+
+  // poseidon
+  MP_QSTR_trezorposeidon;
+  MP_QSTR_poseidon;
+#endif  // ZCASH_SHIELDED
 }

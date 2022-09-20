@@ -10,6 +10,7 @@ UI2 = ARGUMENTS.get('UI2', '0') == '1' or TREZOR_MODEL in ('1', 'R')
 
 FEATURE_FLAGS = {
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
+    "ZCASH_SHIELDED": EVERYTHING,
 }
 
 CCFLAGS_MOD = ''
@@ -193,6 +194,8 @@ if RASPI:
 SOURCE_MOD += [
     'embed/extmod/modtrezorutils/modtrezorutils.c',
 ]
+if FEATURE_FLAGS['ZCASH_SHIELDED']:
+    CPPDEFINES_MOD += ['ZCASH_SHIELDED']
 
 # rust mods
 SOURCE_MOD += [
@@ -201,6 +204,10 @@ SOURCE_MOD += [
 if UI2:
     SOURCE_MOD += [
         'embed/extmod/rustmods/modtrezorui2.c',
+    ]
+if FEATURE_FLAGS["ZCASH_SHIELDED"]:
+    SOURCE_MOD += [
+        'embed/extmod/rustmods/modtrezorzcashprimitives.c'
     ]
 
 # modutime
@@ -674,6 +681,8 @@ def cargo_build():
         features.append('ui')
         if PYOPT == '0':
             features.append('debug')
+    if FEATURE_FLAGS["ZCASH_SHIELDED"]:
+        features.append('zcash_shielded')
 
     return f'cd embed/rust; cargo build --profile {RUST_PROFILE} --target-dir=../../build/unix/rust --no-default-features --features "{" ".join(features)}"'
 

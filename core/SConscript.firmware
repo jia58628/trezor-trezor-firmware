@@ -12,6 +12,7 @@ FEATURE_FLAGS = {
     "RDI": True,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
     "SYSTEM_VIEW": False,
+    "ZCASH_SHIELDED": EVERYTHING,
 }
 
 CCFLAGS_MOD = ''
@@ -193,6 +194,8 @@ if UI2:
 SOURCE_MOD += [
     'embed/extmod/modtrezorutils/modtrezorutils.c',
 ]
+if FEATURE_FLAGS['ZCASH_SHIELDED']:
+    CPPDEFINES_MOD += ['ZCASH_SHIELDED']
 
 # rust mods
 SOURCE_MOD += [
@@ -201,6 +204,10 @@ SOURCE_MOD += [
 if UI2:
     SOURCE_MOD += [
         'embed/extmod/rustmods/modtrezorui2.c',
+    ]
+if FEATURE_FLAGS["ZCASH_SHIELDED"]:
+    SOURCE_MOD += [
+        'embed/extmod/rustmods/modtrezorzcashprimitives.c'
     ]
 
 # modutime
@@ -720,6 +727,8 @@ def cargo_build():
         features.append('ui')
         if PYOPT == '0':
             features.append('ui_debug')
+    if FEATURE_FLAGS["ZCASH_SHIELDED"]:
+        features.append("zcash_shielded")
 
     cargo_opts = [
         f'--target={RUST_TARGET}',
