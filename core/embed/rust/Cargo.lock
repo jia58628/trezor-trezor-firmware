@@ -318,7 +318,6 @@ dependencies = [
  "glob",
  "heapless",
  "pasta_curves",
- "rand_core",
 ]
 
 [[package]]

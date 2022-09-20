@@ -9,7 +9,7 @@ build = "build.rs"
 default = ["model_tt"]
 bitcoin_only = []
 zcash_shielded = [
-    "micropython", "rand_core", "pasta_curves", "blake2b_simd",
+    "micropython", "pasta_curves", "blake2b_simd",
 ]
 model_tt = ["touch"]
 model_t1 = ["buttons"]
@@ -54,11 +54,6 @@ default_features = false
 
 [dependencies.cstr_core]
 version = "0.2.4"
-default_features = false
-
-[dependencies.rand_core]
-optional = true
-version = "0.6.3"
 default_features = false
 
 [dependencies.blake2b_simd]
