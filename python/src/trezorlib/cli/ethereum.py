@@ -187,11 +187,15 @@ def _get_ethereum_definitions(
             "More than one mutually exclusive option for definitions was used. See --help for more info."
         )
 
+    slip44 = None
+    if slip44_hardened is not None:
+        slip44 = UH_(slip44_hardened)  # type: ignore [Argument of type "int | None" cannot be assigned to parameter "x" of type "int" in function "UH_"]
+
     defs = ethereum.messages.EthereumEncodedDefinitions()
     if definitions_dir is not None:
-        if chain_id is not None or slip44_hardened is not None:
+        if chain_id is not None or slip44 is not None:
             defs.encoded_network = ethereum.network_definition_from_dir(
-                definitions_dir, chain_id, UH_(slip44_hardened)  # type: ignore [Argument of type "int | None" cannot be assigned to parameter "x" of type "int" in function "UH_"]
+                definitions_dir, chain_id, slip44
             )
         if chain_id is not None and token_address is not None:
             defs.encoded_token = ethereum.token_definition_from_dir(
@@ -205,9 +209,9 @@ def _get_ethereum_definitions(
             with token_def_file:
                 defs.encoded_token = token_def_file.read()
     elif download_definitions:
-        if chain_id is not None or slip44_hardened is not None:
+        if chain_id is not None or slip44 is not None:
             defs.encoded_network = ethereum.download_network_definition(
-                chain_id, UH_(slip44_hardened)  # type: ignore [Argument of type "int | None" cannot be assigned to parameter "x" of type "int" in function "UH_"]
+                chain_id, slip44
             )
         if chain_id is not None and token_address is not None:
             defs.encoded_token = ethereum.download_token_definition(
@@ -437,7 +441,6 @@ def sign_tx(
     try to connect to an ethereum node and auto-fill these values. You can configure
     the connection with WEB3_PROVIDER_URI environment variable.
     """
-
     is_eip1559 = eip2718_type == 2
     if (
         (not is_eip1559 and gas_price is None)
@@ -455,13 +458,31 @@ def sign_tx(
         click.echo("Can't send tokens and custom data at the same time")
         sys.exit(1)
 
+    defs = _get_ethereum_definitions(
+        definitions_dir=definitions_dir,
+        network_def_file=network_def,
+        token_def_file=token_def,
+        download_definitions=download_definitions,
+        chain_id=chain_id,
+        token_address=to_address,
+    )
+
     address_n = tools.parse_path(address)
-    from_address = ethereum.get_address(client, address_n)
+    from_address = ethereum.get_address(client, address_n, encoded_network=defs.encoded_network)
 
     if token:
         data = _erc20_contract(token, to_address, amount)
         to_address = token
         amount = 0
+        # to_address has changed, reload definitions
+        defs = _get_ethereum_definitions(
+            definitions_dir=definitions_dir,
+            network_def_file=network_def,
+            token_def_file=token_def,
+            download_definitions=download_definitions,
+            chain_id=chain_id,
+            token_address=to_address,
+        )
 
     if data:
         data_bytes = ethereum.decode_hex(data)
@@ -483,15 +504,6 @@ def sign_tx(
 
     assert gas_limit is not None
     assert nonce is not None
-
-    defs = _get_ethereum_definitions(
-        definitions_dir=definitions_dir,
-        network_def_file=network_def,
-        token_def_file=token_def,
-        download_definitions=download_definitions,
-        chain_id=chain_id,
-        token_address=to_address,
-    )
 
     if is_eip1559:
         assert max_gas_fee is not None

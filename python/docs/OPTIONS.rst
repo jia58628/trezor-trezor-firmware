@@ -251,12 +251,14 @@ Ethereum commands.
     --help  Show this message and exit.
 
   Commands:
-    get-address      Get Ethereum address in hex encoding.
-    get-public-node  Get Ethereum public node of given path.
-    sign-message     Sign message with Ethereum address.
-    sign-tx          Sign (and optionally publish) Ethereum transaction.
-    sign-typed-data  Sign typed data (EIP-712) with Ethereum address.
-    verify-message   Verify message signed with Ethereum address.
+    download-definitions  Download all Ethereum network and token definitions and save them.
+    get-address           Get Ethereum address in hex encoding.
+    get-public-node       Get Ethereum public node of given path.
+    sign-message          Sign message with Ethereum address.
+    sign-tx               Sign (and optionally publish) Ethereum transaction.
+    sign-typed-data       Sign typed data (EIP-712) with Ethereum address.
+    sign-typed-data-hash  Sign hash of typed data (EIP-712) with Ethereum address.
+    verify-message        Verify message signed with Ethereum address.
 
 FIDO2, U2F and WebAuthN management commands.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
