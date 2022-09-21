@@ -1,12 +1,10 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor import wire
 from trezor.crypto.hashlib import sha256
 from trezor.utils import HashWriter
 
 from .. import common, writers
-from ..common import BIP32_WALLET_DEPTH, input_is_external
 from .matchcheck import MultisigFingerprintChecker, WalletPathChecker
 
 if TYPE_CHECKING:
@@ -89,7 +87,7 @@ class TxInfoBase:
         writers.write_tx_input_check(self.h_tx_check, txi)
         self.min_sequence = min(self.min_sequence, txi.sequence)
 
-        if not input_is_external(txi):
+        if not common.input_is_external(txi):
             self.wallet_path.add_input(txi)
             self.multisig_fingerprint.add_input(txi)
 
@@ -108,7 +106,7 @@ class TxInfoBase:
             return False
         return (
             self.wallet_path.output_matches(txo)
-            and len(txo.address_n) >= BIP32_WALLET_DEPTH
+            and len(txo.address_n) >= common.BIP32_WALLET_DEPTH
             and txo.address_n[-2] <= _BIP32_CHANGE_CHAIN
             and txo.address_n[-1] <= _BIP32_MAX_LAST_ELEMENT
             and txo.amount > 0
@@ -163,6 +161,8 @@ class OriginalTxInfo(TxInfoBase):
         writers.write_tx_output(self.h_tx, txo, script_pubkey)
 
     async def finalize_tx_hash(self) -> None:
+        from trezor import wire
+
         await self.signer.write_prev_tx_footer(self.h_tx, self.tx, self.orig_hash)
         if self.orig_hash != writers.get_tx_hash(
             self.h_tx, double=self.signer.coin.sign_hash_double, reverse=True

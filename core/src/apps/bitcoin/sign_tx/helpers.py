@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from trezor import utils, wire
-from trezor.enums import InputScriptType, OutputScriptType, RequestType
+from trezor import utils
+from trezor.enums import RequestType
 from trezor.messages import (
     TxAckInput,
     TxAckOutput,
@@ -11,9 +11,9 @@ from trezor.messages import (
     TxAckPrevMeta,
     TxAckPrevOutput,
 )
+from trezor.wire import DataError
 
 from apps.common import paths
-from apps.common.coininfo import CoinInfo
 
 from .. import common
 from ..writers import TX_HASH_SIZE
@@ -22,6 +22,7 @@ from . import layout
 if TYPE_CHECKING:
     from typing import Any, Awaitable
     from trezor.enums import AmountUnit
+    from trezor.wire import Context
 
     from trezor.messages import (
         PrevInput,
@@ -32,13 +33,14 @@ if TYPE_CHECKING:
         TxOutput,
         TxRequest,
     )
+    from apps.common.coininfo import CoinInfo
 
 # Machine instructions
 # ===
 
 
 class UiConfirm:
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         raise NotImplementedError
 
     __eq__ = utils.obj_eq
@@ -50,7 +52,7 @@ class UiConfirmOutput(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_output(ctx, self.output, self.coin, self.amount_unit)
 
 
@@ -60,7 +62,7 @@ class UiConfirmDecredSSTXSubmission(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_decred_sstx_submission(
             ctx, self.output, self.coin, self.amount_unit
         )
@@ -77,7 +79,7 @@ class UiConfirmPaymentRequest(UiConfirm):
         self.amount_unit = amount_unit
         self.coin = coin
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_payment_request(
             ctx, self.payment_req, self.coin, self.amount_unit
         )
@@ -90,7 +92,7 @@ class UiConfirmReplacement(UiConfirm):
         self.description = description
         self.txid = txid
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_replacement(ctx, self.description, self.txid)
 
 
@@ -107,7 +109,7 @@ class UiConfirmModifyOutput(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_modify_output(
             ctx, self.txo, self.orig_txo, self.coin, self.amount_unit
         )
@@ -128,7 +130,7 @@ class UiConfirmModifyFee(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_modify_fee(
             ctx,
             self.user_fee_change,
@@ -154,7 +156,7 @@ class UiConfirmTotal(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_total(
             ctx, self.spending, self.fee, self.fee_rate, self.coin, self.amount_unit
         )
@@ -169,7 +171,7 @@ class UiConfirmJointTotal(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_joint_total(
             ctx, self.spending, self.total, self.coin, self.amount_unit
         )
@@ -181,7 +183,7 @@ class UiConfirmFeeOverThreshold(UiConfirm):
         self.coin = coin
         self.amount_unit = amount_unit
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_feeoverthreshold(
             ctx, self.fee, self.coin, self.amount_unit
         )
@@ -191,12 +193,12 @@ class UiConfirmChangeCountOverThreshold(UiConfirm):
     def __init__(self, change_count: int):
         self.change_count = change_count
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_change_count_over_threshold(ctx, self.change_count)
 
 
 class UiConfirmUnverifiedExternalInput(UiConfirm):
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_unverified_external_input(ctx)
 
 
@@ -204,7 +206,7 @@ class UiConfirmForeignAddress(UiConfirm):
     def __init__(self, address_n: list):
         self.address_n = address_n
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return paths.show_path_warning(ctx, self.address_n)
 
 
@@ -213,7 +215,7 @@ class UiConfirmNonDefaultLocktime(UiConfirm):
         self.lock_time = lock_time
         self.lock_time_disabled = lock_time_disabled
 
-    def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         return layout.confirm_nondefault_locktime(
             ctx, self.lock_time, self.lock_time_disabled
         )
@@ -281,17 +283,19 @@ def request_tx_meta(tx_req: TxRequest, coin: CoinInfo, tx_hash: bytes | None = N
     tx_req.details.tx_hash = tx_hash
     ack = yield TxAckPrevMeta, tx_req
     _clear_tx_request(tx_req)
-    return sanitize_tx_meta(ack.tx, coin)
+    return _sanitize_tx_meta(ack.tx, coin)
 
 
 def request_tx_extra_data(
     tx_req: TxRequest, offset: int, size: int, tx_hash: bytes | None = None
 ) -> Awaitable[bytearray]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    tx_req_details = tx_req.details  # cache
+
+    assert tx_req_details is not None
     tx_req.request_type = RequestType.TXEXTRADATA
-    tx_req.details.extra_data_offset = offset
-    tx_req.details.extra_data_len = size
-    tx_req.details.tx_hash = tx_hash
+    tx_req_details.extra_data_offset = offset
+    tx_req_details.extra_data_len = size
+    tx_req_details.tx_hash = tx_hash
     ack = yield TxAckPrevExtraData, tx_req
     _clear_tx_request(tx_req)
     return ack.tx.extra_data_chunk
@@ -307,7 +311,7 @@ def request_tx_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes |
     tx_req.details.request_index = i
     ack = yield TxAckInput, tx_req
     _clear_tx_request(tx_req)
-    return sanitize_tx_input(ack.tx.input, coin)
+    return _sanitize_tx_input(ack.tx.input, coin)
 
 
 def request_tx_prev_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevInput]:  # type: ignore [awaitable-is-generator]
@@ -317,7 +321,7 @@ def request_tx_prev_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: by
     tx_req.details.tx_hash = tx_hash
     ack = yield TxAckPrevInput, tx_req
     _clear_tx_request(tx_req)
-    return sanitize_tx_prev_input(ack.tx.input, coin)
+    return _sanitize_tx_prev_input(ack.tx.input, coin)
 
 
 def request_tx_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[TxOutput]:  # type: ignore [awaitable-is-generator]
@@ -330,7 +334,7 @@ def request_tx_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes 
     tx_req.details.request_index = i
     ack = yield TxAckOutput, tx_req
     _clear_tx_request(tx_req)
-    return sanitize_tx_output(ack.tx.output, coin)
+    return _sanitize_tx_output(ack.tx.output, coin)
 
 
 def request_tx_prev_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevOutput]:  # type: ignore [awaitable-is-generator]
@@ -350,7 +354,7 @@ def request_payment_req(tx_req: TxRequest, i: int) -> Awaitable[TxAckPaymentRequ
     tx_req.details.request_index = i
     ack = yield TxAckPaymentRequest, tx_req
     _clear_tx_request(tx_req)
-    return sanitize_payment_req(ack)
+    return _sanitize_payment_req(ack)
 
 
 def request_tx_finish(tx_req: TxRequest) -> Awaitable[None]:  # type: ignore [awaitable-is-generator]
@@ -360,19 +364,22 @@ def request_tx_finish(tx_req: TxRequest) -> Awaitable[None]:  # type: ignore [aw
 
 
 def _clear_tx_request(tx_req: TxRequest) -> None:
-    assert tx_req.details is not None
-    assert tx_req.serialized is not None
-    assert tx_req.serialized.serialized_tx is not None
+    tx_req_details = tx_req.details  # cache
+    tx_req_serialized = tx_req.serialized  # cache
+
+    assert tx_req_details is not None
+    assert tx_req_serialized is not None
+    assert tx_req_serialized.serialized_tx is not None
     tx_req.request_type = None
-    tx_req.details.request_index = None
-    tx_req.details.tx_hash = None
-    tx_req.details.extra_data_len = None
-    tx_req.details.extra_data_offset = None
-    tx_req.serialized.signature = None
-    tx_req.serialized.signature_index = None
+    tx_req_details.request_index = None
+    tx_req_details.tx_hash = None
+    tx_req_details.extra_data_len = None
+    tx_req_details.extra_data_offset = None
+    tx_req_serialized.signature = None
+    tx_req_serialized.signature_index = None
     # typechecker thinks serialized_tx is `bytes`, which is immutable
     # we know that it is `bytearray` in reality
-    tx_req.serialized.serialized_tx[:] = bytes()  # type: ignore ["__setitem__" method not defined on type "bytes"]
+    tx_req_serialized.serialized_tx[:] = bytes()  # type: ignore ["__setitem__" method not defined on type "bytes"]
 
 
 # Data sanitizers
@@ -383,149 +390,158 @@ def sanitize_sign_tx(tx: SignTx, coin: CoinInfo) -> SignTx:
     if coin.decred or coin.overwintered:
         tx.expiry = tx.expiry if tx.expiry is not None else 0
     elif tx.expiry:
-        raise wire.DataError("Expiry not enabled on this coin.")
+        raise DataError("Expiry not enabled on this coin.")
 
     if coin.timestamp and not tx.timestamp:
-        raise wire.DataError("Timestamp must be set.")
+        raise DataError("Timestamp must be set.")
     elif not coin.timestamp and tx.timestamp:
-        raise wire.DataError("Timestamp not enabled on this coin.")
+        raise DataError("Timestamp not enabled on this coin.")
 
     if coin.overwintered:
         if tx.version_group_id is None:
-            raise wire.DataError("Version group ID must be set.")
+            raise DataError("Version group ID must be set.")
         if tx.branch_id is None:
-            raise wire.DataError("Branch ID must be set.")
+            raise DataError("Branch ID must be set.")
     elif not coin.overwintered:
         if tx.version_group_id is not None:
-            raise wire.DataError("Version group ID not enabled on this coin.")
+            raise DataError("Version group ID not enabled on this coin.")
         if tx.branch_id is not None:
-            raise wire.DataError("Branch ID not enabled on this coin.")
+            raise DataError("Branch ID not enabled on this coin.")
 
     return tx
 
 
-def sanitize_tx_meta(tx: PrevTx, coin: CoinInfo) -> PrevTx:
+def _sanitize_tx_meta(tx: PrevTx, coin: CoinInfo) -> PrevTx:
     if not coin.extra_data and tx.extra_data_len:
-        raise wire.DataError("Extra data not enabled on this coin.")
+        raise DataError("Extra data not enabled on this coin.")
 
     if coin.decred or coin.overwintered:
         tx.expiry = tx.expiry if tx.expiry is not None else 0
     elif tx.expiry:
-        raise wire.DataError("Expiry not enabled on this coin.")
+        raise DataError("Expiry not enabled on this coin.")
 
     if coin.timestamp and not tx.timestamp:
-        raise wire.DataError("Timestamp must be set.")
+        raise DataError("Timestamp must be set.")
     elif not coin.timestamp and tx.timestamp:
-        raise wire.DataError("Timestamp not enabled on this coin.")
+        raise DataError("Timestamp not enabled on this coin.")
     elif not coin.overwintered:
         if tx.version_group_id is not None:
-            raise wire.DataError("Version group ID not enabled on this coin.")
+            raise DataError("Version group ID not enabled on this coin.")
         if tx.branch_id is not None:
-            raise wire.DataError("Branch ID not enabled on this coin.")
+            raise DataError("Branch ID not enabled on this coin.")
 
     return tx
 
 
-def sanitize_tx_input(txi: TxInput, coin: CoinInfo) -> TxInput:
+def _sanitize_tx_input(txi: TxInput, coin: CoinInfo) -> TxInput:
+    from trezor.enums import InputScriptType
+    from trezor.wire import DataError  # pylint: disable=reimported  # cache
+
+    txi_script_type = txi.script_type  # cache
+
     if len(txi.prev_hash) != TX_HASH_SIZE:
-        raise wire.DataError("Provided prev_hash is invalid.")
+        raise DataError("Provided prev_hash is invalid.")
 
-    if txi.multisig and txi.script_type not in common.MULTISIG_INPUT_SCRIPT_TYPES:
-        raise wire.DataError("Multisig field provided but not expected.")
+    if txi.multisig and txi_script_type not in common.MULTISIG_INPUT_SCRIPT_TYPES:
+        raise DataError("Multisig field provided but not expected.")
 
-    if not txi.multisig and txi.script_type == InputScriptType.SPENDMULTISIG:
-        raise wire.DataError("Multisig details required.")
+    if not txi.multisig and txi_script_type == InputScriptType.SPENDMULTISIG:
+        raise DataError("Multisig details required.")
 
-    if txi.script_type in common.INTERNAL_INPUT_SCRIPT_TYPES:
+    if txi_script_type in common.INTERNAL_INPUT_SCRIPT_TYPES:
         if not txi.address_n:
-            raise wire.DataError("Missing address_n field.")
+            raise DataError("Missing address_n field.")
 
         if txi.script_pubkey:
-            raise wire.DataError("Input's script_pubkey provided but not expected.")
+            raise DataError("Input's script_pubkey provided but not expected.")
     else:
         if txi.address_n:
-            raise wire.DataError("Input's address_n provided but not expected.")
+            raise DataError("Input's address_n provided but not expected.")
 
         if not txi.script_pubkey:
-            raise wire.DataError("Missing script_pubkey field.")
+            raise DataError("Missing script_pubkey field.")
 
     if not coin.decred and txi.decred_tree is not None:
-        raise wire.DataError("Decred details provided but Decred coin not specified.")
+        raise DataError("Decred details provided but Decred coin not specified.")
 
-    if txi.script_type in common.SEGWIT_INPUT_SCRIPT_TYPES or txi.witness is not None:
+    if txi_script_type in common.SEGWIT_INPUT_SCRIPT_TYPES or txi.witness is not None:
         if not coin.segwit:
-            raise wire.DataError("Segwit not enabled on this coin.")
+            raise DataError("Segwit not enabled on this coin.")
 
-    if txi.script_type == InputScriptType.SPENDTAPROOT and not coin.taproot:
-        raise wire.DataError("Taproot not enabled on this coin")
+    if txi_script_type == InputScriptType.SPENDTAPROOT and not coin.taproot:
+        raise DataError("Taproot not enabled on this coin")
 
     if txi.commitment_data and not txi.ownership_proof:
-        raise wire.DataError("commitment_data field provided but not expected.")
+        raise DataError("commitment_data field provided but not expected.")
 
     if txi.orig_hash and txi.orig_index is None:
-        raise wire.DataError("Missing orig_index field.")
+        raise DataError("Missing orig_index field.")
 
     return txi
 
 
-def sanitize_tx_prev_input(txi: PrevInput, coin: CoinInfo) -> PrevInput:
+def _sanitize_tx_prev_input(txi: PrevInput, coin: CoinInfo) -> PrevInput:
     if len(txi.prev_hash) != TX_HASH_SIZE:
-        raise wire.DataError("Provided prev_hash is invalid.")
+        raise DataError("Provided prev_hash is invalid.")
 
     if not coin.decred and txi.decred_tree is not None:
-        raise wire.DataError("Decred details provided but Decred coin not specified.")
+        raise DataError("Decred details provided but Decred coin not specified.")
 
     return txi
 
 
-def sanitize_tx_output(txo: TxOutput, coin: CoinInfo) -> TxOutput:
-    if txo.multisig and txo.script_type not in common.MULTISIG_OUTPUT_SCRIPT_TYPES:
-        raise wire.DataError("Multisig field provided but not expected.")
+def _sanitize_tx_output(txo: TxOutput, coin: CoinInfo) -> TxOutput:
+    from trezor.enums import OutputScriptType
+    from trezor.wire import DataError  # pylint: disable=reimported  # cache
 
-    if not txo.multisig and txo.script_type == OutputScriptType.PAYTOMULTISIG:
-        raise wire.DataError("Multisig details required.")
+    txo_script_type = txo.script_type  # cache
+    txo_address_n = txo.address_n  # cache
 
-    if txo.address_n and txo.script_type not in common.CHANGE_OUTPUT_SCRIPT_TYPES:
-        raise wire.DataError("Output's address_n provided but not expected.")
+    if txo.multisig and txo_script_type not in common.MULTISIG_OUTPUT_SCRIPT_TYPES:
+        raise DataError("Multisig field provided but not expected.")
+
+    if not txo.multisig and txo_script_type == OutputScriptType.PAYTOMULTISIG:
+        raise DataError("Multisig details required.")
+
+    if txo_address_n and txo_script_type not in common.CHANGE_OUTPUT_SCRIPT_TYPES:
+        raise DataError("Output's address_n provided but not expected.")
 
     if txo.amount is None:
-        raise wire.DataError("Missing amount field.")
+        raise DataError("Missing amount field.")
 
-    if txo.script_type in common.SEGWIT_OUTPUT_SCRIPT_TYPES:
+    if txo_script_type in common.SEGWIT_OUTPUT_SCRIPT_TYPES:
         if not coin.segwit:
-            raise wire.DataError("Segwit not enabled on this coin.")
+            raise DataError("Segwit not enabled on this coin.")
 
-    if txo.script_type == OutputScriptType.PAYTOTAPROOT and not coin.taproot:
-        raise wire.DataError("Taproot not enabled on this coin")
+    if txo_script_type == OutputScriptType.PAYTOTAPROOT and not coin.taproot:
+        raise DataError("Taproot not enabled on this coin")
 
-    if txo.script_type == OutputScriptType.PAYTOOPRETURN:
+    if txo_script_type == OutputScriptType.PAYTOOPRETURN:
         # op_return output
         if txo.op_return_data is None:
-            raise wire.DataError("OP_RETURN output without op_return_data")
+            raise DataError("OP_RETURN output without op_return_data")
         if txo.amount != 0:
-            raise wire.DataError("OP_RETURN output with non-zero amount")
-        if txo.address or txo.address_n or txo.multisig:
-            raise wire.DataError("OP_RETURN output with address or multisig")
+            raise DataError("OP_RETURN output with non-zero amount")
+        if txo.address or txo_address_n or txo.multisig:
+            raise DataError("OP_RETURN output with address or multisig")
     else:
         if txo.op_return_data:
-            raise wire.DataError(
-                "OP RETURN data provided but not OP RETURN script type."
-            )
-        if txo.address_n and txo.address:
-            raise wire.DataError("Both address and address_n provided.")
-        if not txo.address_n and not txo.address:
-            raise wire.DataError("Missing address")
+            raise DataError("OP RETURN data provided but not OP RETURN script type.")
+        if txo_address_n and txo.address:
+            raise DataError("Both address and address_n provided.")
+        if not txo_address_n and not txo.address:
+            raise DataError("Missing address")
 
     if txo.orig_hash and txo.orig_index is None:
-        raise wire.DataError("Missing orig_index field.")
+        raise DataError("Missing orig_index field.")
 
     return txo
 
 
-def sanitize_payment_req(payment_req: TxAckPaymentRequest) -> TxAckPaymentRequest:
+def _sanitize_payment_req(payment_req: TxAckPaymentRequest) -> TxAckPaymentRequest:
     for memo in payment_req.memos:
         if (memo.text_memo, memo.refund_memo, memo.coin_purchase_memo).count(None) != 2:
-            raise wire.DataError(
+            raise DataError(
                 "Exactly one memo type must be specified in each PaymentRequestMemo."
             )
 

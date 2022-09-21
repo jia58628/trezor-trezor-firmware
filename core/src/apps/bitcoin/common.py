@@ -2,16 +2,16 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor import wire
-from trezor.crypto import bech32, bip32, der
-from trezor.crypto.curve import bip340, secp256k1
-from trezor.crypto.hashlib import sha256
+from trezor.crypto import bech32
+from trezor.crypto.curve import bip340
 from trezor.enums import InputScriptType, OutputScriptType
-from trezor.utils import HashWriter, ensure
 
 if TYPE_CHECKING:
     from enum import IntEnum
     from apps.common.coininfo import CoinInfo
     from trezor.messages import TxInput
+    from trezor.utils import HashWriter
+    from trezor.crypto import bip32
 else:
     IntEnum = object
 
@@ -99,6 +99,9 @@ NONSEGWIT_INPUT_SCRIPT_TYPES = (
 
 
 def ecdsa_sign(node: bip32.HDNode, digest: bytes) -> bytes:
+    from trezor.crypto import der
+    from trezor.crypto.curve import secp256k1
+
     sig = secp256k1.sign(node.private_key(), digest)
     sigder = der.encode_seq((sig[1:33], sig[33:65]))
     return sigder
@@ -111,6 +114,8 @@ def bip340_sign(node: bip32.HDNode, digest: bytes) -> bytes:
 
 
 def ecdsa_hash_pubkey(pubkey: bytes, coin: CoinInfo) -> bytes:
+    from trezor.utils import ensure
+
     if pubkey[0] == 0x04:
         ensure(len(pubkey) == 65)  # uncompressed format
     elif pubkey[0] == 0x00:
@@ -173,6 +178,9 @@ def input_is_external_unverified(txi: TxInput) -> bool:
 
 
 def tagged_hashwriter(tag: bytes) -> HashWriter:
+    from trezor.crypto.hashlib import sha256
+    from trezor.utils import HashWriter
+
     tag_digest = sha256(tag).digest()
     ctx = sha256(tag_digest)
     ctx.update(tag_digest)

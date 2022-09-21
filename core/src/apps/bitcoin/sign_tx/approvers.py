@@ -1,18 +1,16 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor import wire
-from trezor.enums import OutputScriptType
 from trezor.ui.components.common.confirm import INFO
+from trezor.wire import DataError, NotEnoughFunds, ProcessError
 
 from apps.common import safety_checks
 
-from ..authorization import FEE_RATE_DECIMALS
 from ..common import input_is_external_unverified
 from ..keychain import validate_path_against_script_type
 from . import helpers, tx_weight
 from .payment_request import PaymentRequestVerifier
-from .tx_info import OriginalTxInfo, TxInfo
+from .tx_info import OriginalTxInfo
 
 if TYPE_CHECKING:
     from trezor.messages import SignTx, TxInput, TxOutput, TxAckPaymentRequest
@@ -21,6 +19,7 @@ if TYPE_CHECKING:
     from apps.common.keychain import Keychain
 
     from ..authorization import CoinJoinAuthorization
+    from .tx_info import TxInfo
 
 
 # An Approver object computes the transaction totals and either prompts the user
@@ -73,7 +72,7 @@ class Approver:
         if input_is_external_unverified(txi):
             self.has_unverified_external_input = True
             if safety_checks.is_strict():
-                raise wire.ProcessError("Unverifiable external input.")
+                raise ProcessError("Unverifiable external input.")
         else:
             self.external_in += txi.amount
             if txi.orig_hash:
@@ -152,7 +151,7 @@ class BasicApprover(Approver):
             not validate_path_against_script_type(self.coin, txi)
             and not self.foreign_address_confirmed
         ):
-            raise wire.ProcessError("Transaction has changed during signing")
+            raise ProcessError("Transaction has changed during signing")
 
     def add_change_output(self, txo: TxOutput, script_pubkey: bytes) -> None:
         super().add_change_output(txo, script_pubkey)
@@ -164,6 +163,8 @@ class BasicApprover(Approver):
         script_pubkey: bytes,
         orig_txo: TxOutput | None = None,
     ) -> None:
+        from trezor.enums import OutputScriptType
+
         await super().add_external_output(txo, script_pubkey, orig_txo)
 
         if orig_txo:
@@ -174,7 +175,7 @@ class BasicApprover(Approver):
                 if self.is_payjoin():
                     # In case of PayJoin the above could be used to increase other external
                     # outputs, which would create too much UI complexity.
-                    raise wire.ProcessError(
+                    raise ProcessError(
                         "Reducing original output amounts is not supported."
                     )
                 await helpers.confirm_modify_output(
@@ -185,7 +186,7 @@ class BasicApprover(Approver):
                 # confirmation, because approve_tx() together with the branch above ensures that
                 # the increase is paid by external inputs.
                 if not self.is_payjoin():
-                    raise wire.ProcessError(
+                    raise ProcessError(
                         "Increasing original output amounts is not supported."
                     )
 
@@ -193,7 +194,7 @@ class BasicApprover(Approver):
             # Skip output confirmation for replacement transactions,
             # but don't allow adding new OP_RETURN outputs.
             if txo.script_type == OutputScriptType.PAYTOOPRETURN and not orig_txo:
-                raise wire.ProcessError(
+                raise ProcessError(
                     "Adding new OP_RETURN outputs in replacement transactions is not supported."
                 )
         elif txo.payment_req_index is None or self.show_payment_req_details:
@@ -206,7 +207,7 @@ class BasicApprover(Approver):
     ) -> None:
         await super().add_payment_request(msg, keychain)
         if msg.amount is None:
-            raise wire.DataError("Missing payment request amount.")
+            raise DataError("Missing payment request amount.")
 
         result = await helpers.confirm_payment_request(msg, self.coin, self.amount_unit)
         self.show_payment_req_details = result is INFO
@@ -241,7 +242,7 @@ class BasicApprover(Approver):
 
         # some coins require negative fees for reward TX
         if fee < 0 and not self.coin.negative_fee:
-            raise wire.NotEnoughFunds("Not enough funds")
+            raise NotEnoughFunds("Not enough funds")
 
         total = self.total_in - self.change_out
         spending = total - self.external_in
@@ -253,7 +254,7 @@ class BasicApprover(Approver):
         # fee > (coin.maxfee per byte * tx size)
         if fee > fee_threshold:
             if fee > 10 * fee_threshold and safety_checks.is_strict():
-                raise wire.DataError("The fee is unexpectedly large")
+                raise DataError("The fee is unexpectedly large")
             await helpers.confirm_feeoverthreshold(fee, self.coin, self.amount_unit)
 
         if self.change_count > self.MAX_SILENT_CHANGE_COUNT:
@@ -267,7 +268,7 @@ class BasicApprover(Approver):
             orig_fee = self.orig_total_in - self.orig_total_out
 
             if fee < 0 or orig_fee < 0:
-                raise wire.ProcessError(
+                raise ProcessError(
                     "Negative fees not supported in transaction replacement."
                 )
 
@@ -277,14 +278,14 @@ class BasicApprover(Approver):
             # not increase by more than the fee difference (so additional funds
             # can only go towards the fee, which is confirmed by the user).
             if spending - orig_spending > fee - orig_fee:
-                raise wire.ProcessError("Invalid replacement transaction.")
+                raise ProcessError("Invalid replacement transaction.")
 
             # Replacement transactions must not change the effective nLockTime.
             lock_time = 0 if tx_info.lock_time_disabled() else tx_info.tx.lock_time
             for orig in orig_txs:
                 orig_lock_time = 0 if orig.lock_time_disabled() else orig.tx.lock_time
                 if lock_time != orig_lock_time:
-                    raise wire.ProcessError(
+                    raise ProcessError(
                         "Original transactions must have same effective nLockTime as replacement transaction."
                     )
 
@@ -338,7 +339,7 @@ class CoinJoinApprover(Approver):
         self.authorization = authorization
 
         if authorization.params.coin_name != tx.coin_name:
-            raise wire.DataError("Coin name does not match authorization.")
+            raise DataError("Coin name does not match authorization.")
 
         # Upper bound on the user's contribution to the weight of the transaction.
         self.our_weight = tx_weight.TxWeightCalculator()
@@ -346,7 +347,7 @@ class CoinJoinApprover(Approver):
     async def add_internal_input(self, txi: TxInput) -> None:
         self.our_weight.add_input(txi)
         if not self.authorization.check_sign_tx_input(txi, self.coin):
-            raise wire.ProcessError("Unauthorized path")
+            raise ProcessError("Unauthorized path")
 
         await super().add_internal_input(txi)
 
@@ -356,7 +357,7 @@ class CoinJoinApprover(Approver):
         # in multiple signatures schemes (ECDSA and Schnorr) and we want to be sure that the user
         # went through a warning screen before we sign the input.
         if not self.authorization.check_sign_tx_input(txi, self.coin):
-            raise wire.ProcessError("Unauthorized path")
+            raise ProcessError("Unauthorized path")
 
     def add_external_input(self, txi: TxInput) -> None:
         super().add_external_input(txi)
@@ -365,7 +366,7 @@ class CoinJoinApprover(Approver):
         # is not critical for security, we are just being cautious, because
         # CoinJoin is automated and this is not a very legitimate use-case.
         if input_is_external_unverified(txi):
-            raise wire.ProcessError("Unverifiable external input.")
+            raise ProcessError("Unverifiable external input.")
 
     def add_change_output(self, txo: TxOutput, script_pubkey: bytes) -> None:
         super().add_change_output(txo, script_pubkey)
@@ -377,10 +378,10 @@ class CoinJoinApprover(Approver):
         await super().add_payment_request(msg, keychain)
 
         if msg.recipient_name != self.authorization.params.coordinator:
-            raise wire.DataError("CoinJoin coordinator mismatch in payment request.")
+            raise DataError("CoinJoin coordinator mismatch in payment request.")
 
         if msg.memos:
-            raise wire.DataError("Memos not allowed in CoinJoin payment request.")
+            raise DataError("Memos not allowed in CoinJoin payment request.")
 
     async def approve_orig_txids(
         self, tx_info: TxInfo, orig_txs: list[OriginalTxInfo]
@@ -388,6 +389,8 @@ class CoinJoinApprover(Approver):
         pass
 
     async def approve_tx(self, tx_info: TxInfo, orig_txs: list[OriginalTxInfo]) -> None:
+        from ..authorization import FEE_RATE_DECIMALS
+
         await super().approve_tx(tx_info, orig_txs)
 
         max_fee_per_vbyte = self.authorization.params.max_fee_per_kvbyte / 1000
@@ -400,7 +403,7 @@ class CoinJoinApprover(Approver):
         mining_fee = self.total_in - self.total_out
 
         if mining_fee > max_fee_per_vbyte * self.weight.get_virtual_size():
-            raise wire.ProcessError("Mining fee over threshold")
+            raise ProcessError("Mining fee over threshold")
 
         # The maximum mining fee that the user should be paying.
         our_max_mining_fee = max_fee_per_vbyte * self.our_weight.get_virtual_size()
@@ -433,14 +436,14 @@ class CoinJoinApprover(Approver):
             + our_max_mining_fee
             + min_allowed_output_amount_plus_fee
         ):
-            raise wire.ProcessError("Total fee over threshold.")
+            raise ProcessError("Total fee over threshold.")
 
         if not self.authorization.approve_sign_tx(tx_info.tx):
-            raise wire.ProcessError("Exceeded number of CoinJoin rounds.")
+            raise ProcessError("Exceeded number of CoinJoin rounds.")
 
     def _add_output(self, txo: TxOutput, script_pubkey: bytes) -> None:
         super()._add_output(txo, script_pubkey)
 
         # All CoinJoin outputs must be accompanied by a signed payment request.
         if txo.payment_req_index is None:
-            raise wire.DataError("Missing payment request.")
+            raise DataError("Missing payment request.")

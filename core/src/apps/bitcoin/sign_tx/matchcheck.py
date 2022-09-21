@@ -1,9 +1,5 @@
 from typing import TYPE_CHECKING
 
-from trezor import wire
-from trezor.utils import ensure
-
-from .. import multisig
 from ..common import BIP32_WALLET_DEPTH
 
 if TYPE_CHECKING:
@@ -54,6 +50,8 @@ class MatchChecker(Generic[T]):
         raise NotImplementedError
 
     def add_input(self, txi: TxInput) -> None:
+        from trezor.utils import ensure
+
         ensure(not self.read_only)
 
         if self.attribute is self.MISMATCH:
@@ -68,6 +66,8 @@ class MatchChecker(Generic[T]):
             self.attribute = self.MISMATCH
 
     def check_input(self, txi: TxInput) -> None:
+        from trezor import wire
+
         if self.attribute is self.MISMATCH:
             return  # There was already a mismatch when adding inputs, ignore it now.
 
@@ -94,6 +94,8 @@ class WalletPathChecker(MatchChecker):
 
 class MultisigFingerprintChecker(MatchChecker):
     def attribute_from_tx(self, txio: TxInput | TxOutput) -> Any:
+        from .. import multisig
+
         if not txio.multisig:
             return None
         return multisig.multisig_fingerprint(txio.multisig)

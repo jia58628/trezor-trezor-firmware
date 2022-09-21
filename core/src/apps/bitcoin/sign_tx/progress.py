@@ -1,4 +1,4 @@
-from trezor import ui, utils, workflow
+from trezor import ui
 
 _progress = 0
 _steps = 0
@@ -19,12 +19,16 @@ def advance(i: int = 1) -> None:
 
 
 def report_init() -> None:
+    from trezor import workflow
+
     workflow.close_others()
     ui.display.clear()
     ui.header("Signing transaction")
 
 
 def report() -> None:
+    from trezor import utils
+
     if utils.DISABLE_ANIMATION:
         return
     p = 1000 * _progress // _steps
