@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
 from trezor import protobuf
-from trezor.crypto import hmac
+from trezor.crypto import aes
+from trezor.crypto.hashlib import sha256
 from trezor.wire import ProcessError
 
 if TYPE_CHECKING:
@@ -17,18 +18,24 @@ def xor(x: bytes, y: bytes) -> bytes:
 
 
 class MessageAccumulator:
-    def __init__(self, secret: bytes) -> None:
-        self.key = secret
+    def __init__(self, key1: bytes, key2: bytes) -> None:
+        self.key1 = key1
+        self.key2 = key2
         self.state = EMPTY
 
     def xor_message(self, msg: MessageType, index: int) -> None:
-        mac = hmac(hmac.SHA256, self.key)
+        # compute mask
         assert msg.MESSAGE_WIRE_TYPE is not None
-        mac.update(msg.MESSAGE_WIRE_TYPE.to_bytes(2, "big"))
-        mac.update(index.to_bytes(4, "little"))
-        mac.update(protobuf.dump_message_buffer(msg))
-        self.state = xor(self.state, mac.digest())
+        mask_preimage = bytearray(32)
+        mask_preimage[0:2] = msg.MESSAGE_WIRE_TYPE.to_bytes(2, "big")
+        mask_preimage[2:6] = index.to_bytes(4, "little")
+        mask = aes(aes.ECB, self.key1).encrypt(mask_preimage)
+
+        msg_digest = sha256(protobuf.dump_message_buffer(msg)).digest()
+        prp_input = xor(mask, msg_digest)
+        prp_output = aes(aes.ECB, self.key2).encrypt(prp_input)
+        self.state = xor(self.state, prp_output)
 
     def check(self) -> None:
         if self.state != EMPTY:
-            raise ProcessError("Orchard input or output changed")
+            raise ProcessError("Message changed.")

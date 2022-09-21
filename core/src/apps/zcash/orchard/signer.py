@@ -99,10 +99,15 @@ class OrchardSigner:
         ]
         self.key_node = keychain.derive(key_path)
 
-        msg_acc_key = keychain.derive_slip21(
-            [b"Zcash Orchard", b"Message Accumulator Key"],
-        ).key()
-        self.msg_acc = MessageAccumulator(secret=msg_acc_key)
+        msg_acc_keys = (
+            keychain.derive_slip21(
+                [b"Zcash Orchard", b"Message Accumulator", b"key1"],
+            ).key(),
+            keychain.derive_slip21(
+                [b"Zcash Orchard", b"Message Accumulator", b"key2"],
+            ).key(),
+        )
+        self.msg_acc = MessageAccumulator(*msg_acc_keys)
 
         self.rng = None
 
@@ -111,7 +116,7 @@ class OrchardSigner:
     async def process_inputs(self) -> None:
         for i in range(self.inputs_count):
             txi = await self.get_input(i)
-            self.msg_acc.xor_message(txi, i)  # add message to accumulator
+            self.msg_acc.xor_message(txi, i)  # add message to the accumulator
             self.approver.add_orchard_input(txi)
 
     @skip_if_empty
@@ -119,7 +124,7 @@ class OrchardSigner:
     async def approve_outputs(self) -> None:
         for i in range(self.outputs_count):
             txo = await self.get_output(i)
-            self.msg_acc.xor_message(txo, i)  # add message to accumulator
+            self.msg_acc.xor_message(txo, i)  # add message to the accumulator
             if output_is_internal(txo):
                 self.approver.add_orchard_change_output(txo)
             else:
@@ -186,6 +191,7 @@ class OrchardSigner:
         )
 
     def derive_shielding_seed(self) -> bytes:
+        assert self.tx_info.tx.orchard is not None  # typing
         ss_slip21 = self.keychain.derive_slip21(
             [b"Zcash Orchard", b"bundle_shielding_seed"],
         ).key()
@@ -208,7 +214,7 @@ class OrchardSigner:
             return builder.InputInfo.dummy(rng)
 
         txi = await self.get_input(index)
-        self.msg_acc.xor_message(txi, index)  # remove message from accumulator
+        self.msg_acc.xor_message(txi, index)  # remove message from the accumulator
 
         note = Note.from_message(txi)
         return builder.InputInfo(note, fvk)
@@ -224,7 +230,7 @@ class OrchardSigner:
             return builder.OutputInfo.dummy(rng)
 
         txo = await self.get_output(index)
-        self.msg_acc.xor_message(txo, index)  # remove message from accumulator
+        self.msg_acc.xor_message(txo, index)  # remove message from the accumulator
 
         if output_is_internal(txo):
             fvk = fvk.internal()
@@ -251,7 +257,7 @@ class OrchardSigner:
             rng = self.rng.for_action(i)
             ask = rng.dummy_ask() if j is None else ask
             rsk = redpallas.randomize(ask, rng.alpha())
-            signature = redpallas.sign_spend_auth(rsk, sighash)
+            signature = redpallas.sign_spend_auth(rsk, sighash, rng)
             await self.set_serialized_signature(i, signature, sig_type)
 
     async def set_serialized_signature(

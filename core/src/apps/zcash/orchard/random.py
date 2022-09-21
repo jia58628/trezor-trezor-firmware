@@ -16,19 +16,19 @@ class BundleShieldingRng:
         self.seed = seed
 
     def for_action(self, i: int) -> "ActionShieldingRng":
-        h = blake2b(personal=b"TrezorActionSeed", outlen=32)
+        h = blake2b(personal=b"ActionShieldSeed", outlen=32)
         h.update(self.seed)
         h.update(i.to_bytes(4, "little"))
         return ActionShieldingRng(h.digest())
 
     def _shuffle(self, x: list[Any], personal: bytes) -> None:
-        pass  # Suite shuffles inputs
-
-    def shuffle_outputs(self, outputs: list[int | None]) -> None:
-        self._shuffle(outputs, personal=b"TrezorSpendsPerm")
+        pass  # TODO
 
     def shuffle_inputs(self, inputs: list[int | None]) -> None:
-        self._shuffle(inputs, personal=b"TrezorInputsPerm")
+        self._shuffle(inputs, personal=b"Inps_Permutation")
+
+    def shuffle_outputs(self, outputs: list[int | None]) -> None:
+        self._shuffle(outputs, personal=b"Outs_Permutation")
 
 
 class ActionShieldingRng:
@@ -72,3 +72,6 @@ class ActionShieldingRng:
 
     def rho(self) -> Fp:
         return to_base(self.random(b"rho"))
+
+    def spend_auth_T(self) -> bytes:
+        return self.random(b"spend_auth_T", 32)

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from trezor.crypto import random
 from trezor.crypto.hashlib import blake2b
 from trezor.crypto.pallas import Fp, Scalar
 
@@ -8,6 +7,10 @@ if TYPE_CHECKING:
     from typing import Iterable
 
     pass  # utils.i
+
+
+def xor(a: bytes, b: bytes) -> bytes:
+    return bytes(x ^ y for x, y in zip(a, b))
 
 
 # https://zips.z.cash/protocol/protocol.pdf#concreteprfs

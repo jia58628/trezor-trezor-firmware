@@ -121,7 +121,6 @@ def sign_tx(
     orchard.enable_outputs = True
 
     msg.orchard = orchard
- Zcash Shielded Payments #2472
     if o_inputs or o_outputs:
         actions_count = max(2, len(o_inputs), len(o_outputs))
     else:
