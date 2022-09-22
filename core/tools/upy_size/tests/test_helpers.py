@@ -1,9 +1,8 @@
 import ast
 
 from ..src.upy_size.strategies.helpers import (
-    get_all_global_symbols,
-    get_all_nodes,
-    get_all_toplevel_imported_symbols,
+    all_global_symbols,
+    all_toplevel_imported_symbols,
     get_all_toplevel_nodes,
     get_function_body_code,
     get_node_code,
@@ -34,9 +33,9 @@ def abc(x: ENUM):
 """
 
 
-def test_get_all_toplevel_imported_symbols():
-    all_toplevel_imports = get_all_toplevel_imported_symbols(CODE)
-    assert len(all_toplevel_imports) == 5
+def test_all_toplevel_imported_symbols():
+    toplevel_imports = all_toplevel_imported_symbols(CODE)
+    assert len(toplevel_imports) == 5
     for item in (
         "MessageType2",
         "MessageType3",
@@ -44,12 +43,12 @@ def test_get_all_toplevel_imported_symbols():
         "trezor.crypto",
         "TYPE_CHECKING",
     ):
-        assert item in all_toplevel_imports
+        assert item in toplevel_imports
 
 
-def test_get_all_global_symbols():
-    all_global_symbols = get_all_global_symbols(CODE)
-    assert len(all_global_symbols) == 7
+def test_all_global_symbols():
+    global_symbols = all_global_symbols(CODE)
+    assert len(global_symbols) == 7
     for item in (
         "MessageType2",
         "MessageType3",
@@ -59,7 +58,7 @@ def test_get_all_global_symbols():
         "main",
         "abc",
     ):
-        assert item in all_global_symbols
+        assert item in global_symbols
 
 
 def test_get_node_code():

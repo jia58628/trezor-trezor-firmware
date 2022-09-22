@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
+from typing import Iterator
 
 from . import Settings, SpaceSaving
 from .helpers import get_all_toplevel_nodes, get_method_names
@@ -23,13 +24,10 @@ class InitOnlyClass(SpaceSaving):
 def init_only_classes(
     file_content: str, settings: Settings = Settings()
 ) -> list[InitOnlyClass]:
-    all_small_classes: list[InitOnlyClass] = []
+    def iterator() -> Iterator[InitOnlyClass]:
+        for node in get_all_toplevel_nodes(file_content):
+            if isinstance(node, ast.ClassDef):
+                if get_method_names(node) == ["__init__"]:
+                    yield InitOnlyClass(name=node.name, line_no=node.lineno)
 
-    for node in get_all_toplevel_nodes(file_content):
-        if isinstance(node, ast.ClassDef):
-            if get_method_names(node) == ["__init__"]:
-                all_small_classes.append(
-                    InitOnlyClass(name=node.name, line_no=node.lineno)
-                )
-
-    return sorted(all_small_classes, key=lambda x: x.line_no)
+    return sorted(list(iterator()), key=lambda x: x.line_no)

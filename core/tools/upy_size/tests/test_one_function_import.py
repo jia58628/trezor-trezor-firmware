@@ -23,7 +23,7 @@ def abc(x: int):
     send(MyMSG)
     return MessageType2(x)
 
-class ABC(ui.Component, abc.Layout):
+class ABC(ui.Component, abc.Layout, Generic[K, V]):
     abc = ENUM.abc
 
     def _init__(self, x: int):

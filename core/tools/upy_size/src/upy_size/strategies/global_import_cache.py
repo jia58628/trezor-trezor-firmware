@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import (
-    CacheCandidate,
-    get_all_toplevel_imported_symbols,
-    get_cache_candidates,
-)
+from .helpers import CacheCandidate, all_toplevel_imported_symbols, get_cache_candidates
 
 
 @dataclass
@@ -24,16 +21,13 @@ class GlobalImportCache(SpaceSaving):
 def global_import_cache(
     file_content: str, settings: Settings = Settings(), low_threshold: int = 3
 ) -> list[GlobalImportCache]:
-    imports_to_cache: list[GlobalImportCache] = []
-
-    for symbol in get_all_toplevel_imported_symbols(file_content):
-        symbol_dot_regex = rf"\b{symbol}\.\w+\b"
-        cache_candidates = get_cache_candidates(
-            file_content, symbol_dot_regex, low_threshold=low_threshold
-        )
-
-        if cache_candidates:
+    def iterator() -> Iterator[GlobalImportCache]:
+        for symbol in all_toplevel_imported_symbols(file_content):
+            symbol_dot_regex = rf"\b{symbol}\.\w+\b"
+            cache_candidates = get_cache_candidates(
+                file_content, symbol_dot_regex, low_threshold=low_threshold
+            )
             for candidate in cache_candidates:
-                imports_to_cache.append(GlobalImportCache(cache_candidate=candidate))
+                yield GlobalImportCache(candidate)
 
-    return imports_to_cache
+    return list(iterator())

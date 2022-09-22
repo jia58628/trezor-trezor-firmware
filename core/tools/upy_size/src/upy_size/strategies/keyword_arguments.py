@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
+from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import get_all_nodes, get_function_name
+from .helpers import all_nodes, get_function_name
 
 
 @dataclass
@@ -23,16 +24,14 @@ class Kwarg(SpaceSaving):
 def keyword_arguments(
     file_content: str, settings: Settings = Settings()
 ) -> list[Kwarg]:
-    used_kwargs: list[Kwarg] = []
-
-    for node in get_all_nodes(file_content):
-        if isinstance(node, ast.Call):
-            if node.keywords:
-                func_name = get_function_name(node)
-                used_kwargs.append(
-                    Kwarg(
-                        name=func_name, amount=len(node.keywords), line_no=node.lineno
+    def iterator() -> Iterator[Kwarg]:
+        for node in all_nodes(file_content):
+            if isinstance(node, ast.Call):
+                if node.keywords:
+                    yield Kwarg(
+                        name=get_function_name(node),
+                        amount=len(node.keywords),
+                        line_no=node.lineno,
                     )
-                )
 
-    return sorted(used_kwargs, key=lambda x: x.line_no)
+    return sorted(list(iterator()), key=lambda x: x.line_no)

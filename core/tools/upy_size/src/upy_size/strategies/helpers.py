@@ -4,6 +4,7 @@ import ast
 import re
 from collections import Counter
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Iterator
 
 FUNC_ASTS = (ast.FunctionDef, ast.AsyncFunctionDef)
@@ -32,6 +33,7 @@ class CacheCandidate:
         return f"{self.cache_string} ({self.amount}x)"
 
 
+@lru_cache(maxsize=None)
 def get_cache_candidates(
     file_content: str, regex: str, low_threshold: int = 3, no_comments: bool = True
 ) -> list[CacheCandidate]:
@@ -47,41 +49,49 @@ def get_cache_candidates(
     return [CacheCandidate(cache_string=k, amount=v) for k, v in res]
 
 
-def get_all_global_symbols(file_content: str) -> list[str]:
-    imported_symbols = get_all_toplevel_imported_symbols(file_content)
-    functions = get_all_function_names(file_content)
-    return imported_symbols + functions
+@lru_cache(maxsize=None)
+def all_global_symbols(file_content: str) -> list[str]:
+    symbols = all_toplevel_imported_symbols(file_content)
+    functions = all_function_names(file_content)
+    return symbols + functions
 
 
+@lru_cache(maxsize=None)
 def get_all_toplevel_nodes(file_content: str) -> list[ast.AST]:
     parsed_ast = ast.parse(file_content)
     return list(parsed_ast.body)
 
 
-def get_all_nodes(file_content: str) -> list[ast.AST]:
+@lru_cache(maxsize=None)
+def all_nodes(file_content: str) -> list[ast.AST]:
     parsed_ast = ast.parse(file_content)
     return list(ast.walk(parsed_ast))
 
 
-def get_all_function_names(file_content: str) -> list[str]:
-    functions = get_all_functions(file_content)
+@lru_cache(maxsize=None)
+def all_function_names(file_content: str) -> list[str]:
+    functions = all_functions(file_content)
     return [f.name for f in functions]
 
 
-def get_all_toplevel_functions(file_content: str) -> list[Function]:
-    return [
-        create_function_from_node(file_content, node)
-        for node in get_all_toplevel_nodes(file_content)
-        if isinstance(node, FUNC_ASTS)
-    ]
+@lru_cache(maxsize=None)
+def all_toplevel_functions(file_content: str) -> list[Function]:
+    def iterator() -> Iterator[Function]:
+        for node in get_all_toplevel_nodes(file_content):
+            if isinstance(node, FUNC_ASTS):
+                yield create_function_from_node(file_content, node)
+
+    return list(iterator())
 
 
-def get_all_functions(file_content: str) -> list[Function]:
-    return [
-        create_function_from_node(file_content, node)
-        for node in get_all_nodes(file_content)
-        if isinstance(node, FUNC_ASTS)
-    ]
+@lru_cache(maxsize=None)
+def all_functions(file_content: str) -> list[Function]:
+    def iterator() -> Iterator[Function]:
+        for node in all_nodes(file_content):
+            if isinstance(node, FUNC_ASTS):
+                yield create_function_from_node(file_content, node)
+
+    return list(iterator())
 
 
 def create_function_from_node(
@@ -108,24 +118,24 @@ def number_of_occurrences(
     return len(re.findall(regex, file_content))
 
 
-def get_all_toplevel_imported_symbols(
+@lru_cache(maxsize=None)
+def all_toplevel_imported_symbols(
     file_content: str, include_star: bool = False
 ) -> list[str]:
-    """Does not look into if TYPE_CHECKING, only toplevel imports."""
-    symbols: list[str] = []
+    def iterator() -> Iterator[str]:
+        """Does not look into if TYPE_CHECKING, only toplevel imports."""
+        for node in get_all_toplevel_nodes(file_content):
+            if isinstance(node, IMPORT_ASTS):
+                for n in node.names:
+                    if not include_star and n.name == "*":
+                        continue
 
-    for node in get_all_toplevel_nodes(file_content):
-        if isinstance(node, IMPORT_ASTS):
-            for n in node.names:
-                if not include_star and n.name == "*":
-                    continue
+                    if n.asname is not None:
+                        yield n.asname
+                    else:
+                        yield n.name
 
-                if n.asname is None:
-                    symbols.append(n.name)
-                else:
-                    symbols.append(n.asname)
-
-    return symbols
+    return list(iterator())
 
 
 def get_node_code(file_content: str, node: ast.AST) -> str:
@@ -209,30 +219,27 @@ def get_variable_name(node: ast.Assign) -> str:
     return node.targets[0].id  # type: ignore
 
 
-def get_global_assignments(file_content: str) -> list[ast.Assign]:
-    global_assignments: list[ast.Assign] = []
+@lru_cache(maxsize=None)
+def global_assignments(file_content: str) -> list[ast.Assign]:
+    def iterator() -> Iterator[ast.Assign]:
+        for node in ast.parse(file_content).body:
+            if isinstance(node, ast.Assign):
+                yield node
 
-    parsed_ast = ast.parse(file_content)
-    for node in parsed_ast.body:
-        if isinstance(node, ast.Assign):
-            global_assignments.append(node)
-
-    return global_assignments
-
-
-def get_all_constants(file_content: str) -> list[str]:
-    const: list[str] = []
-
-    global_ass = get_global_assignments(file_content)
-    for ass in global_ass:
-        if is_const_assignment(ass):
-            var_name = get_variable_name(ass)
-            const.append(var_name)
-
-    return const
+    return list(iterator())
 
 
-def is_not_redefined(file_content: str, var_name: str) -> bool:
+@lru_cache(maxsize=None)
+def all_constants(file_content: str) -> list[str]:
+    def iterator() -> Iterator[str]:
+        for ass in global_assignments(file_content):
+            if is_const_assignment(ass):
+                yield get_variable_name(ass)
+
+    return list(iterator())
+
+
+def _is_not_redefined(file_content: str, var_name: str) -> bool:
     """Check if the variable is defined only once."""
     const_regex = rf"\b{var_name}\s=\s"
     occurrences = number_of_occurrences(file_content, const_regex)
@@ -245,41 +252,41 @@ def is_a_constant_number_var(file_content: str, assign: ast.Assign) -> bool:
     if not isinstance(assign.value.value, int):
         return False
     var_name = get_variable_name(assign)
-    return is_not_redefined(file_content, var_name)
+    return _is_not_redefined(file_content, var_name)
 
 
-def contains_symbol(text: str, symbol: str) -> bool:
+def _contains_symbol(text: str, symbol: str) -> bool:
     regex = rf"\b{symbol}\b"
     return re.search(regex, text) is not None
 
 
-def resolve_attribute_name(node: ast.AST) -> str:
+def _resolve_attribute_name(node: ast.AST) -> str:
     if isinstance(node, ast.Name):
         return node.id
     elif isinstance(node, ast.Attribute):
-        return resolve_attribute_name(node.value) + "." + node.attr
+        return _resolve_attribute_name(node.value) + "." + node.attr
     elif isinstance(node, ast.Subscript):
         return (
-            resolve_attribute_name(node.value)
+            _resolve_attribute_name(node.value)
             + "["
-            + resolve_attribute_name(node.slice)
+            + _resolve_attribute_name(node.slice)
             + "]"
         )
     elif isinstance(node, ast.Tuple):
-        return ", ".join([resolve_attribute_name(n) for n in node.elts])
+        return ", ".join([_resolve_attribute_name(n) for n in node.elts])
     else:
         raise RuntimeError(f"Unexpected node type - {node}")
 
 
-def get_inheritance_bases(node: ast.ClassDef) -> list[str]:
-    return [resolve_attribute_name(base) for base in node.bases]
+def _get_inheritance_bases(node: ast.ClassDef) -> list[str]:
+    return [_resolve_attribute_name(base) for base in node.bases]
 
 
-def used_in_class_inheritance(file_content: str, symbol: str) -> bool:
-    for node in get_all_nodes(file_content):
+def _used_in_class_inheritance(file_content: str, symbol: str) -> bool:
+    for node in all_nodes(file_content):
         if isinstance(node, ast.ClassDef):
-            for base_class in get_inheritance_bases(node):
-                if contains_symbol(base_class, symbol):
+            for base_class in _get_inheritance_bases(node):
+                if _contains_symbol(base_class, symbol):
                     return True
     return False
 
@@ -295,8 +302,8 @@ def resolve_decorator_symbol(node: ast.AST) -> str:
         raise RuntimeError(f"Unexpected node type - {node}")
 
 
-def used_in_decorator(file_content: str, symbol: str) -> bool:
-    for node in get_all_nodes(file_content):
+def _used_in_decorator(file_content: str, symbol: str) -> bool:
+    for node in all_nodes(file_content):
         if isinstance(node, FUNC_ASTS):
             for decorator in node.decorator_list:
                 decorated = resolve_decorator_symbol(decorator)
@@ -308,35 +315,33 @@ def used_in_decorator(file_content: str, symbol: str) -> bool:
 
 def is_used_outside_function(file_content: str, symbol: str) -> bool:
     """Look at toplevel and classes to see if the symbol is used there."""
-    if used_in_class_inheritance(file_content, symbol):
+    if _used_in_class_inheritance(file_content, symbol):
         return True
-    if used_in_decorator(file_content, symbol):
+    if _used_in_decorator(file_content, symbol):
         return True
 
-    outside_code = get_code_outside_of_function(file_content)
-    occurrences = number_of_occurrences(outside_code, rf"\b{symbol}\b")
-    return occurrences > 0
+    outside_code = _get_code_outside_of_function(file_content)
+    return number_of_occurrences(outside_code, rf"\b{symbol}\b") > 0
 
 
-def get_code_outside_of_function(file_content: str) -> str:
+def _get_code_outside_of_function(file_content: str) -> str:
     """Get the code outside of the function."""
     node_code_lines: list[str] = []
 
-    outside_func_nodes = list(yield_nonfunction_nodes(file_content))
-    for node in outside_func_nodes:
+    for node in _yield_nonfunction_nodes(file_content):
         node_code = get_node_code(file_content, node)
         node_code_lines.append(node_code)
 
     return "\n".join(node_code_lines)
 
 
-def yield_nonfunction_nodes(file_content: str) -> Iterator[ast.AST]:
+def _yield_nonfunction_nodes(file_content: str) -> Iterator[ast.AST]:
     """Get all nodes that are not functions and not imports."""
     tree = ast.parse(file_content)
-    yield from recursively_yield_nonfunction_nodes(tree)
+    yield from _recursively_yield_nonfunction_nodes(tree)
 
 
-def recursively_yield_nonfunction_nodes(node: ast.AST) -> Iterator[ast.AST]:
+def _recursively_yield_nonfunction_nodes(node: ast.AST) -> Iterator[ast.AST]:
     """Get all nodes that are not functions and not imports."""
     if isinstance(node, IMPORT_ASTS + FUNC_ASTS):
         return
@@ -345,26 +350,26 @@ def recursively_yield_nonfunction_nodes(node: ast.AST) -> Iterator[ast.AST]:
         yield node
     else:
         for subnode in node.body:  # type: ignore
-            yield from recursively_yield_nonfunction_nodes(subnode)  # type: ignore
+            yield from _recursively_yield_nonfunction_nodes(subnode)  # type: ignore
 
 
-def annotation_contains_symbol(
+def _annotation_contains_symbol(
     file_content: str, symbol: str, annotation_node: ast.AST
 ) -> bool:
     """Check if the annotation contains the symbol."""
     if isinstance(annotation_node, (ast.Name, ast.Attribute)):
-        type_hint = resolve_attribute_name(annotation_node)
-        return contains_symbol(type_hint, symbol)
+        type_hint = _resolve_attribute_name(annotation_node)
+        return _contains_symbol(type_hint, symbol)
     else:
         annotation_code = get_node_code(file_content, annotation_node)
-        return contains_symbol(annotation_code, symbol)
+        return _contains_symbol(annotation_code, symbol)
 
 
 def is_used_as_type_hint(file_content: str, symbol: str) -> bool:
     """Check if the symbol is used as a type hint."""
-    for node in get_all_nodes(file_content):
+    for node in all_nodes(file_content):
         if isinstance(node, ast.arg):
             if hasattr(node, "annotation") and node.annotation is not None:
-                if annotation_contains_symbol(file_content, symbol, node.annotation):
+                if _annotation_contains_symbol(file_content, symbol, node.annotation):
                     return True
     return False

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterator
 
 from . import Settings, SpaceSaving
 from .helpers import (
     CacheCandidate,
     Function,
-    get_all_functions,
-    get_all_global_symbols,
+    all_functions,
+    all_global_symbols,
     get_cache_candidates,
 )
 
@@ -27,25 +28,22 @@ class LocalCacheGlobal(SpaceSaving):
 def local_cache_global(
     file_content: str, settings: Settings = Settings(), low_threshold: int = 5
 ) -> list[LocalCacheGlobal]:
-    cacheable_global_symbols: list[LocalCacheGlobal] = []
+    def iterator() -> Iterator[LocalCacheGlobal]:
+        functions = all_functions(file_content)
 
-    all_functions = get_all_functions(file_content)
+        for symbol in all_global_symbols(file_content):
+            symbol_regex = rf"\b{symbol}\b"
 
-    for symbol in get_all_global_symbols(file_content):
-        symbol_regex = rf"\b{symbol}\b"
+            for func in functions:
+                cache_candidates = get_cache_candidates(
+                    func.body_code, symbol_regex, low_threshold=low_threshold
+                )
 
-        for func in all_functions:
-            cache_candidates = get_cache_candidates(
-                func.body_code, symbol_regex, low_threshold=low_threshold
-            )
-
-            if cache_candidates:
-                for candidate in cache_candidates:
-                    cacheable_global_symbols.append(
-                        LocalCacheGlobal(
+                if cache_candidates:
+                    for candidate in cache_candidates:
+                        yield LocalCacheGlobal(
                             func=func,
                             cache_candidate=candidate,
                         )
-                    )
 
-    return sorted(cacheable_global_symbols, key=lambda x: x.func.line_no)
+    return sorted(list(iterator()), key=lambda x: x.func.line_no)

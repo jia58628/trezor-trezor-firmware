@@ -364,7 +364,7 @@ def get_tx_hash(w: HashWriter) -> bytes:
 
 #### Benefits
 
-The more times the function is used in that function, the more space-beneficial it is to import it just there (as it creates a local symbol, not a global one).  For each usage of local import, around **2-3 bytes** are saved.
+The more times the symbol is used in that function, the more space-beneficial it is to import it just there (as it creates a local symbol, not a global one).  For each usage of local import, around **2-3 bytes** are saved.
 
 #### Drawbacks
 
@@ -380,7 +380,8 @@ Creating a constant is more costly than to define a normal number, but it saves 
 
 ```python
 HASH_LENGTH = 32
-SLIP_44_ID = 133
+SLIP_44_ID = 123
+LOCAL_ONLY = 456
 ```
 
 ##### After

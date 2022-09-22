@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterator
 
 from . import Settings, SpaceSaving
 from .helpers import (
-    get_all_constants,
-    get_all_toplevel_imported_symbols,
-    get_global_assignments,
+    all_constants,
     get_variable_name,
+    global_assignments,
     is_a_constant_number_var,
     number_of_occurrences,
 )
@@ -39,36 +39,27 @@ class NoConstNumber(SpaceSaving):
 def local_constants(
     file_content: str, settings: Settings = Settings()
 ) -> list[LocalConstant]:
-    local_only_constants: list[LocalConstant] = []
+    def iterator() -> Iterator[LocalConstant]:
+        for const in all_constants(file_content):
+            # Those with underscores are already fine
+            if const.startswith("_"):
+                continue
 
-    all_consts = get_all_constants(file_content)
-    for const in all_consts:
-        # Those with underscores are already fine
-        if const.startswith("_"):
-            continue
+            const_regex = rf"\b{const}\b"
+            occurrences = number_of_occurrences(file_content, const_regex)
+            if occurrences > 1:
+                yield LocalConstant(const, occurrences)
 
-        const_regex = rf"\b{const}\b"
-        occurrences = number_of_occurrences(file_content, const_regex)
-        if occurrences > 1:
-            local_only_constants.append(LocalConstant(const, occurrences))
-
-    return local_only_constants
+    return list(iterator())
 
 
 def no_const_number(
     file_content: str, settings: Settings = Settings()
 ) -> list[NoConstNumber]:
-    no_const_numbers: list[NoConstNumber] = []
+    def iterator() -> Iterator[NoConstNumber]:
+        for assignment in global_assignments(file_content):
+            if is_a_constant_number_var(file_content, assignment):
+                var_name = get_variable_name(assignment)
+                yield NoConstNumber(var_name)
 
-    for assignment in get_global_assignments(file_content):
-        if is_a_constant_number_var(file_content, assignment):
-            var_name = get_variable_name(assignment)
-            no_const_numbers.append(NoConstNumber(var_name))
-
-    # When `const` is not already imported, it is not worth
-    # importing it just for one symbol
-    imported_symbols = get_all_toplevel_imported_symbols(file_content)
-    if not "const" in imported_symbols and len(no_const_numbers) < 2:
-        return []
-
-    return no_const_numbers
+    return list(iterator())
