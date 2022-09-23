@@ -51,6 +51,10 @@ static const uint8_t * const pubkey[PUBKEYS] = {
 #define FLASH_META_SIG2 (FLASH_META_START + 0x0080)
 #define FLASH_META_SIG3 (FLASH_META_START + 0x00C0)
 
+#define VERIFYMESSAGE_PREFIX ("\x18" "Bitcoin Signed Message:\n\x20")
+#define PREFIX_LENGTH (sizeof (VERIFYMESSAGE_PREFIX) -1)
+#define SIGNED_LENGTH (PREFIX_LENGTH + 32)
+
 void compute_firmware_fingerprint(const image_header *hdr, uint8_t hash[32]) {
   image_header copy = {0};
   memcpy(&copy, hdr, sizeof(image_header));
@@ -61,6 +65,14 @@ void compute_firmware_fingerprint(const image_header *hdr, uint8_t hash[32]) {
   copy.sigindex2 = 0;
   copy.sigindex3 = 0;
   sha256_Raw((const uint8_t *)&copy, sizeof(image_header), hash);
+}
+
+void compute_firmware_fingerprint_for_verifymessage(const image_header *hdr, uint8_t hash[32]) {
+  uint8_t prefixed_header[SIGNED_LENGTH] = VERIFYMESSAGE_PREFIX;
+  uint8_t header_hash[32];
+  compute_firmware_fingerprint(hdr, header_hash);
+  memcpy(prefixed_header + PREFIX_LENGTH, header_hash, sizeof(header_hash));
+  sha256_Raw(prefixed_header, sizeof(prefixed_header), hash);
 }
 
 bool firmware_present_new(void) {
@@ -78,9 +90,13 @@ bool firmware_present_new(void) {
   return true;
 }
 
-int signatures_new_ok(const image_header *hdr, uint8_t store_fingerprint[32]) {
+int signatures_new_ok(const image_header *hdr, uint8_t store_fingerprint[32], bool use_verifymessage) {
   uint8_t hash[32] = {0};
-  compute_firmware_fingerprint(hdr, hash);
+  if (use_verifymessage) {
+    compute_firmware_fingerprint_for_verifymessage(hdr, hash);
+  } else {
+    compute_firmware_fingerprint(hdr, hash);
+  }
 
   if (store_fingerprint) {
     memcpy(store_fingerprint, hash, 32);
@@ -110,6 +126,22 @@ int signatures_new_ok(const image_header *hdr, uint8_t store_fingerprint[32]) {
     return SIG_FAIL;
   }
 
+  return SIG_OK;
+}
+
+int signatures_match(const image_header *hdr, uint8_t store_fingerprint[32]) {
+  int result = 0;
+  // Return success if "verify message" or the "new" style matches.
+  // Signature of one hash can't be used to get signature of the other method
+  // under assumption of SHA2 preimage resistance.
+  // Use XOR to always force computing both signatures.
+  // Return only the hash for the "new style" computation so that it is
+  // the same shown in previous bootloader.
+  result ^= signatures_new_ok(hdr, store_fingerprint, false);
+  result ^= signatures_new_ok(hdr, NULL, true);
+  if (result != SIG_OK) {
+    return SIG_FAIL;
+  }
   return SIG_OK;
 }
 

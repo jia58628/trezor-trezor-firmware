@@ -24,7 +24,7 @@ bool get_features(Features *resp) {
 #else
   const image_header *hdr =
       (const image_header *)FLASH_PTR(FLASH_FWHEADER_START);
-  if (SIG_OK == signatures_new_ok(hdr, NULL)) {
+  if (SIG_OK == signatures_match(hdr, NULL)) {
     strlcpy(resp->fw_vendor, "SatoshiLabs", sizeof(resp->fw_vendor));
   } else {
     strlcpy(resp->fw_vendor, "UNSAFE, DO NOT USE!", sizeof(resp->fw_vendor));

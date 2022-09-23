@@ -157,7 +157,7 @@ int main(void) {
         (const image_header *)FLASH_PTR(FLASH_FWHEADER_START);
 
     uint8_t fingerprint[32] = {0};
-    int signed_firmware = signatures_new_ok(hdr, fingerprint);
+    int signed_firmware = signatures_match(hdr, fingerprint);
     if (SIG_OK != signed_firmware) {
       show_unofficial_warning(fingerprint);
     }

@@ -185,8 +185,8 @@ static int should_keep_storage(int old_was_signed,
   if (SIG_OK != old_was_signed) return SIG_FAIL;
 
   const image_header *new_hdr = (const image_header *)FW_HEADER;
-  // if the new header is unsigned, erase storage
-  if (SIG_OK != signatures_new_ok(new_hdr, NULL)) return SIG_FAIL;
+  // if the "verify message" header is unsigned, erase storage
+  if (SIG_OK != signatures_match(new_hdr, NULL)) return SIG_FAIL;
   // if the new header hashes don't match flash contents, erase storage
   if (SIG_OK != check_firmware_hashes(new_hdr)) return SIG_FAIL;
 
@@ -276,8 +276,9 @@ static void rx_callback(usbd_device *dev, uint8_t ep) {
         if (firmware_present_new()) {
           const image_header *hdr =
               (const image_header *)FLASH_PTR(FLASH_FWHEADER_START);
+          // previous firmware was signed either by "new" xor "verify message" style
           old_was_signed =
-              signatures_new_ok(hdr, NULL) & check_firmware_hashes(hdr);
+              signatures_match(hdr, NULL) & check_firmware_hashes(hdr);
           fix_version_current = hdr->fix_version;
         } else {
           old_was_signed = SIG_FAIL;
@@ -399,7 +400,7 @@ static void rx_callback(usbd_device *dev, uint8_t ep) {
       }
       flash_state = STATE_CHECK;
       const image_header *hdr = (const image_header *)FW_HEADER;
-      if (SIG_OK != signatures_new_ok(hdr, NULL)) {
+      if (SIG_OK != signatures_match(hdr, NULL)) {
         send_msg_buttonrequest_firmwarecheck(dev);
         return;
       }
@@ -414,7 +415,7 @@ static void rx_callback(usbd_device *dev, uint8_t ep) {
 
     bool hash_check_ok;
     // show fingerprint of unsigned firmware
-    if (SIG_OK != signatures_new_ok(hdr, NULL)) {
+    if (SIG_OK != signatures_match(hdr, NULL)) {
       if (msg_id != 0x001B) {  // ButtonAck message (id 27)
         return;
       }
