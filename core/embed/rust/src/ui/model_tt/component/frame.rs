@@ -1,8 +1,8 @@
 use super::theme;
 use crate::ui::{
-    component::{Child, Component, Event, EventCtx},
+    component::{text::TextStyle, Child, Component, Event, EventCtx},
     display::{self, Color, Font},
-    geometry::{Insets, Offset, Rect},
+    geometry::{Insets, Offset, Point, Rect},
 };
 
 pub struct Frame<T, U> {
@@ -94,7 +94,6 @@ where
 
 pub struct NotificationFrame<T, U> {
     area: Rect,
-    border: Insets,
     icon: &'static [u8],
     title: U,
     content: Child<T>,
@@ -105,24 +104,42 @@ where
     T: Component,
     U: AsRef<str>,
 {
-    const HEIGHT: i16 = 42;
+    const HEIGHT: i16 = 32;
     const COLOR: Color = theme::YELLOW;
-    const FONT: Font = Font::BOLD;
     const TEXT_OFFSET: Offset = Offset::new(1, -2);
     const ICON_SPACE: i16 = 8;
+    const BORDER: i16 = 8;
 
     pub fn new(icon: &'static [u8], title: U, content: T) -> Self {
         Self {
             icon,
             title,
             area: Rect::zero(),
-            border: theme::borders_notification(),
             content: Child::new(content),
         }
     }
 
     pub fn inner(&self) -> &T {
         self.content.inner()
+    }
+
+    pub fn paint_notification(area: Rect, icon: &'static [u8], title: &str, color: Color) {
+        let (area, _) = area
+            .inset(Insets::uniform(Self::BORDER))
+            .split_top(Self::HEIGHT);
+        let style = TextStyle {
+            background_color: color,
+            ..theme::TEXT_BOLD
+        };
+        display::rect_fill_rounded(area, color, theme::BG, 2);
+        icon_text_center(
+            area.center(),
+            icon,
+            Self::ICON_SPACE,
+            title,
+            style,
+            Self::TEXT_OFFSET,
+        );
     }
 }
 
@@ -134,10 +151,8 @@ where
     type Msg = T::Msg;
 
     fn place(&mut self, bounds: Rect) -> Rect {
-        let (title_area, content_area) = bounds.split_top(Self::HEIGHT);
-        let content_area = content_area.inset(self.border);
-
-        self.area = title_area;
+        let content_area = bounds.inset(theme::borders_notification());
+        self.area = bounds;
         self.content.place(content_area);
         bounds
     }
@@ -147,24 +162,7 @@ where
     }
 
     fn paint(&mut self) {
-        let toif_info = unwrap!(display::toif_info(self.icon), "Invalid TOIF data");
-        let icon_width = toif_info.0.y;
-        let text_width = Self::FONT.text_width(self.title.as_ref());
-        let text_height = Self::FONT.text_height();
-        let text_center =
-            self.area.center() + Offset::new((icon_width + Self::ICON_SPACE) / 2, text_height / 2);
-        let icon_center = self.area.center() - Offset::x((text_width + Self::ICON_SPACE) / 2);
-
-        display::rect_fill_rounded(self.area, Self::COLOR, theme::BG, 2);
-        display::text_center(
-            text_center + Self::TEXT_OFFSET,
-            self.title.as_ref(),
-            Self::FONT,
-            theme::BG,
-            Self::COLOR,
-        );
-        display::icon(icon_center, self.icon, theme::BG, Self::COLOR);
-
+        Self::paint_notification(self.area, self.icon, self.title.as_ref(), Self::COLOR);
         self.content.paint();
     }
 
@@ -186,4 +184,29 @@ where
         t.field("content", &self.content);
         t.close();
     }
+}
+
+pub fn icon_text_center(
+    baseline: Point,
+    icon: &'static [u8],
+    space: i16,
+    text: &str,
+    style: TextStyle,
+    text_offset: Offset,
+) {
+    let toif_info = unwrap!(display::toif_info(icon), "Invalid TOIF data");
+    let icon_width = toif_info.0.y;
+    let text_width = style.text_font.text_width(text);
+    let text_height = style.text_font.text_height();
+    let text_center = baseline + Offset::new((icon_width + space) / 2, text_height / 2);
+    let icon_center = baseline - Offset::x((text_width + space) / 2);
+
+    display::text_center(
+        text_center + text_offset,
+        text,
+        style.text_font,
+        style.text_color,
+        style.background_color,
+    );
+    display::icon(icon_center, icon, style.text_color, style.background_color);
 }
