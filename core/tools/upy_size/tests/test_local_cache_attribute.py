@@ -1,4 +1,4 @@
-from ..src.upy_size.strategies.local_cache import local_cache
+from ..src.upy_size.strategies.local_cache_attribute import local_cache_attribute
 
 CODE = """\
 def abc(msg):
@@ -22,18 +22,18 @@ def mutating_func(ctx, msg):
 """
 
 
-def test_local_cache():
-    res = local_cache(CODE, low_threshold=3)
+def test_local_cache_attribute():
+    res = local_cache_attribute(CODE, threshold=3)
     assert len(res) == 2
 
     assert res[0].func.name == "my_func"
     assert res[0].cache_candidate.cache_string == "msg.abc"
     assert res[0].cache_candidate.amount == 4
-    assert res[0].gets_mutated == False
+    assert res[0].gets_mutated is False
     assert res[0].saved_bytes() == 8
 
     assert res[1].func.name == "mutating_func"
     assert res[1].cache_candidate.cache_string == "msg.abc"
     assert res[1].cache_candidate.amount == 5
-    assert res[1].gets_mutated == True
+    assert res[1].gets_mutated is True
     assert res[1].saved_bytes() == 10

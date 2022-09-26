@@ -1,4 +1,4 @@
-from ..src.upy_size.strategies.global_import_cache import global_import_cache
+from ..src.upy_size.strategies.import_global_cache import global_import_cache
 
 CODE = """\
 import messages
@@ -7,6 +7,7 @@ import enum
 def main(msg: MessageType1, xyz):
     x = 54
     enum.MessageType3(xyz=x)
+    send(messages.enum.store)
     y = messages.MessageType2(xyz=x)
     return messages.MessageType2(x)
 

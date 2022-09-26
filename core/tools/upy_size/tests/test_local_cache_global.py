@@ -25,11 +25,18 @@ def defg(x: int):
     abc(1)
     abc(1)
     abc(1)
+
+def local_import_do_not_flag(x: int):
+    from writer import write_int
+    write_int(x)
+    write_int(4)
+    write_int(1)
+    write_int(1)
 """
 
 
 def test_local_cache_global():
-    res = local_cache_global(CODE, low_threshold=3)
+    res = local_cache_global(CODE, threshold=3)
     assert len(res) == 3
 
     assert res[0].func.name == "main"

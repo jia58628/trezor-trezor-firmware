@@ -6,11 +6,9 @@ from typing import Iterator
 from . import Settings, SpaceSaving
 from .helpers import (
     Function,
-    all_functions,
-    all_toplevel_imported_symbols,
+    get_func_toplevel_symbol_usages,
     is_used_as_type_hint,
     is_used_outside_function,
-    number_of_occurrences,
 )
 
 
@@ -37,38 +35,20 @@ def one_function_import(
     file_content: str, settings: Settings = Settings()
 ) -> list[OneFunctionImport]:
     def iterator() -> Iterator[OneFunctionImport]:
-        functions = all_functions(file_content)
-
-        for symbol in all_toplevel_imported_symbols(file_content):
+        for symbol, func_usages in get_func_toplevel_symbol_usages(
+            file_content
+        ).items():
+            if len(func_usages) != 1:
+                continue  # used in more than one function
             if is_used_outside_function(file_content, symbol):
-                continue
-
-            used = 0
-
-            symbol_regex = rf"\b{symbol}\b"
-            used_func: Function | None = None
-            usages_in_func: int | None = None
-            for func in functions:
-                occurrences = number_of_occurrences(func.body_code, symbol_regex)
-                if occurrences > 0:
-                    used += 1
-                    used_func = func
-                    usages_in_func = occurrences
-
-                # Not to waste CPU and time when it's already clear that
-                # symbols is used in more than one function
-                if used > 1:
-                    break
+                continue  # used on top-level
 
             # Used only in one function, means we can import it just there
-            if used == 1:
-                assert used_func is not None
-                assert usages_in_func is not None
-                yield OneFunctionImport(
-                    func=used_func,
-                    symbol=symbol,
-                    usages_in_func=usages_in_func,
-                    used_as_type_hint=is_used_as_type_hint(file_content, symbol),
-                )
+            yield OneFunctionImport(
+                func=func_usages[0].func,
+                symbol=symbol,
+                usages_in_func=func_usages[0].usages,
+                used_as_type_hint=is_used_as_type_hint(file_content, symbol),
+            )
 
     return sorted(list(iterator()), key=lambda x: x.func.line_no)

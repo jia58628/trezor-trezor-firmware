@@ -95,11 +95,12 @@ def derive_shelley_address(parameters: Params) -> bytes:
     # _create_header
     header_int = parameters.address_type << 4 | network_id
     header = header_int.to_bytes(1, "little")
+    ...
 ```
 
 #### Benefits
 
-Size benefits of inlining one-time function is around **50 bytes**. It depends on the amount of function arguments - the more, the bigger the size decrease. Also, those two functions can now share one local scope, which is beneficial for caching purposes (see next strategies).
+Size benefit of inlining one-time function is around **50 bytes**. It depends on the amount of function arguments - the more, the bigger the size decrease. Also, those two functions can now share one local scope, which is beneficial for caching purposes (see next strategies).
 
 #### Drawbacks
 

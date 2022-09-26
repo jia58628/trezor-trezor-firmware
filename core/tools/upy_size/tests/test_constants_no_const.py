@@ -1,4 +1,4 @@
-from ..src.upy_size.strategies.local_constants import local_constants, no_const_number
+from ..src.upy_size.strategies.constants_no_const import no_const_number
 
 CODE = """\
 from micropython import const
@@ -14,13 +14,6 @@ def main():
 
     return abc * X
 """
-
-
-def test_local_constants():
-    res = local_constants(CODE)
-    assert len(res) == 1
-    assert res[0].name == "X"
-    assert res[0].saved_bytes() == 4
 
 
 def test_no_const_number():

@@ -90,6 +90,9 @@
     "src/apps/monero/xmr/keccak_hasher.py": [
         "get_keccak_writer"
     ],
+    "src/apps/monero/xmr/key_image.py": [
+        "generate_ring_signature"
+    ],
     "src/apps/monero/xmr/crypto_helpers.py": [
         "decodeint"
     ],

@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import all_toplevel_imported_symbols, number_of_occurrences
+from .helpers import (
+    all_toplevel_imported_symbols,
+    all_toplevel_symbol_usages,
+    all_type_hint_usages,
+)
 
 
 @dataclass
@@ -18,20 +22,18 @@ class TypeOnlyImport(SpaceSaving):
         return f"{self.symbol} (~{self.saved_bytes()} bytes)"
 
 
-def import_unused(
+def type_only_import(
     file_content: str, settings: Settings = Settings()
 ) -> list[TypeOnlyImport]:
     def iterator() -> Iterator[TypeOnlyImport]:
-        for symbol in all_toplevel_imported_symbols(file_content):
-            regex = rf"\b{symbol}\b"
-            # TODO: also account for other usages like list[MyType]
-            type_regex = rf": {symbol}\b"
-            occurrences = number_of_occurrences(file_content, regex)
-            if occurrences == 1:
-                continue  # reexported
-            type_occurrences = number_of_occurrences(file_content, type_regex)
+        symbol_usages = all_toplevel_symbol_usages(file_content)
+        type_hints = all_type_hint_usages(file_content)
 
-            if type_occurrences == occurrences - 1:
-                yield TypeOnlyImport(symbol)
+        for symbol in all_toplevel_imported_symbols(file_content):
+            # Reporting when the usage as a type-hint equal to the
+            # overall usage as a symbol
+            if symbol in type_hints and symbol in symbol_usages:
+                if type_hints[symbol] == symbol_usages[symbol]:
+                    yield TypeOnlyImport(symbol)
 
     return list(iterator())

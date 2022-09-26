@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import get_all_toplevel_nodes, get_method_names
+from .helpers import all_toplevel_nodes, get_method_names
 
 
 @dataclass
@@ -25,7 +25,8 @@ def init_only_classes(
     file_content: str, settings: Settings = Settings()
 ) -> list[InitOnlyClass]:
     def iterator() -> Iterator[InitOnlyClass]:
-        for node in get_all_toplevel_nodes(file_content):
+        # Looking for classes with only __init__ method
+        for node in all_toplevel_nodes(file_content):
             if isinstance(node, ast.ClassDef):
                 if get_method_names(node) == ["__init__"]:
                     yield InitOnlyClass(name=node.name, line_no=node.lineno)

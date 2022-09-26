@@ -2,15 +2,23 @@ from ..src.upy_size.strategies import Settings
 from ..src.upy_size.strategies.function_inline import function_inline
 
 CODE = """\
+from helpers import Obj
+
 def main(abc, xyz):
     x = 54
-    func_used_also_elsewhere(x)
-    return _square(x)
+    used_also_elsewhere(x)
+    _used_more_than_once(x)
+    Obj.send(x)
+    return _function_to_inline(x)
 
-def _square(x):
+def _function_to_inline(x):
     return x * x
 
-def func_used_also_elsewhere(x):
+def _used_more_than_once(x):
+    return x * x
+
+def used_also_elsewhere(x):
+    _used_more_than_once(x)
     return x * x
 
 class ABC:
@@ -20,9 +28,9 @@ class ABC:
 
 
 def test_function_inline():
-    SETTINGS = Settings(not_inlineable_funcs=["func_used_also_elsewhere"])
+    SETTINGS = Settings(not_inlineable_funcs=["used_also_elsewhere"])
 
     res = function_inline(CODE, SETTINGS)
     assert len(res) == 1
-    assert res[0].func.name == "_square"
+    assert res[0].func.name == "_function_to_inline"
     assert res[0].saved_bytes() == 50

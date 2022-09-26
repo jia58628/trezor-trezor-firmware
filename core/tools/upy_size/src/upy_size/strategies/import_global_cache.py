@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import CacheCandidate, all_toplevel_imported_symbols, get_cache_candidates
+from .helpers import CacheCandidate, get_global_attribute_lookups
 
 
 @dataclass
@@ -19,15 +19,13 @@ class GlobalImportCache(SpaceSaving):
 
 
 def global_import_cache(
-    file_content: str, settings: Settings = Settings(), low_threshold: int = 3
+    file_content: str, settings: Settings = Settings(), threshold: int = 3
 ) -> list[GlobalImportCache]:
     def iterator() -> Iterator[GlobalImportCache]:
-        for symbol in all_toplevel_imported_symbols(file_content):
-            symbol_dot_regex = rf"\b{symbol}\.\w+\b"
-            cache_candidates = get_cache_candidates(
-                file_content, symbol_dot_regex, low_threshold=low_threshold
-            )
-            for candidate in cache_candidates:
-                yield GlobalImportCache(candidate)
+        for symbol, lookups in get_global_attribute_lookups(file_content).items():
+            for attr, amount in lookups.items():
+                if amount >= threshold:
+                    cache_string = f"{symbol}.{attr}"
+                    yield GlobalImportCache(CacheCandidate(cache_string, amount))
 
     return list(iterator())
