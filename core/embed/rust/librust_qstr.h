@@ -70,7 +70,6 @@ static void _librust_qstrs(void) {
   MP_QSTR_user_fee_change;
 
   // pallas
-#ifdef ZCASH_SHIELDED
   MP_QSTR_trezorpallas;
   MP_QSTR_Fp;
   MP_QSTR_Scalar;
@@ -87,5 +86,4 @@ static void _librust_qstrs(void) {
   // poseidon
   MP_QSTR_trezorposeidon;
   MP_QSTR_poseidon;
-#endif  // ZCASH_SHIELDED
 }
