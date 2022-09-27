@@ -1,3 +1,4 @@
+import gc
 from micropython import const
 from typing import TYPE_CHECKING
 
@@ -111,6 +112,7 @@ def encrypt_note(
 
     sym_encrypt(ock, op)
 
+    gc.collect()
     return TransmittedNoteCiphertext(
         epk_bytes=ephemeral_key,
         enc_ciphertext=bytes(np),

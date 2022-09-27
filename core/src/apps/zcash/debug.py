@@ -5,14 +5,23 @@ if __debug__:
 
     def log_gc(label=""):
         gc.collect()
+        log_gc_2(label)
+
+    def log_gc_2(label=""):
         log.info(
             __name__,
-            "GC[%s]: alloc: %d kb free: %d kb (%d/1000)",
+            "GC[%s]: alloc: %d kb, free: %d kb (%d/1000)",
             label,
             gc.mem_alloc() // 1000,
             gc.mem_free() // 1000,
             (1000 * gc.mem_free()) // (gc.mem_free() + gc.mem_alloc()),
         )
+
+    def trace_gc(x):
+        gc.collect()
+        log_gc_2("trace")
+        gc.collect()
+        return x
 
 
 def watch_gc(func):

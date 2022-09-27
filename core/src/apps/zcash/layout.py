@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from trezor import strings, ui
-from trezor.enums import ButtonRequestType
 from trezor.ui.components.common.confirm import CONFIRMED, SHOW_PAGINATED
 from trezor.ui.components.tt.scroll import AskPaginated, Paginated, paginate_paragraphs
 from trezor.ui.components.tt.text import Text
@@ -10,7 +9,7 @@ from trezor.ui.layouts import confirm_action, confirm_address
 from trezor.ui.layouts.tt import Confirm, interact, raise_if_cancelled
 from trezor.utils import chunks, chunks_intersperse, ensure
 
-from apps.bitcoin.sign_tx import helpers
+from apps.bitcoin.sign_tx.helpers import UiConfirm
 
 if TYPE_CHECKING:
     from typing import Awaitable, Any
@@ -25,7 +24,7 @@ def _format_amount(value: int, coin: CoinInfo) -> str:
     return "%s %s" % (strings.format_amount(value, 8), coin.coin_shortcut)
 
 
-class UiConfirmTransparentOutput(helpers.UiConfirm):
+class UiConfirmTransparentOutput(UiConfirm):
     def __init__(self, txo: TxOutput, coin: CoinInfo) -> None:
         self.txo = txo
         self.coin = coin
@@ -36,7 +35,7 @@ class UiConfirmTransparentOutput(helpers.UiConfirm):
         return maybe_show_full_address(ctx, content, self.txo.address)
 
 
-class UiConfirmOrchardOutput(helpers.UiConfirm):
+class UiConfirmOrchardOutput(UiConfirm):
     def __init__(self, txo: ZcashOrchardOutput, coin: CoinInfo) -> None:
         self.txo = txo
         self.coin = coin
@@ -118,27 +117,3 @@ async def maybe_show_full_address(
         else:
             assert result is CONFIRMED
             break
-
-
-async def require_confirm_export_fvk(ctx: Context) -> None:
-    await confirm_action(
-        ctx,
-        "export_full_viewing_key",
-        "Confirm export",
-        description="Do you really want to export Full Viewing Key?",
-        icon=ui.ICON_SEND,
-        icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
-    )
-
-
-async def require_confirm_export_ivk(ctx: Context) -> None:
-    await confirm_action(
-        ctx,
-        "export_incoming_viewing_key",
-        "Confirm export",
-        description="Do you really want to export Incoming Viewing Key?",
-        icon=ui.ICON_SEND,
-        icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
-    )

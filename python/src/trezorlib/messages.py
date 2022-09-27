@@ -954,8 +954,8 @@ class HDNodeType(protobuf.MessageType):
 class ZcashGetFullViewingKey(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 893
     FIELDS = {
-        2: protobuf.Field("coin_name", "string", repeated=False, required=False),
-        3: protobuf.Field("z_address_n", "uint32", repeated=True, required=False),
+        1: protobuf.Field("coin_name", "string", repeated=False, required=False),
+        2: protobuf.Field("z_address_n", "uint32", repeated=True, required=False),
     }
 
     def __init__(
@@ -1806,7 +1806,7 @@ class ZcashOrchardBundleInfo(protobuf.MessageType):
         1: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
         2: protobuf.Field("outputs_count", "uint32", repeated=False, required=True),
         3: protobuf.Field("anchor", "bytes", repeated=False, required=True),
-        7: protobuf.Field("account", "uint32", repeated=False, required=False),
+        4: protobuf.Field("account", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -1852,8 +1852,9 @@ class TxRequestSerializedType(protobuf.MessageType):
         1: protobuf.Field("signature_index", "uint32", repeated=False, required=False),
         2: protobuf.Field("signature", "bytes", repeated=False, required=False),
         3: protobuf.Field("serialized_tx", "bytes", repeated=False, required=False),
-        4: protobuf.Field("signature_type", "uint32", repeated=False, required=False),
-        8: protobuf.Field("zcash_shielding_seed", "bytes", repeated=False, required=False),
+        4: protobuf.Field("signature_type", "ZcashSignatureType", repeated=False, required=False),
+        5: protobuf.Field("zcash_shielding_seed", "bytes", repeated=False, required=False),
+        6: protobuf.Field("tx_sighash", "bytes", repeated=False, required=False),
     }
 
     def __init__(
@@ -1862,14 +1863,16 @@ class TxRequestSerializedType(protobuf.MessageType):
         signature_index: Optional["int"] = None,
         signature: Optional["bytes"] = None,
         serialized_tx: Optional["bytes"] = None,
-        signature_type: Optional["int"] = None,
+        signature_type: Optional["ZcashSignatureType"] = None,
         zcash_shielding_seed: Optional["bytes"] = None,
+        tx_sighash: Optional["bytes"] = None,
     ) -> None:
         self.signature_index = signature_index
         self.signature = signature
         self.serialized_tx = serialized_tx
         self.signature_type = signature_type
         self.zcash_shielding_seed = zcash_shielding_seed
+        self.tx_sighash = tx_sighash
 
 
 class TransactionType(protobuf.MessageType):

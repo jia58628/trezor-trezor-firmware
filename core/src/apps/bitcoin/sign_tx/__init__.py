@@ -47,6 +47,7 @@ if TYPE_CHECKING:
             keychain: Keychain,
             coin: CoinInfo,
             approver: approvers.Approver | None,
+            **kwargs,
         ) -> None:
             ...
 

@@ -22,8 +22,8 @@ enum ZcashSignatureType {
  * @next ZcashFullViewingKey
  */
 message ZcashGetFullViewingKey {
-    optional string coin_name = 2 [default = "Zcash"];
-    repeated uint32 z_address_n = 3; // z-address ZIP 32 path
+    optional string coin_name = 1 [default = "Zcash"];
+    repeated uint32 z_address_n = 2; // z-address ZIP 32 path
 }
 
 /**

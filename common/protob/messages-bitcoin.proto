@@ -182,7 +182,7 @@ message VerifyMessage {
 /**
  * Request: Ask device to sign transaction
  * @start
- * @next TxRequest
+ * @next uest
  * @next Failure
  */
 message SignTx {
@@ -207,7 +207,7 @@ message SignTx {
         required uint32 inputs_count = 1;   // number of Orchard inputs
         required uint32 outputs_count = 2;  // number of Orchard outputs
         required bytes anchor = 3;          // a root of Orchard Merkle tree
-        optional uint32 account = 7 [default = 0];
+        optional uint32 account = 4 [default = 0];
     }
 }
 
@@ -263,9 +263,9 @@ message TxRequest {
         optional bytes signature = 2;           // signature of the signature_index input
         optional bytes serialized_tx = 3;       // part of serialized and signed transaction
 
-        optional uint32 signature_type = 4;     // currently for Zcash only
-
-        optional bytes zcash_shielding_seed = 8;  // for Zcash only
+        optional zcash.ZcashSignatureType signature_type = 4;  // for Zcash only
+        optional bytes zcash_shielding_seed = 5;  // for Zcash only
+        optional bytes tx_sighash = 6;            // for Zcash only
     }
 }
 

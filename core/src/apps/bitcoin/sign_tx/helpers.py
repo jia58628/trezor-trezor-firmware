@@ -372,6 +372,7 @@ def _clear_tx_request(tx_req: TxRequest) -> None:
     # we know that it is `bytearray` in reality
     tx_req.serialized.serialized_tx[:] = bytes()  # type: ignore ["__setitem__" method not defined on type "bytes"]
     tx_req.serialized.signature_type = None
+    tx_req.serialized.tx_sighash = None
     tx_req.serialized.zcash_shielding_seed = None
 
 

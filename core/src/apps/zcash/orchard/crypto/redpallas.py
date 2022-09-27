@@ -30,7 +30,7 @@ def sign_spend_auth(sk: Scalar, message: bytes, rng: ActionShieldingRng) -> byte
     # secret leakage caused by mallicious hw randomness generator), we set
     T = xor(rng.spend_auth_T(), sk.to_bytes())
     # - `rng.spend_auth_T()` randomizes the signature
-    # - xoring with bytes of `sk` makes `T` unpredictable for external viewers
+    # - xoring with bytes of `sk` makes `T` unpredictable for outside
 
     vk: bytes = (sk * SPENDING_KEY_BASE).to_bytes()
     r: Scalar = H_star(T + vk + message)

@@ -1157,8 +1157,9 @@ if TYPE_CHECKING:
         signature_index: "int | None"
         signature: "bytes | None"
         serialized_tx: "bytes | None"
-        signature_type: "int | None"
+        signature_type: "ZcashSignatureType | None"
         zcash_shielding_seed: "bytes | None"
+        tx_sighash: "bytes | None"
 
         def __init__(
             self,
@@ -1166,8 +1167,9 @@ if TYPE_CHECKING:
             signature_index: "int | None" = None,
             signature: "bytes | None" = None,
             serialized_tx: "bytes | None" = None,
-            signature_type: "int | None" = None,
+            signature_type: "ZcashSignatureType | None" = None,
             zcash_shielding_seed: "bytes | None" = None,
+            tx_sighash: "bytes | None" = None,
         ) -> None:
             pass
 

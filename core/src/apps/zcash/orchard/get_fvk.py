@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 
+from trezor import ui
+from trezor.enums import ButtonRequestType
 from trezor.messages import ZcashFullViewingKey, ZcashGetFullViewingKey
+from trezor.ui.layouts import confirm_action
 
-from .. import layout
 from .keychain import with_keychain
 
 if TYPE_CHECKING:
@@ -14,6 +16,18 @@ if TYPE_CHECKING:
 async def get_fvk(
     ctx: Context, msg: ZcashGetFullViewingKey, keychain: OrchardKeychain
 ) -> ZcashFullViewingKey:
-    await layout.require_confirm_export_fvk(ctx)
+    await require_confirm_export_fvk(ctx)
     fvk = keychain.derive(msg.z_address_n).full_viewing_key()
     return ZcashFullViewingKey(fvk=fvk.to_bytes())
+
+
+async def require_confirm_export_fvk(ctx: Context) -> None:
+    await confirm_action(
+        ctx,
+        "export_full_viewing_key",
+        "Confirm export",
+        description="Do you really want to export Full Viewing Key?",
+        icon=ui.ICON_SEND,
+        icon_color=ui.GREEN,
+        br_code=ButtonRequestType.SignTx,
+    )

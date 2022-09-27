@@ -33,3 +33,6 @@ class ZcashApprover(approvers.BasicApprover):
         self.total_out += txo.amount
         self.orchard_balance -= txo.amount
         return (yield UiConfirmOrchardOutput(txo, self.coin))
+
+    async def approve_tx(self, tx_info: TxInfo, orig_txs: list[OriginalTxInfo]) -> None:
+        pass

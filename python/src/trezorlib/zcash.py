@@ -76,28 +76,21 @@ def get_address(
     )
 
 
-def encode_memo(memo):
-    encoded = memo.encode("utf-8")
-    if len(encoded) < 512:
-        raise ValueError("Memo is too long.")
-    return encoded + (512 - len(encoded))*b"\x00"
-
-
 EMPTY_ANCHOR = bytes.fromhex("ae2935f1dfd8a24aed7c70df7de3a668eb7a49b1319880dde2bbd9031ae5d82f")
 
 
 def sign_tx(
     client,
-    t_inputs = [],
-    t_outputs = [],
-    o_inputs = [],
-    o_outputs = [],
-    coin_name = "Zcash",
-    version_group_id = 0x26A7270A,  # protocol spec §7.1.2
-    branch_id = 0xC2D6D0B4,  # https://zips.z.cash/zip-0252
-    expiry = 0,
-    anchor = EMPTY_ANCHOR,
-    verbose = False,
+    t_inputs=[],
+    t_outputs=[],
+    o_inputs=[],
+    o_outputs=[],
+    coin_name="Zcash",
+    version_group_id=0x26A7270A,  # protocol spec §7.1.2
+    branch_id=0xC2D6D0B4,  # https://zips.z.cash/zip-0252
+    expiry=0,
+    anchor=EMPTY_ANCHOR,
+    verbose=False,
 ):
     def log(*args, **kwargs):
         if verbose:
@@ -119,19 +112,18 @@ def sign_tx(
     orchard.anchor = anchor
     orchard.enable_spends = True
     orchard.enable_outputs = True
-
     msg.orchard = orchard
-    if o_inputs or o_outputs:
-        actions_count = max(2, len(o_inputs), len(o_outputs))
-    else:
-        actions_count = 0
+    actions_count = (
+        min(len(o_outputs), len(o_inputs), 2)
+        if len(o_outputs) + len(o_inputs) > 0
+        else 0)
+
+    serialized_tx = b""
 
     signatures = {
         SigType.TRANSPARENT: [None] * len(t_inputs),
-        SigType.ORCHARD_SPEND_AUTH: [None] * actions_count,
+        SigType.ORCHARD_SPEND_AUTH:  dict(),
     }
-
-    serialized_tx = b""
 
     print("T <- sign tx")
     res = client.call(msg)
@@ -148,17 +140,27 @@ def sign_tx(
                 idx = res.serialized.signature_index
                 sig = res.serialized.signature
                 sig_type = res.serialized.signature_type
-                if signatures[sig_type][idx] is not None:
-                    raise ValueError("Signature for index {} already filled".format(idx))
-                log("T -> {} signature {}".format(
-                    {
-                        SigType.TRANSPARENT: "t",
-                        SigType.ORCHARD_SPEND_AUTH: "o auth",
-                    }[sig_type],
-                    idx)
-                )
+                if sig_type == SigType.TRANSPARENT:
+                    log(f"T -> t signature {idx}")
+                    if signatures[sig_type][idx] is not None:
+                        raise ValueError(f"Transparent signature for index {idx} already filled")
+                elif sig_type == SigType.ORCHARD_SPEND_AUTH:
+                    log(f"T -> o signature {idx}")
+                    if signatures[sig_type].get(idx) is not None:
+                        raise ValueError(f"Orchard signature for index {idx} already filled")
+                    if idx >= actions_count:
+                        raise IndexError(f"Orchard signature index out of range: {idx}")
+                else:
+                    raise ValueError(f"Unknown signature type: {sig_type}.")
                 signatures[sig_type][idx] = sig
 
+            if res.serialized.zcash_shielding_seed is not None:
+                log("T -> shielding seed")
+                yield res.serialized.zcash_shielding_seed
+
+            if res.serialized.tx_sighash is not None:
+                log("T -> sighash")
+                yield res.serialized.tx_sighash
 
         log("")
 
@@ -196,4 +198,4 @@ def sign_tx(
     if not isinstance(res, messages.TxRequest):
         raise exceptions.TrezorException("Unexpected message")
 
-    return signatures, serialized_tx
+    yield (signatures, serialized_tx)

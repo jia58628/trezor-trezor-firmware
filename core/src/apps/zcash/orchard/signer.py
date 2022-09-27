@@ -99,15 +99,11 @@ class OrchardSigner:
         ]
         self.key_node = keychain.derive(key_path)
 
-        msg_acc_keys = (
+        self.msg_acc = MessageAccumulator(
             keychain.derive_slip21(
-                [b"Zcash Orchard", b"Message Accumulator", b"key1"],
-            ).key(),
-            keychain.derive_slip21(
-                [b"Zcash Orchard", b"Message Accumulator", b"key2"],
-            ).key(),
+                [b"Zcash Orchard", b"Message Accumulator"],
+            ).key()
         )
-        self.msg_acc = MessageAccumulator(*msg_acc_keys)
 
         self.rng = None
 
@@ -133,7 +129,7 @@ class OrchardSigner:
     @skip_if_empty
     @watch_gc_async
     async def compute_digest(self) -> None:
-        # shielding seed
+        # derive shielding seed
         shielding_seed = self.derive_shielding_seed()
         self.rng = BundleShieldingRng(seed=shielding_seed)
 
@@ -250,15 +246,17 @@ class OrchardSigner:
     @watch_gc_async
     async def sign_inputs(self) -> None:
         sighash = self.sig_hasher.signature_digest()
+        self.tx_req.serialized.tx_sighash = sighash
         sig_type = ZcashSignatureType.ORCHARD_SPEND_AUTH
         ask = self.key_node.spend_authorizing_key()
         assert self.rng is not None
         for i, j in enumerate(self.shuffled_inputs):
+            if j is None:
+                continue
             rng = self.rng.for_action(i)
-            ask = rng.dummy_ask() if j is None else ask
             rsk = redpallas.randomize(ask, rng.alpha())
             signature = redpallas.sign_spend_auth(rsk, sighash, rng)
-            await self.set_serialized_signature(i, signature, sig_type)
+            await self.set_serialized_signature(j, signature, sig_type)
 
     async def set_serialized_signature(
         self, i: int, signature: bytes, sig_type: ZcashSignatureType
