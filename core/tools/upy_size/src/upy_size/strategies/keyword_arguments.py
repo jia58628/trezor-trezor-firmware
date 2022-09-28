@@ -24,6 +24,11 @@ class Kwarg(SpaceSaving):
 def keyword_arguments(
     file_content: str, settings: Settings = Settings()
 ) -> list[Kwarg]:
+    """Looking for usages of keyword arguments in function calls.
+
+    It may be then beneficial to replace them with positional arguments.
+    """
+
     def iterator() -> Iterator[Kwarg]:
         for node in all_nodes(file_content):
             if isinstance(node, ast.Call):

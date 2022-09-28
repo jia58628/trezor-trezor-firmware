@@ -4,9 +4,15 @@ CODE = """\
 from micropython import const
 from typing import TYPE_CHECKING
 from message import MessageType2, OnlyInOneFunc, InFuncAndTypeHint
-import ENUM, abc
-from trezor import ui
+import ENUM, abc, cbor
+from trezor import ui, wire, utils, paths
 import decorators
+
+if not utils.BITCOIN_ONLY:
+    from apps.bitcoin import bitcoin
+
+if TYPE_CHECKING:
+    import HashBuilderList
 
 nine = const(9)
 
@@ -19,8 +25,10 @@ def main(msg: MessageType1, xyz: InFuncAndTypeHint.abc):
     return MessageType2(x)
 
 @decorators.decorator("hoho")
+@decorators(paths.PATTERN_BIP44_PUBKEY)
 def abc(x: int):
     decorators.hello()
+    paths.validate_path(x)
     receive(InFuncAndTypeHint)
     send(InFuncAndTypeHint)
     return MessageType2(x)
@@ -31,8 +39,15 @@ class ABC(ui.Component, abc.Layout, Generic[K, V]):
     def _init__(self, x: int):
         self.x = const(x)
 
-def trial():
+def print_builder(builder: HashBuilderList[cbor.CborSequence]) -> None:
+    print(builder)
+
+def trial(ctx: wire.Context = wire.DUMMY_CONTEXT):
     ui.show("hello")
+    if not utils.BITCOIN_ONLY:
+        ui.show("hello altcoin")
+    relay: HashBuilderList[cbor.CborSequence] = []
+    wire.send("ola")
     return ENUM.xyz
 """
 

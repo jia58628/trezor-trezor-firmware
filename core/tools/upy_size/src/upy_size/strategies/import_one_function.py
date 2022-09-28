@@ -6,7 +6,7 @@ from typing import Iterator
 from . import Settings, SpaceSaving
 from .helpers import (
     Function,
-    get_func_toplevel_symbol_usages,
+    get_toplevel_symbol_usages_in_functions,
     is_used_as_type_hint,
     is_used_outside_function,
 )
@@ -34,8 +34,17 @@ class OneFunctionImport(SpaceSaving):
 def one_function_import(
     file_content: str, settings: Settings = Settings()
 ) -> list[OneFunctionImport]:
+    """Looking for symbols that can be imported only in one function.
+
+    These symbols must be used only in that one function and nowhere
+    else in the file (on top-level or in other functions).
+
+    Issuing a warning if the symbol is used as a type-hint,
+    as it will need to be added into `if TYPE_CHECKING` import branch.
+    """
+
     def iterator() -> Iterator[OneFunctionImport]:
-        for symbol, func_usages in get_func_toplevel_symbol_usages(
+        for symbol, func_usages in get_toplevel_symbol_usages_in_functions(
             file_content
         ).items():
             if len(func_usages) != 1:
@@ -43,7 +52,6 @@ def one_function_import(
             if is_used_outside_function(file_content, symbol):
                 continue  # used on top-level
 
-            # Used only in one function, means we can import it just there
             yield OneFunctionImport(
                 func=func_usages[0].func,
                 symbol=symbol,

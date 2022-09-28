@@ -24,11 +24,16 @@ class InitOnlyClass(SpaceSaving):
 def init_only_classes(
     file_content: str, settings: Settings = Settings()
 ) -> list[InitOnlyClass]:
+    """Looking for small classes only with __init__ constructor.
+
+    If these classes are used only to store data for a short time,
+    it could be beneficial to use tuples instead.
+    """
+
     def iterator() -> Iterator[InitOnlyClass]:
-        # Looking for classes with only __init__ method
         for node in all_toplevel_nodes(file_content):
             if isinstance(node, ast.ClassDef):
                 if get_method_names(node) == ["__init__"]:
-                    yield InitOnlyClass(name=node.name, line_no=node.lineno)
+                    yield InitOnlyClass(node.name, node.lineno)
 
     return sorted(list(iterator()), key=lambda x: x.line_no)

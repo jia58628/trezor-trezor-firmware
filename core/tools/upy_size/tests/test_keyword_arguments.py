@@ -22,5 +22,5 @@ def test_keyword_arguments():
     assert res[0].name == "show"
     assert res[0].saved_bytes() == 3
 
-    assert res[1].name == "layouts.warn"
+    assert res[1].name == "warn"
     assert res[1].saved_bytes() == 6

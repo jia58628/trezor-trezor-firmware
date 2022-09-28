@@ -21,6 +21,11 @@ class NoConstNumber(SpaceSaving):
 def no_const_number(
     file_content: str, settings: Settings = Settings()
 ) -> list[NoConstNumber]:
+    """Looking for assignments of constant number variables without `const`.
+
+    For these cases it may be beneficial to wrap them in `micropython.const`.
+    """
+
     def iterator() -> Iterator[NoConstNumber]:
         for assignment in all_global_assignments(file_content):
             if is_a_constant_number_var(file_content, assignment):

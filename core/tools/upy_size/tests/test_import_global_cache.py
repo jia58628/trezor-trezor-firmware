@@ -4,6 +4,8 @@ CODE = """\
 import messages
 import enum
 
+senf(messages.MessageType2)
+
 def main(msg: MessageType1, xyz):
     x = 54
     enum.MessageType3(xyz=x)
@@ -20,4 +22,5 @@ def test_global_import_cache():
     res = global_import_cache(CODE)
     assert len(res) == 1
     assert res[0].cache_candidate.cache_string == "messages.MessageType2"
-    assert res[0].saved_bytes() == 3
+    assert res[0].cache_candidate.amount == 4
+    assert res[0].saved_bytes() == 4

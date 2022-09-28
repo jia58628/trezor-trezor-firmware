@@ -29,19 +29,21 @@ class LocalCacheGlobal(SpaceSaving):
 def local_cache_global(
     file_content: str, settings: Settings = Settings(), threshold: int = 5
 ) -> list[LocalCacheGlobal]:
+    """Looking for frequent usages of global symbols in local scope.
+
+    It may be then beneficial to create a local cache/alias for the global symbol.
+    """
+
     def iterator() -> Iterator[LocalCacheGlobal]:
-        functions = all_functions(file_content)
         global_symbols = all_global_symbols(file_content)
 
-        for func in functions:
-            func_imported = all_function_imported_symbols(func.node)
-            used_symbols = get_used_func_symbols(func.node)
-            for symbol in used_symbols:
-                if symbol in global_symbols and symbol not in func_imported:
-                    amount = used_symbols[symbol]
+        for func in all_functions(file_content):
+            imported_in_func = all_function_imported_symbols(func.node)
+            used_in_func = get_used_func_symbols(func.node)
+            for symbol in used_in_func:
+                if symbol in global_symbols and symbol not in imported_in_func:
+                    amount = used_in_func[symbol]
                     if amount >= threshold:
-                        yield LocalCacheGlobal(
-                            cache_candidate=CacheCandidate(symbol, amount), func=func
-                        )
+                        yield LocalCacheGlobal(CacheCandidate(symbol, amount), func)
 
     return sorted(list(iterator()), key=lambda x: x.func.line_no)

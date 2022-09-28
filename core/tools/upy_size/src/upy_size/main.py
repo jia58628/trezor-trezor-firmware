@@ -3,8 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Callable, Iterator, TextIO
 
 import click
 from typing_extensions import TypedDict  # older python compatibility
@@ -22,21 +23,43 @@ from strategies.local_cache_global import local_cache_global
 from strategies.small_classes import init_only_classes
 
 
-class Result(TypedDict):
+class ValidatorResult(TypedDict):
+    """Individual result of a validator/strategy."""
+
     validator_name: str
     saved_bytes: int
     lines: list[str]
 
 
 class FileResults(TypedDict):
-    file_name: str
+    """Results for a single file.
+
+    This data-structure gets saved to a JSON file as cache.
+    """
+
+    abs_file_path: str
     saved_bytes: int
-    results: list[Result]
+    results: list[ValidatorResult]
     file_hash: str
 
 
+class IgnoreData(TypedDict):
+    """Data saved in a JSON file to ignore certain warnings in certain files.
+
+    So far supported only for function inlining, but could be extended.
+    """
+
+    function_inline: dict[str, list[str]]
+
+
+@dataclass
+class UserOptions:
+    """Holds user input from CLI."""
+
+    ignore_data: IgnoreData | None
+
+
 HERE = Path(__file__).parent
-NOT_INLINED_FILE = HERE / "not_inlineable.json"
 CACHE_FILE = HERE / "cache.json"
 
 VALIDATORS: list[Callable[[str, Settings], list[SpaceSaving]]] = [  # type: ignore
@@ -53,12 +76,14 @@ VALIDATORS: list[Callable[[str, Settings], list[SpaceSaving]]] = [  # type: igno
 ]
 
 
-UNEXPECTED_ERRORS = False
+UNEXPECTED_ERRORS: list[str] = []
 
 
 class ResultCache:
-    """Saving file results locally to avoid recomputing them
-    if the file is not changed"""
+    """Saving file results locally to avoid recomputing them if the file is not changed.
+
+    Allows for usage as a context manager, when the cache is saved on exit.
+    """
 
     def __init__(
         self, cache: dict[str, FileResults], cache_file: Path, force_invalid: bool
@@ -66,6 +91,12 @@ class ResultCache:
         self.cache = cache
         self.cache_file = cache_file
         self.force_invalid = force_invalid
+
+    def __enter__(self) -> ResultCache:
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
+        self.save()
 
     @classmethod
     def load(cls, cache_file: Path, force_invalid: bool = False) -> ResultCache:
@@ -97,12 +128,20 @@ class ResultCache:
             json.dump(self.cache, f, indent=4)
 
 
-def get_uninlinable_functions(file_path: Path) -> list[str]:
-    with open(NOT_INLINED_FILE, "r") as f:
-        NOT_INLINABLE_FUNCTIONS = json.load(f)
+def get_uninlinable_functions(file_path: Path, ignore_data: IgnoreData) -> list[str]:
+    """Get a list of functions that should not be inlined.
+
+    Matches filepaths in ignore file with absolute path according to their endings.
+    When it doesn't find the wanted file, it returns an empty list.
+    """
+
+    # TODO: generalize this function to work with all ignore_data
+    # and getting just relevant data for given file
+
+    funcs_to_not_inline = ignore_data["function_inline"]
 
     file_abs_path = str(file_path.absolute())
-    for file, functions in NOT_INLINABLE_FUNCTIONS.items():
+    for file, functions in funcs_to_not_inline.items():
         if file_abs_path.endswith(file):
             return functions
 
@@ -110,10 +149,13 @@ def get_uninlinable_functions(file_path: Path) -> list[str]:
 
 
 def report_file_results(file_results: FileResults) -> None:
+    """Reporting results for a specific file by printing them into terminal."""
     if not file_results["results"]:
         return
 
-    print(file_results["file_name"])
+    # TODO: offer some other result output, like logging to a file
+
+    print(file_results["abs_file_path"])
     print(f"Potentially saved bytes: {file_results['saved_bytes']}")
     indent = " " * 4
     for result in file_results["results"]:
@@ -123,7 +165,14 @@ def report_file_results(file_results: FileResults) -> None:
     print(80 * "*")
 
 
-def analyze_file(file_path: Path, cache: ResultCache) -> int:
+def analyze_file(file_path: Path, cache: ResultCache, options: UserOptions) -> int:
+    """Main function for analyzing a single file.
+
+    Handles cache lookup according to file-hash and analyses
+    the file only if the cache is not valid.
+
+    Reports file results and returns the amount of saved bytes in this file.
+    """
     with open(file_path, "r") as f:
         file_content = f.read()
 
@@ -133,10 +182,10 @@ def analyze_file(file_path: Path, cache: ResultCache) -> int:
     if cache.is_valid(abs_path, file_hash):
         file_results = cache.get(abs_path)
     else:
-        results = get_file_results(file_content, file_path)
+        results = get_file_results(file_content, file_path, options)
         saved_bytes = sum(r["saved_bytes"] for r in results)
         file_results = FileResults(
-            file_name=abs_path,
+            abs_file_path=abs_path,
             saved_bytes=saved_bytes,
             results=results,
             file_hash=file_hash,
@@ -148,13 +197,25 @@ def analyze_file(file_path: Path, cache: ResultCache) -> int:
     return file_results["saved_bytes"]
 
 
-def get_file_results(file_content: str, file_path: Path) -> list[Result]:
-    not_inlineable_funcs = get_uninlinable_functions(file_path)
-    FILE_SETTINGS = Settings(
-        file_path=file_path, not_inlineable_funcs=not_inlineable_funcs
-    )
+def get_file_results(
+    file_content: str, file_path: Path, options: UserOptions
+) -> list[ValidatorResult]:
+    """Runs a series of validators on a file and returns the results.
 
-    def iterator() -> Iterator[Result]:
+    All validators are run with the file content and also with the
+    `Settings` object as a way to pass additional information to the validators.
+    """
+
+    # List of functions that cannot be inlined for this file, if any
+    # TODO: send all the ignore data connected with this file_path
+    if options.ignore_data:
+        not_inlineable_funcs = get_uninlinable_functions(file_path, options.ignore_data)
+    else:
+        not_inlineable_funcs = []
+
+    FILE_SETTINGS = Settings(file_path, not_inlineable_funcs)
+
+    def iterator() -> Iterator[ValidatorResult]:
         for validator in VALIDATORS:
             # Error handling so that it is usable even for untested codebases,
             # where one uncaught error does not stop the whole process
@@ -165,7 +226,7 @@ def get_file_results(file_content: str, file_path: Path) -> list[Result]:
                 continue
 
             if result:
-                yield Result(
+                yield ValidatorResult(
                     validator_name=validator.__name__,
                     saved_bytes=sum(p.saved_bytes() for p in result),
                     lines=[str(p) for p in result],
@@ -175,32 +236,43 @@ def get_file_results(file_content: str, file_path: Path) -> list[Result]:
 
 
 def report_uncaught_error(validator_name: str, file_path: str, err: str) -> None:
-    global UNEXPECTED_ERRORS
-    UNEXPECTED_ERRORS = True  # type: ignore
-    print(f"Error happened while validating file {file_path}")
-    print(f"Validator: {validator_name}")
-    print(err)
+    """Process unexpected error by appending it to the list of errors."""
+    UNEXPECTED_ERRORS.append(f"Error happened while validating file {file_path}")
+    UNEXPECTED_ERRORS.append(f"Validator: {validator_name}")
+    UNEXPECTED_ERRORS.append(f"Err: {err}")
 
 
 @click.command()
-@click.argument(
-    "path", type=click.Path(exists=True, file_okay=True, dir_okay=True), default="."
+@click.argument("path", type=click.Path(exists=True), default=".")
+@click.option("-n", "--no-cache", is_flag=True, help="Do not use cache (dev purposes).")
+@click.option(
+    "-i",
+    "--ignore-file",
+    type=click.File("r"),
+    help="File with warnings that should be ignored.",
 )
-@click.option("-n", "--no-cache", is_flag=True, help="Do not use cache (dev purposes)")
-def main(path: Path, no_cache: bool) -> None:
+def main(path: str | Path, no_cache: bool, ignore_file: TextIO | None) -> None:
+    # TODO: `output` optionally specifying file where to save the result
+    # TODO: `exclude` for not analyzing specific files/patterns
+    # TODO: `validator` for running only specific validator
+    # TODO: `no-validator` for excluding specific validator
+
     path = Path(path)
+    options = UserOptions(ignore_data=json.load(ignore_file) if ignore_file else None)
+
     possible_saved_bytes = 0
-    cache = ResultCache.load(CACHE_FILE, force_invalid=no_cache)
-
     file_iterable = path.rglob("*.py") if path.is_dir() else [path]
-    for file in file_iterable:
-        possible_saved_bytes += analyze_file(file, cache)
 
-    cache.save()
+    with ResultCache.load(CACHE_FILE, force_invalid=no_cache) as cache:
+        for file in file_iterable:
+            possible_saved_bytes += analyze_file(file, cache, options)
+
     print(f"Potentially saved bytes: {possible_saved_bytes}")
 
     if UNEXPECTED_ERRORS:
-        print("ERROR: There was some unexpected issue. Please check the output.")
+        for line in UNEXPECTED_ERRORS:
+            print(line)
+        print("ERROR: There was some unexpected issue. Please check the output above.")
         sys.exit(1)
 
 

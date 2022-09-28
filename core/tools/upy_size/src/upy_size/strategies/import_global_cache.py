@@ -21,11 +21,15 @@ class GlobalImportCache(SpaceSaving):
 def global_import_cache(
     file_content: str, settings: Settings = Settings(), threshold: int = 3
 ) -> list[GlobalImportCache]:
+    """Looking for possibilities of caching global import attribute lookups.
+
+    It may be then beneficial to create a global cache/alias for the attribute.
+    """
+
     def iterator() -> Iterator[GlobalImportCache]:
         for symbol, lookups in get_global_attribute_lookups(file_content).items():
             for attr, amount in lookups.items():
                 if amount >= threshold:
-                    cache_string = f"{symbol}.{attr}"
-                    yield GlobalImportCache(CacheCandidate(cache_string, amount))
+                    yield GlobalImportCache(CacheCandidate(f"{symbol}.{attr}", amount))
 
     return list(iterator())

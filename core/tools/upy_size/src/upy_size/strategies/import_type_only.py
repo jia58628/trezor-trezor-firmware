@@ -4,11 +4,7 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from . import Settings, SpaceSaving
-from .helpers import (
-    all_toplevel_imported_symbols,
-    all_toplevel_symbol_usages,
-    all_type_hint_usages,
-)
+from .helpers import all_toplevel_symbol_usages, all_type_hint_usages
 
 
 @dataclass
@@ -25,15 +21,17 @@ class TypeOnlyImport(SpaceSaving):
 def type_only_import(
     file_content: str, settings: Settings = Settings()
 ) -> list[TypeOnlyImport]:
-    def iterator() -> Iterator[TypeOnlyImport]:
-        symbol_usages = all_toplevel_symbol_usages(file_content)
-        type_hints = all_type_hint_usages(file_content)
+    """Looking for imports of symbols that are only used as a type hint.
 
-        for symbol in all_toplevel_imported_symbols(file_content):
-            # Reporting when the usage as a type-hint equal to the
-            # overall usage as a symbol
-            if symbol in type_hints and symbol in symbol_usages:
-                if type_hints[symbol] == symbol_usages[symbol]:
-                    yield TypeOnlyImport(symbol)
+    It is better to include these in `if TYPE_CHECKING` branch to be
+    explicit about their intent and to save flash space.
+    """
+
+    def iterator() -> Iterator[TypeOnlyImport]:
+        type_usages = all_type_hint_usages(file_content)
+
+        for symbol, usages in all_toplevel_symbol_usages(file_content).items():
+            if symbol in type_usages and type_usages[symbol] == usages:
+                yield TypeOnlyImport(symbol)
 
     return list(iterator())

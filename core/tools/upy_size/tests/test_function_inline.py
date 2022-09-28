@@ -23,7 +23,7 @@ def used_also_elsewhere(x):
 
 class ABC:
     def __init__(self, x):
-        __init__(self, x)
+        super().__init__(x)
 """
 
 

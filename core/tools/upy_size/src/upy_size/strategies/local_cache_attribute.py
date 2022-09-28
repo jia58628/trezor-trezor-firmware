@@ -8,8 +8,9 @@ from .helpers import (
     CacheCandidate,
     Function,
     all_functions,
-    attr_gets_modified,
     get_func_local_attribute_lookups,
+    is_attr_modified,
+    is_symbol_assigned,
 )
 
 
@@ -17,19 +18,29 @@ from .helpers import (
 class LocalCache(SpaceSaving):
     cache_candidate: CacheCandidate
     func: Function
-    gets_mutated: bool
+    attribute_mutated: bool
+    symbol_assigned: bool
 
     def saved_bytes(self) -> int:
         return self.cache_candidate.amount * 2
 
     def __repr__(self) -> str:  # pragma: no cover
-        mutated_msg = " (WARNING: gets mutated)" if self.gets_mutated else ""
-        return f"{self.func} - {self.cache_candidate} (~{self.saved_bytes()} bytes){mutated_msg}"
+        mutated_msg = " (WARNING: attr gets mutated)" if self.attribute_mutated else ""
+        assigned_msg = (
+            " (WARNING: symbol gets (re)assigned)" if self.symbol_assigned else ""
+        )
+        warnings = mutated_msg + assigned_msg
+        return f"{self.func} - {self.cache_candidate} (~{self.saved_bytes()} bytes){warnings}"
 
 
 def local_cache_attribute(
     file_content: str, settings: Settings = Settings(), threshold: int = 4
 ) -> list[LocalCache]:
+    """Looking for possibilities of caching local attribute lookups.
+
+    It may be then beneficial to create a local cache/alias for the attribute.
+    """
+
     def iterator() -> Iterator[LocalCache]:
         for func in all_functions(file_content):
             attr_lookups = get_func_local_attribute_lookups(file_content, func.node)
@@ -41,9 +52,10 @@ def local_cache_attribute(
                                 f"{obj_name}.{attr_name}", amount
                             ),
                             func=func,
-                            gets_mutated=attr_gets_modified(
+                            attribute_mutated=is_attr_modified(
                                 func.node, obj_name, attr_name
                             ),
+                            symbol_assigned=is_symbol_assigned(func.node, obj_name),
                         )
 
     return sorted(list(iterator()), key=lambda x: x.func.line_no)
