@@ -2,18 +2,7 @@ from typing import TYPE_CHECKING
 
 from trezor import utils
 from trezor.enums import RequestType
-from trezor.messages import (
-    TxAckInput,
-    TxAckOutput,
-    TxAckPaymentRequest,
-    TxAckPrevExtraData,
-    TxAckPrevInput,
-    TxAckPrevMeta,
-    TxAckPrevOutput,
-)
 from trezor.wire import DataError
-
-from apps.common import paths
 
 from .. import common
 from ..writers import TX_HASH_SIZE
@@ -32,6 +21,7 @@ if TYPE_CHECKING:
         TxInput,
         TxOutput,
         TxRequest,
+        TxAckPaymentRequest,
     )
     from apps.common.coininfo import CoinInfo
 
@@ -207,6 +197,8 @@ class UiConfirmForeignAddress(UiConfirm):
         self.address_n = address_n
 
     def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
+        from apps.common import paths
+
         return paths.show_path_warning(ctx, self.address_n)
 
 
@@ -278,6 +270,8 @@ def confirm_nondefault_locktime(lock_time: int, lock_time_disabled: bool) -> Awa
 
 
 def request_tx_meta(tx_req: TxRequest, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevTx]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckPrevMeta
+
     assert tx_req.details is not None
     tx_req.request_type = RequestType.TXMETA
     tx_req.details.tx_hash = tx_hash
@@ -289,6 +283,8 @@ def request_tx_meta(tx_req: TxRequest, coin: CoinInfo, tx_hash: bytes | None = N
 def request_tx_extra_data(
     tx_req: TxRequest, offset: int, size: int, tx_hash: bytes | None = None
 ) -> Awaitable[bytearray]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckPrevExtraData
+
     tx_req_details = tx_req.details  # cache
 
     assert tx_req_details is not None
@@ -302,6 +298,8 @@ def request_tx_extra_data(
 
 
 def request_tx_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[TxInput]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckInput
+
     assert tx_req.details is not None
     if tx_hash:
         tx_req.request_type = RequestType.TXORIGINPUT
@@ -315,6 +313,8 @@ def request_tx_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes |
 
 
 def request_tx_prev_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevInput]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckPrevInput
+
     assert tx_req.details is not None
     tx_req.request_type = RequestType.TXINPUT
     tx_req.details.request_index = i
@@ -325,6 +325,8 @@ def request_tx_prev_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: by
 
 
 def request_tx_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[TxOutput]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckOutput
+
     assert tx_req.details is not None
     if tx_hash:
         tx_req.request_type = RequestType.TXORIGOUTPUT
@@ -338,6 +340,8 @@ def request_tx_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes 
 
 
 def request_tx_prev_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevOutput]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckPrevOutput
+
     assert tx_req.details is not None
     tx_req.request_type = RequestType.TXOUTPUT
     tx_req.details.request_index = i
@@ -349,6 +353,8 @@ def request_tx_prev_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: b
 
 
 def request_payment_req(tx_req: TxRequest, i: int) -> Awaitable[TxAckPaymentRequest]:  # type: ignore [awaitable-is-generator]
+    from trezor.messages import TxAckPaymentRequest
+
     assert tx_req.details is not None
     tx_req.request_type = RequestType.TXPAYMENTREQ
     tx_req.details.request_index = i

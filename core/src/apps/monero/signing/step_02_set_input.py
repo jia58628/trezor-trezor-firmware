@@ -38,6 +38,8 @@ async def set_input(
 
     state.current_input_index += 1
     current_input_index = state.current_input_index  # cache
+    src_entr_amount = src_entr.amount  # cache
+    src_entr_outputs = src_entr.outputs  # cache
 
     await layout.transaction_step(state, state.STEP_INP, current_input_index)
 
@@ -46,15 +48,15 @@ async def set_input(
     if current_input_index >= state.input_count:
         raise ValueError("Too many inputs")
     # real_output denotes which output in outputs is the real one (ours)
-    if src_entr.real_output >= len(src_entr.outputs):
+    if src_entr.real_output >= len(src_entr_outputs):
         raise ValueError(
-            f"real_output index {src_entr.real_output} bigger than output_keys.size() {len(src_entr.outputs)}"
+            f"real_output index {src_entr.real_output} bigger than output_keys.size() {len(src_entr_outputs)}"
         )
-    state.summary_inputs_money += src_entr.amount
+    state.summary_inputs_money += src_entr_amount
 
     # Secrets derivation
     # the UTXO's one-time address P
-    out_key = c_h.decodepoint(src_entr.outputs[src_entr.real_output].key.dest)
+    out_key = c_h.decodepoint(src_entr_outputs[src_entr.real_output].key.dest)
     # the tx_pub of our UTXO stored inside its transaction
     tx_key = c_h.decodepoint(src_entr.real_out_tx_key)
     additional_tx_pub_key = _get_additional_public_key(src_entr)
@@ -75,9 +77,9 @@ async def set_input(
 
     # Construct tx.vin
     # If multisig is used then ki in vini should be src_entr.multisig_kLRki.ki
-    vini = TxinToKey(amount=src_entr.amount, k_image=c_h.encodepoint(ki))
+    vini = TxinToKey(amount=src_entr_amount, k_image=c_h.encodepoint(ki))
     vini.key_offsets = _absolute_output_offsets_to_relative(
-        [x.idx for x in src_entr.outputs]
+        [x.idx for x in src_entr_outputs]
     )
 
     if src_entr.rct:
@@ -96,7 +98,7 @@ async def set_input(
     state.mem_trace(3, True)
 
     # PseudoOuts commitment, alphas stored to state
-    alpha, pseudo_out = _gen_commitment(state, src_entr.amount)
+    alpha, pseudo_out = _gen_commitment(state, src_entr_amount)
     pseudo_out = c_h.encodepoint(pseudo_out)
 
     # The alpha is encrypted and passed back for storage
@@ -120,7 +122,7 @@ async def set_input(
         # When we finish the inputs processing, we no longer need
         # the precomputed subaddresses so we clear them to save memory.
         state.subaddresses = None
-        state.input_last_amount = src_entr.amount
+        state.input_last_amount = src_entr_amount
 
     return MoneroTransactionSetInputAck(
         vini=vini_bin,
@@ -169,17 +171,15 @@ def _absolute_output_offsets_to_relative(off: list[int]) -> list[int]:
 def _get_additional_public_key(
     src_entr: MoneroTransactionSourceEntry,
 ) -> crypto.Point | None:
+    additional_tx_keys = src_entr.real_out_additional_tx_keys  # cache
+
     additional_tx_pub_key = None
-    if len(src_entr.real_out_additional_tx_keys) == 1:  # compression
-        additional_tx_pub_key = crypto_helpers.decodepoint(
-            src_entr.real_out_additional_tx_keys[0]
-        )
-    elif src_entr.real_out_additional_tx_keys:
-        if src_entr.real_output_in_tx_index >= len(
-            src_entr.real_out_additional_tx_keys
-        ):
+    if len(additional_tx_keys) == 1:  # compression
+        additional_tx_pub_key = crypto_helpers.decodepoint(additional_tx_keys[0])
+    elif additional_tx_keys:
+        if src_entr.real_output_in_tx_index >= len(additional_tx_keys):
             raise ValueError("Wrong number of additional derivations")
         additional_tx_pub_key = crypto_helpers.decodepoint(
-            src_entr.real_out_additional_tx_keys[src_entr.real_output_in_tx_index]
+            additional_tx_keys[src_entr.real_output_in_tx_index]
         )
     return additional_tx_pub_key

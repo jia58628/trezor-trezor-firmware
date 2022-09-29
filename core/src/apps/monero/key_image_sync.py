@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from trezor.messages import MoneroKeyImageSyncStepRequest
 from trezor.wire import DataError
 
 from apps.common.keychain import auto_keychain
@@ -12,6 +11,7 @@ if TYPE_CHECKING:
         MoneroKeyImageSyncFinalAck,
         MoneroKeyImageExportInitAck,
         MoneroKeyImageSyncStepAck,
+        MoneroKeyImageSyncStepRequest,
     )
     from trezor.wire import Context
 
@@ -28,6 +28,7 @@ async def key_image_sync(
     from trezor.messages import (
         MoneroKeyImageSyncFinalAck,
         MoneroKeyImageSyncFinalRequest,
+        MoneroKeyImageSyncStepRequest,
     )
 
     state = KeyImageSync()

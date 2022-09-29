@@ -2,13 +2,16 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor.crypto import rlp
-from trezor.messages import EthereumTxRequest
 
 from .helpers import bytes_from_address
 from .keychain import with_keychain_from_chain_id
 
 if TYPE_CHECKING:
-    from trezor.messages import EthereumSignTxEIP1559, EthereumAccessList
+    from trezor.messages import (
+        EthereumSignTxEIP1559,
+        EthereumAccessList,
+        EthereumTxRequest,
+    )
 
     from apps.common.keychain import Keychain
     from trezor.wire import Context
@@ -41,11 +44,12 @@ async def sign_tx_eip1559(
     from .sign_tx import handle_erc20, send_request_chunk, check_common_fields
 
     _rlp = rlp  # cache
+    msg_gas_limit = msg.gas_limit  # cache
 
     # check
-    if len(msg.max_gas_fee) + len(msg.gas_limit) > 30:
+    if len(msg.max_gas_fee) + len(msg_gas_limit) > 30:
         raise wire.DataError("Fee overflow")
-    if len(msg.max_priority_fee) + len(msg.gas_limit) > 30:
+    if len(msg.max_priority_fee) + len(msg_gas_limit) > 30:
         raise wire.DataError("Fee overflow")
     check_common_fields(msg)
 
@@ -65,7 +69,7 @@ async def sign_tx_eip1559(
         value,
         int.from_bytes(msg.max_priority_fee, "big"),
         int.from_bytes(msg.max_gas_fee, "big"),
-        int.from_bytes(msg.gas_limit, "big"),
+        int.from_bytes(msg_gas_limit, "big"),
         msg.chain_id,
         token,
     )
@@ -87,7 +91,7 @@ async def sign_tx_eip1559(
         msg.nonce,
         msg.max_priority_fee,
         msg.max_gas_fee,
-        msg.gas_limit,
+        msg_gas_limit,
         address_bytes,
         msg.value,
     )
@@ -152,6 +156,7 @@ def _get_total_length(msg: EthereumSignTxEIP1559, data_total: int) -> int:
 def _sign_digest(
     msg: EthereumSignTxEIP1559, keychain: Keychain, digest: bytes
 ) -> EthereumTxRequest:
+    from trezor.messages import EthereumTxRequest
     from trezor.crypto.curve import secp256k1
 
     node = keychain.derive(msg.address_n)

@@ -1,15 +1,13 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor.ui.components.common.confirm import INFO
-from trezor.wire import DataError, NotEnoughFunds, ProcessError
+from trezor.wire import DataError, ProcessError
 
 from apps.common import safety_checks
 
 from ..common import input_is_external_unverified
 from ..keychain import validate_path_against_script_type
 from . import helpers, tx_weight
-from .payment_request import PaymentRequestVerifier
 from .tx_info import OriginalTxInfo
 
 if TYPE_CHECKING:
@@ -20,6 +18,7 @@ if TYPE_CHECKING:
 
     from ..authorization import CoinJoinAuthorization
     from .tx_info import TxInfo
+    from .payment_request import PaymentRequestVerifier
 
 
 # An Approver object computes the transaction totals and either prompts the user
@@ -64,19 +63,21 @@ class Approver:
         pass
 
     def add_external_input(self, txi: TxInput) -> None:
+        txi_amount = txi.amount  # cache
+
         self.weight.add_input(txi)
-        self.total_in += txi.amount
+        self.total_in += txi_amount
         if txi.orig_hash:
-            self.orig_total_in += txi.amount
+            self.orig_total_in += txi_amount
 
         if input_is_external_unverified(txi):
             self.has_unverified_external_input = True
             if safety_checks.is_strict():
                 raise ProcessError("Unverifiable external input.")
         else:
-            self.external_in += txi.amount
+            self.external_in += txi_amount
             if txi.orig_hash:
-                self.orig_external_in += txi.amount
+                self.orig_external_in += txi_amount
 
     def _add_output(self, txo: TxOutput, script_pubkey: bytes) -> None:
         self.weight.add_output(script_pubkey)
@@ -85,6 +86,8 @@ class Approver:
     async def add_payment_request(
         self, msg: TxAckPaymentRequest, keychain: Keychain
     ) -> None:
+        from .payment_request import PaymentRequestVerifier
+
         self.finish_payment_request()
         self.payment_req_verifier = PaymentRequestVerifier(msg, self.coin, keychain)
 
@@ -205,6 +208,8 @@ class BasicApprover(Approver):
     async def add_payment_request(
         self, msg: TxAckPaymentRequest, keychain: Keychain
     ) -> None:
+        from trezor.ui.components.common.confirm import INFO
+
         await super().add_payment_request(msg, keychain)
         if msg.amount is None:
             raise DataError("Missing payment request amount.")
@@ -233,6 +238,11 @@ class BasicApprover(Approver):
             await helpers.confirm_replacement(description, orig.orig_hash)
 
     async def approve_tx(self, tx_info: TxInfo, orig_txs: list[OriginalTxInfo]) -> None:
+        from trezor.wire import NotEnoughFunds
+
+        self_coin = self.coin  # cache
+        self_amount_unit = self.amount_unit  # cache
+
         await super().approve_tx(tx_info, orig_txs)
 
         if self.has_unverified_external_input:
@@ -241,7 +251,7 @@ class BasicApprover(Approver):
         fee = self.total_in - self.total_out
 
         # some coins require negative fees for reward TX
-        if fee < 0 and not self.coin.negative_fee:
+        if fee < 0 and not self_coin.negative_fee:
             raise NotEnoughFunds("Not enough funds")
 
         total = self.total_in - self.change_out
@@ -249,13 +259,13 @@ class BasicApprover(Approver):
         tx_size_vB = self.weight.get_virtual_size()
         fee_rate = fee / tx_size_vB
         # fee_threshold = (coin.maxfee per byte * tx size)
-        fee_threshold = (self.coin.maxfee_kb / 1000) * tx_size_vB
+        fee_threshold = (self_coin.maxfee_kb / 1000) * tx_size_vB
 
         # fee > (coin.maxfee per byte * tx size)
         if fee > fee_threshold:
             if fee > 10 * fee_threshold and safety_checks.is_strict():
                 raise DataError("The fee is unexpectedly large")
-            await helpers.confirm_feeoverthreshold(fee, self.coin, self.amount_unit)
+            await helpers.confirm_feeoverthreshold(fee, self_coin, self_amount_unit)
 
         if self.change_count > self.MAX_SILENT_CHANGE_COUNT:
             await helpers.confirm_change_count_over_threshold(self.change_count)
@@ -294,14 +304,14 @@ class BasicApprover(Approver):
                 # coming entirely from the user's own funds and from decreases of external outputs.
                 # We consider the decreases as belonging to the user.
                 await helpers.confirm_modify_fee(
-                    fee - orig_fee, fee, fee_rate, self.coin, self.amount_unit
+                    fee - orig_fee, fee, fee_rate, self_coin, self_amount_unit
                 )
             elif spending > orig_spending:
                 # PayJoin and user is spending more: Show the increase in the user's contribution
                 # to the fee, ignoring any contribution from external inputs. Decreasing of
                 # external outputs is not allowed in PayJoin, so there is no need to handle those.
                 await helpers.confirm_modify_fee(
-                    spending - orig_spending, fee, fee_rate, self.coin, self.amount_unit
+                    spending - orig_spending, fee, fee_rate, self_coin, self_amount_unit
                 )
             else:
                 # PayJoin and user is not spending more: When new external inputs are involved and
@@ -317,11 +327,11 @@ class BasicApprover(Approver):
 
             if not self.external_in:
                 await helpers.confirm_total(
-                    total, fee, fee_rate, self.coin, self.amount_unit
+                    total, fee, fee_rate, self_coin, self_amount_unit
                 )
             else:
                 await helpers.confirm_joint_total(
-                    spending, total, self.coin, self.amount_unit
+                    spending, total, self_coin, self_amount_unit
                 )
 
 

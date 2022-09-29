@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 
     T = TypeVar("T")
 
-    def list_of_type(lst: list[Any], typ: type[T]) -> TypeGuard[list[T]]:
+    def _list_of_type(lst: list[Any], typ: type[T]) -> TypeGuard[list[T]]:
         ...
 
 
@@ -240,7 +240,7 @@ def _generate_clsag(
     crypto.encodeint_into(mg_buff[index + 1], tmp_sc)
 
     if TYPE_CHECKING:
-        assert list_of_type(mg_buff, bytes)
+        assert _list_of_type(mg_buff, bytes)
 
     mg_buff.append(crypto_helpers.encodeint(sc1))
     mg_buff.append(sD)

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-import storage
 import storage.device as storage_device
 import storage.recovery as storage_recovery
 from trezor import wire
@@ -29,6 +28,7 @@ async def recovery_homescreen() -> None:
 
 async def recovery_process(ctx: GenericContext) -> Success:
     from trezor.enums import MessageType
+    import storage
 
     wire.AVOID_RESTARTING_FOR = (MessageType.Initialize, MessageType.GetFeatures)
     try:

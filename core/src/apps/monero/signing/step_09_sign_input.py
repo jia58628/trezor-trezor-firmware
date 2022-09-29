@@ -13,8 +13,6 @@ on output masks as pseudo outputs have to remain same.
 import gc
 from typing import TYPE_CHECKING
 
-from apps.monero.xmr import crypto
-
 if TYPE_CHECKING:
     from trezor.messages import MoneroTransactionSourceEntry
     from trezor.messages import MoneroTransactionSignInputAck
@@ -48,8 +46,8 @@ async def sign_input(
     from trezor import utils
     from apps.monero import layout
     from apps.monero.xmr import crypto_helpers
+    from apps.monero.xmr import crypto
 
-    _crypto = crypto  # cache
     _ensure = utils.ensure  # cache
     state_mem_trace = state.mem_trace  # cache
     state_input_count = state.input_count  # cache
@@ -76,7 +74,7 @@ async def sign_input(
     vini_hmac_comp = offloading_keys.gen_hmac_vini(
         state.key_hmac, src_entr, vini_bin, input_position
     )
-    if not _crypto.ct_equals(vini_hmac_comp, vini_hmac):
+    if not crypto.ct_equals(vini_hmac_comp, vini_hmac):
         raise ValueError("HMAC is not correct")
 
     # Key image sorting check - permutation correctness
@@ -103,16 +101,16 @@ async def sign_input(
     if input_position + 1 == state_input_count:
         # Recompute the lash alpha so the sum holds
         state_mem_trace("Correcting alpha")
-        alpha_diff = _crypto.sc_sub_into(None, state.sumout, state.sumpouts_alphas)
-        _crypto.sc_add_into(pseudo_out_alpha, pseudo_out_alpha, alpha_diff)
-        pseudo_out_c = _crypto.gen_commitment_into(
+        alpha_diff = crypto.sc_sub_into(None, state.sumout, state.sumpouts_alphas)
+        crypto.sc_add_into(pseudo_out_alpha, pseudo_out_alpha, alpha_diff)
+        pseudo_out_c = crypto.gen_commitment_into(
             None, pseudo_out_alpha, state.input_last_amount
         )
 
     else:
         if input_position + 1 == state_input_count:
             _ensure(
-                _crypto.sc_eq(state.sumpouts_alphas, state.sumout) != 0, "Sum eq error"
+                crypto.sc_eq(state.sumpouts_alphas, state.sumout) != 0, "Sum eq error"
             )
 
         # both pseudo_out and its mask were offloaded so we need to
@@ -121,7 +119,7 @@ async def sign_input(
             offloading_keys.hmac_key_txin_comm(state.key_hmac, input_position),
             pseudo_out,
         )
-        if not _crypto.ct_equals(pseudo_out_hmac_comp, pseudo_out_hmac):
+        if not crypto.ct_equals(pseudo_out_hmac_comp, pseudo_out_hmac):
             raise ValueError("HMAC is not correct")
 
         pseudo_out_c = crypto_helpers.decodepoint(pseudo_out)
@@ -155,18 +153,18 @@ async def sign_input(
 
     # Private key correctness test
     _ensure(
-        _crypto.point_eq(
+        crypto.point_eq(
             crypto_helpers.decodepoint(src_entr_outputs[src_entr.real_output].key.dest),
-            _crypto.scalarmult_base_into(None, input_secret_key.dest),
+            crypto.scalarmult_base_into(None, input_secret_key.dest),
         ),
         "Real source entry's destination does not equal spend key's",
     )
     _ensure(
-        _crypto.point_eq(
+        crypto.point_eq(
             crypto_helpers.decodepoint(
                 src_entr_outputs[src_entr.real_output].key.commitment
             ),
-            _crypto.gen_commitment_into(None, input_secret_key.mask, src_entr.amount),
+            crypto.gen_commitment_into(None, input_secret_key.mask, src_entr.amount),
         ),
         "Real source entry's mask does not equal spend key's",
     )

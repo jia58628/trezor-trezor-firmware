@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import storage.device as storage_device
 from trezor import config, io, log, loop, utils, workflow
-from trezor.crypto import hashlib, hmac
+from trezor.crypto import hashlib
 from trezor.crypto.curve import nist256p1
 from trezor.ui.components.common.confirm import Pageable
 from trezor.ui.components.common.webauthn import ConfirmInfo
@@ -1795,8 +1795,8 @@ def _cbor_get_assertion_hmac_secret(
 ) -> bytes | None:
     from storage.fido2 import KEY_AGREEMENT_PRIVKEY
     from trezor.crypto import aes
+    from trezor.crypto import hmac
 
-    # _hmac = hmac  # cache
     _common = common  # cache
 
     key_agreement = hmac_secret[1]  # The public key of platform key agreement key.

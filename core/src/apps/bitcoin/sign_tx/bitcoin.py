@@ -13,7 +13,6 @@ from ..common import SigHashType, ecdsa_sign, input_is_external
 from ..verification import SignatureVerifier
 from . import helpers, progress
 from .helpers import request_tx_input, request_tx_output
-from .sig_hasher import BitcoinSigHasher
 from .tx_info import OriginalTxInfo
 
 if TYPE_CHECKING:
@@ -139,6 +138,8 @@ class Bitcoin:
         return HashWriter(sha256())
 
     def create_sig_hasher(self, tx: SignTx | PrevTx) -> SigHasher:
+        from .sig_hasher import BitcoinSigHasher
+
         return BitcoinSigHasher()
 
     async def step1_process_inputs(self) -> None:

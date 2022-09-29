@@ -9,7 +9,7 @@ from trezor.wire import DataError
 from apps.bitcoin.sign_tx.tx_weight import TxWeightCalculator
 from apps.common.writers import write_compact_size
 
-from .. import multisig, scripts_decred, writers
+from .. import scripts_decred, writers
 from ..common import ecdsa_hash_pubkey
 from ..writers import write_uint32
 from . import helpers
@@ -210,6 +210,7 @@ class Decred(Bitcoin):
         from trezor.enums import DecredStakingSpendType
         from ..common import SigHashType, ecdsa_sign
         from . import progress
+        from .. import multisig
 
         self_tx_info_tx_inputs_count = self.tx_info.tx.inputs_count  # cache
         self_coin = self.coin  # cache

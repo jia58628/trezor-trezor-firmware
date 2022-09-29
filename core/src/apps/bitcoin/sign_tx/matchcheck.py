@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from ..common import BIP32_WALLET_DEPTH
-
 if TYPE_CHECKING:
     from typing import Any, Generic, TypeVar
 
@@ -87,6 +85,8 @@ class MatchChecker(Generic[T]):
 
 class WalletPathChecker(MatchChecker):
     def attribute_from_tx(self, txio: TxInput | TxOutput) -> Any:
+        from ..common import BIP32_WALLET_DEPTH
+
         if len(txio.address_n) < BIP32_WALLET_DEPTH:
             return None
         return txio.address_n[:-BIP32_WALLET_DEPTH]

@@ -1,7 +1,6 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor import wire
 from trezor.messages import AuthorizeCoinJoin
 
 from apps.common.paths import PATTERN_BIP44, PathSchema
@@ -14,6 +13,7 @@ if TYPE_CHECKING:
     from typing_extensions import Protocol
 
     from trezor.protobuf import MessageType
+    from trezor.wire import Context
 
     from trezor.enums import InputScriptType
     from trezor.messages import (
@@ -245,6 +245,7 @@ def get_schemas_from_patterns(
 
 def _get_coin_by_name(coin_name: str | None) -> coininfo.CoinInfo:
     from apps.common import coininfo
+    from trezor import wire
 
     if coin_name is None:
         coin_name = "Bitcoin"
@@ -256,7 +257,7 @@ def _get_coin_by_name(coin_name: str | None) -> coininfo.CoinInfo:
 
 
 async def _get_keychain_for_coin(
-    ctx: wire.Context,
+    ctx: Context,
     coin: coininfo.CoinInfo,
     unlock_schemas: Iterable[PathSchema] = (),
 ) -> Keychain:
@@ -309,7 +310,7 @@ def _get_unlock_schemas(
 
 def with_keychain(func: HandlerWithCoinInfo[MsgOut]) -> Handler[MsgIn, MsgOut]:
     async def wrapper(
-        ctx: wire.Context,
+        ctx: Context,
         msg: MsgIn,
         auth_msg: MessageType | None = None,
     ) -> MsgOut:

@@ -1,7 +1,6 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor import messages
 from trezor.crypto import hashlib
 from trezor.wire import ProcessError
 
@@ -17,6 +16,7 @@ if TYPE_CHECKING:
         int, CatalystRegistrationPayload | CatalystRegistrationSignature
     ]
 
+    from trezor import messages
     from trezor.wire import Context
 
     from . import seed
@@ -128,6 +128,7 @@ def get_hash_and_supplement(
     network_id: int,
 ) -> tuple[bytes, messages.CardanoTxAuxiliaryDataSupplement]:
     from trezor.enums import CardanoTxAuxiliaryDataSupplementType
+    from trezor import messages
 
     if parameters := auxiliary_data.catalyst_registration_parameters:
         (

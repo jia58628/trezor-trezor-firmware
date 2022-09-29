@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 from apps.common.keychain import auto_keychain
-from apps.monero.signing.state import State
 
 if TYPE_CHECKING:
     from trezor.messages import MoneroTransactionFinalAck
     from apps.common.keychain import Keychain
+    from apps.monero.signing.state import State
     from trezor.wire import Context
 
 
@@ -15,6 +15,7 @@ async def sign_tx(
 ) -> MoneroTransactionFinalAck:
     import gc
     from trezor import log, utils
+    from apps.monero.signing.state import State
 
     state = State(ctx)
     mods = utils.unimport_begin()

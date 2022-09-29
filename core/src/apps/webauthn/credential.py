@@ -11,16 +11,11 @@ from trezor.crypto.curve import ed25519, nist256p1
 from apps.common import cbor, seed
 from apps.common.paths import HARDENED
 
-from . import common
+from .common import COSE_ALG_EDDSA, COSE_ALG_ES256, COSE_CURVE_ED25519, COSE_CURVE_P256
 
 if TYPE_CHECKING:
     from typing import Iterable
     from trezor.crypto import bip32
-
-
-COSE_CURVE_P256 = common.COSE_CURVE_P256  # cache
-COSE_CURVE_ED25519 = common.COSE_CURVE_ED25519  # cache
-COSE_ALG_ES256 = common.COSE_ALG_ES256  # cache
 
 
 # Credential ID values
@@ -300,28 +295,29 @@ class Fido2Credential(Credential):
         return node.private_key()
 
     def public_key(self) -> bytes:
+        from . import common
+
         self_curve = self.curve  # cache
-        _common = common  # cache
 
         if self_curve == COSE_CURVE_P256:
             pubkey = nist256p1.publickey(self._private_key(), False)
             return cbor.encode(
                 {
-                    _common.COSE_KEY_ALG: self.algorithm,
-                    _common.COSE_KEY_KTY: _common.COSE_KEYTYPE_EC2,
-                    _common.COSE_KEY_CRV: self_curve,
-                    _common.COSE_KEY_X: pubkey[1:33],
-                    _common.COSE_KEY_Y: pubkey[33:],
+                    common.COSE_KEY_ALG: self.algorithm,
+                    common.COSE_KEY_KTY: common.COSE_KEYTYPE_EC2,
+                    common.COSE_KEY_CRV: self_curve,
+                    common.COSE_KEY_X: pubkey[1:33],
+                    common.COSE_KEY_Y: pubkey[33:],
                 }
             )
         elif self_curve == COSE_CURVE_ED25519:
             pubkey = ed25519.publickey(self._private_key())
             return cbor.encode(
                 {
-                    _common.COSE_KEY_ALG: self.algorithm,
-                    _common.COSE_KEY_KTY: _common.COSE_KEYTYPE_OKP,
-                    _common.COSE_KEY_CRV: self_curve,
-                    _common.COSE_KEY_X: pubkey,
+                    common.COSE_KEY_ALG: self.algorithm,
+                    common.COSE_KEY_KTY: common.COSE_KEYTYPE_OKP,
+                    common.COSE_KEY_CRV: self_curve,
+                    common.COSE_KEY_X: pubkey,
                 }
             )
         raise TypeError
@@ -333,7 +329,7 @@ class Fido2Credential(Credential):
         ):
             return self._u2f_sign(data)
         elif (self.algorithm, self.curve) == (
-            common.COSE_ALG_EDDSA,
+            COSE_ALG_EDDSA,
             COSE_CURVE_ED25519,
         ):
             return ed25519.sign(
@@ -349,7 +345,7 @@ class Fido2Credential(Credential):
         ):
             return der.encode_seq((b"\x0a" * 32, b"\x0a" * 32))
         elif (self.algorithm, self.curve) == (
-            common.COSE_ALG_EDDSA,
+            COSE_ALG_EDDSA,
             COSE_CURVE_ED25519,
         ):
             return b"\x0a" * 64

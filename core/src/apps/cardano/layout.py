@@ -1,44 +1,39 @@
 from typing import TYPE_CHECKING
 
-from trezor import messages, ui
+from trezor import ui
 from trezor.enums import (
     ButtonRequestType,
     CardanoAddressType,
     CardanoCertificateType,
-    CardanoNativeScriptHashDisplayFormat,
     CardanoNativeScriptType,
 )
 from trezor.strings import format_amount
-from trezor.ui.layouts import (
-    confirm_blob,
-    confirm_metadata,
-    confirm_output,
-    confirm_path_warning,
-    confirm_properties,
-    confirm_text,
-    should_show_more,
-    show_address,
-)
+from trezor.ui import layouts
 
 from apps.common.paths import address_n_to_str
 
-from . import addresses, seed
-from .helpers import bech32, network_ids, protocol_magics
+from . import addresses
+from .helpers import bech32, protocol_magics
 from .helpers.utils import (
     format_account_number,
     format_asset_fingerprint,
     format_optional_int,
     format_stake_pool_id,
-    to_account_path,
 )
+
+confirm_metadata = layouts.confirm_metadata  # cache
+confirm_properties = layouts.confirm_properties  # cache
 
 if TYPE_CHECKING:
     from typing import Literal
 
-    from trezor import wire
-
+    from trezor.wire import Context
+    from trezor import messages
+    from trezor.enums import CardanoNativeScriptHashDisplayFormat
     from trezor.ui.layouts import PropertyType
+
     from .helpers.credential import Credential
+    from .seed import Keychain
 
 
 ADDRESS_TYPE_NAMES = {
@@ -71,14 +66,18 @@ CERTIFICATE_TYPE_NAMES = {
     CardanoCertificateType.STAKE_POOL_REGISTRATION: "Stakepool registration",
 }
 
+BRT_Other = ButtonRequestType.Other  # cache
+
 
 def format_coin_amount(amount: int, network_id: int) -> str:
+    from .helpers import network_ids
+
     currency = "ADA" if network_ids.is_mainnet(network_id) else "tADA"
     return f"{format_amount(amount, 6)} {currency}"
 
 
 async def show_native_script(
-    ctx: wire.Context,
+    ctx: Context,
     script: messages.CardanoNativeScript,
     indices: list[int] | None = None,
 ) -> None:
@@ -145,7 +144,7 @@ async def show_native_script(
         "verify_script",
         "Verify script",
         props,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
     for i, sub_script in enumerate(script_scripts):
@@ -153,10 +152,12 @@ async def show_native_script(
 
 
 async def show_script_hash(
-    ctx: wire.Context,
+    ctx: Context,
     script_hash: bytes,
     display_format: CardanoNativeScriptHashDisplayFormat,
 ) -> None:
+    from trezor.enums import CardanoNativeScriptHashDisplayFormat
+
     CNSHDF = CardanoNativeScriptHashDisplayFormat  # cache
 
     assert display_format in (
@@ -170,21 +171,21 @@ async def show_script_hash(
             "verify_script",
             "Verify script",
             (("Script hash:", bech32.encode(bech32.HRP_SCRIPT_HASH, script_hash)),),
-            br_code=ButtonRequestType.Other,
+            br_code=BRT_Other,
         )
     elif display_format == CNSHDF.POLICY_ID:
-        await confirm_blob(
+        await layouts.confirm_blob(
             ctx,
             "verify_script",
             "Verify script",
             script_hash,
             "Policy ID:",
-            br_code=ButtonRequestType.Other,
+            br_code=BRT_Other,
         )
 
 
-async def show_tx_init(ctx: wire.Context, title: str) -> bool:
-    should_show_details = await should_show_more(
+async def show_tx_init(ctx: Context, title: str) -> bool:
+    should_show_details = await layouts.should_show_more(
         ctx,
         "Confirm transaction",
         (
@@ -204,7 +205,7 @@ async def show_tx_init(ctx: wire.Context, title: str) -> bool:
     return should_show_details
 
 
-async def confirm_input(ctx: wire.Context, input: messages.CardanoTxInput) -> None:
+async def confirm_input(ctx: Context, input: messages.CardanoTxInput) -> None:
     await confirm_properties(
         ctx,
         "confirm_input",
@@ -213,12 +214,12 @@ async def confirm_input(ctx: wire.Context, input: messages.CardanoTxInput) -> No
             ("Input ID:", input.prev_hash),
             ("Input index:", str(input.prev_index)),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_sending(
-    ctx: wire.Context,
+    ctx: Context,
     ada_amount: int,
     to: str,
     output_type: Literal["address", "change", "collateral-return"],
@@ -230,7 +231,7 @@ async def confirm_sending(
         "collateral-return": "Collateral return",
     }[output_type]
 
-    await confirm_output(
+    await layouts.confirm_output(
         ctx,
         to,
         format_coin_amount(ada_amount, network_id),
@@ -240,12 +241,12 @@ async def confirm_sending(
         width_paginated=17,
         to_str="\nto\n",
         to_paginated=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_sending_token(
-    ctx: wire.Context, policy_id: bytes, token: messages.CardanoToken
+    ctx: Context, policy_id: bytes, token: messages.CardanoToken
 ) -> None:
     assert token.amount is not None  # _validate_token
 
@@ -263,11 +264,11 @@ async def confirm_sending_token(
             ),
             ("Amount sent:", format_amount(token.amount, 0)),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def confirm_datum_hash(ctx: wire.Context, datum_hash: bytes) -> None:
+async def confirm_datum_hash(ctx: Context, datum_hash: bytes) -> None:
     await confirm_properties(
         ctx,
         "confirm_datum_hash",
@@ -278,12 +279,12 @@ async def confirm_datum_hash(ctx: wire.Context, datum_hash: bytes) -> None:
                 bech32.encode(bech32.HRP_OUTPUT_DATUM_HASH, datum_hash),
             ),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_inline_datum(
-    ctx: wire.Context, first_chunk: bytes, inline_datum_size: int
+    ctx: Context, first_chunk: bytes, inline_datum_size: int
 ) -> None:
     await _confirm_data_chunk(
         ctx,
@@ -295,7 +296,7 @@ async def confirm_inline_datum(
 
 
 async def confirm_reference_script(
-    ctx: wire.Context, first_chunk: bytes, reference_script_size: int
+    ctx: Context, first_chunk: bytes, reference_script_size: int
 ) -> None:
     await _confirm_data_chunk(
         ctx,
@@ -307,7 +308,7 @@ async def confirm_reference_script(
 
 
 async def _confirm_data_chunk(
-    ctx: wire.Context, br_type: str, title: str, first_chunk: bytes, data_size: int
+    ctx: Context, br_type: str, title: str, first_chunk: bytes, data_size: int
 ) -> None:
     MAX_DISPLAYED_SIZE = 56
     displayed_bytes = first_chunk[:MAX_DISPLAYED_SIZE]
@@ -325,12 +326,12 @@ async def _confirm_data_chunk(
         br_type,
         title="Confirm transaction",
         props=props,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def show_credentials(
-    ctx: wire.Context,
+    ctx: Context,
     payment_credential: Credential,
     stake_credential: Credential,
 ) -> None:
@@ -340,7 +341,7 @@ async def show_credentials(
 
 
 async def show_change_output_credentials(
-    ctx: wire.Context,
+    ctx: Context,
     payment_credential: Credential,
     stake_credential: Credential,
 ) -> None:
@@ -350,7 +351,7 @@ async def show_change_output_credentials(
 
 
 async def show_device_owned_output_credentials(
-    ctx: wire.Context,
+    ctx: Context,
     payment_credential: Credential,
     stake_credential: Credential,
     show_both_credentials: bool,
@@ -362,7 +363,7 @@ async def show_device_owned_output_credentials(
 
 
 async def _show_credential(
-    ctx: wire.Context,
+    ctx: Context,
     credential: Credential,
     intro_text: str,
     is_output: bool,
@@ -417,16 +418,16 @@ async def _show_credential(
         props,
         icon,
         icon_color,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_path(ctx: wire.Context, path: list[int], title: str) -> None:
-    await confirm_path_warning(ctx, address_n_to_str(path), path_type=title)
+async def warn_path(ctx: Context, path: list[int], title: str) -> None:
+    await layouts.confirm_path_warning(ctx, address_n_to_str(path), path_type=title)
 
 
 async def warn_tx_output_contains_tokens(
-    ctx: wire.Context, is_collateral_return: bool = False
+    ctx: Context, is_collateral_return: bool = False
 ) -> None:
     content = (
         "The collateral return\noutput contains tokens."
@@ -439,65 +440,67 @@ async def warn_tx_output_contains_tokens(
         "Confirm transaction",
         content,
         larger_vspace=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_tx_contains_mint(ctx: wire.Context) -> None:
+async def warn_tx_contains_mint(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "confirm_tokens",
         "Confirm transaction",
         "The transaction contains minting or burning of tokens.",
         larger_vspace=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_tx_output_no_datum(ctx: wire.Context) -> None:
+async def warn_tx_output_no_datum(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "confirm_no_datum_hash",
         "Confirm transaction",
         "The following transaction output contains a script address, but does not contain a datum.",
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_no_script_data_hash(ctx: wire.Context) -> None:
+async def warn_no_script_data_hash(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "confirm_no_script_data_hash",
         "Confirm transaction",
         "The transaction contains no script data hash. Plutus script will not be able to run.",
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_no_collateral_inputs(ctx: wire.Context) -> None:
+async def warn_no_collateral_inputs(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "confirm_no_collateral_inputs",
         "Confirm transaction",
         "The transaction contains no collateral inputs. Plutus script will not be able to run.",
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_unknown_total_collateral(ctx: wire.Context) -> None:
+async def warn_unknown_total_collateral(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "confirm_unknown_total_collateral",
         "Warning",
         "Unknown collateral amount, check all items carefully.",
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_witness_request(
-    ctx: wire.Context,
+    ctx: Context,
     witness_path: list[int],
 ) -> None:
+    from . import seed
+
     if seed.is_multisig_path(witness_path):
         path_title = "multi-sig path"
     elif seed.is_minting_path(witness_path):
@@ -505,18 +508,18 @@ async def confirm_witness_request(
     else:
         path_title = "path"
 
-    await confirm_text(
+    await layouts.confirm_text(
         ctx,
         "confirm_total",
         "Confirm transaction",
         address_n_to_str(witness_path),
         f"Sign transaction with {path_title}:",
-        ButtonRequestType.Other,
+        BRT_Other,
     )
 
 
 async def confirm_tx(
-    ctx: wire.Context,
+    ctx: Context,
     fee: int,
     network_id: int,
     protocol_magic: int,
@@ -551,12 +554,12 @@ async def confirm_tx(
         "Confirm transaction",
         props,
         hold=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_certificate(
-    ctx: wire.Context, certificate: messages.CardanoTxCertificate
+    ctx: Context, certificate: messages.CardanoTxCertificate
 ) -> None:
     # stake pool registration requires custom confirmation logic not covered
     # in this call
@@ -578,12 +581,12 @@ async def confirm_certificate(
         "confirm_certificate",
         "Confirm transaction",
         props,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_stake_pool_parameters(
-    ctx: wire.Context,
+    ctx: Context,
     pool_parameters: messages.CardanoPoolParametersType,
     network_id: int,
 ) -> None:
@@ -608,17 +611,19 @@ async def confirm_stake_pool_parameters(
                 None,
             ),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_stake_pool_owner(
-    ctx: wire.Context,
-    keychain: seed.Keychain,
+    ctx: Context,
+    keychain: Keychain,
     owner: messages.CardanoPoolOwner,
     protocol_magic: int,
     network_id: int,
 ) -> None:
+    from trezor import messages
+
     props: list[tuple[str, str | None]] = []
     if owner.staking_key_path:
         props.append(("Pool owner:", address_n_to_str(owner.staking_key_path)))
@@ -658,12 +663,12 @@ async def confirm_stake_pool_owner(
         "confirm_pool_owners",
         "Confirm transaction",
         props,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_stake_pool_metadata(
-    ctx: wire.Context,
+    ctx: Context,
     metadata: messages.CardanoPoolMetadataType | None,
 ) -> None:
     if metadata is None:
@@ -672,7 +677,7 @@ async def confirm_stake_pool_metadata(
             "confirm_pool_metadata",
             "Confirm transaction",
             (("Pool has no metadata (anonymous pool)", None),),
-            br_code=ButtonRequestType.Other,
+            br_code=BRT_Other,
         )
         return
 
@@ -684,12 +689,12 @@ async def confirm_stake_pool_metadata(
             ("Pool metadata url:", metadata.url),
             ("Pool metadata hash:", metadata.hash),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_stake_pool_registration_final(
-    ctx: wire.Context,
+    ctx: Context,
     protocol_magic: int,
     ttl: int | None,
     validity_interval_start: int | None,
@@ -705,12 +710,12 @@ async def confirm_stake_pool_registration_final(
             ("TTL:", format_optional_int(ttl)),
         ),
         hold=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_withdrawal(
-    ctx: wire.Context,
+    ctx: Context,
     withdrawal: messages.CardanoTxWithdrawal,
     address_bytes: bytes,
     network_id: int,
@@ -735,13 +740,15 @@ async def confirm_withdrawal(
         "confirm_withdrawal",
         "Confirm transaction",
         props,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 def _format_stake_credential(
     path: list[int], script_hash: bytes | None, key_hash: bytes | None
 ) -> tuple[str, str]:
+    from .helpers.utils import to_account_path
+
     if path:
         return (
             f"for account {format_account_number(path)}:",
@@ -757,7 +764,7 @@ def _format_stake_credential(
 
 
 async def confirm_catalyst_registration(
-    ctx: wire.Context,
+    ctx: Context,
     public_key: str,
     staking_path: list[int],
     reward_address: str,
@@ -777,24 +784,22 @@ async def confirm_catalyst_registration(
             ("Rewards go to:", reward_address),
             ("Nonce:", str(nonce)),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def show_auxiliary_data_hash(
-    ctx: wire.Context, auxiliary_data_hash: bytes
-) -> None:
+async def show_auxiliary_data_hash(ctx: Context, auxiliary_data_hash: bytes) -> None:
     await confirm_properties(
         ctx,
         "confirm_auxiliary_data",
         "Confirm transaction",
         (("Auxiliary data hash:", auxiliary_data_hash),),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_token_minting(
-    ctx: wire.Context, policy_id: bytes, token: messages.CardanoToken
+    ctx: Context, policy_id: bytes, token: messages.CardanoToken
 ) -> None:
     assert token.mint_amount is not None  # _validate_token
     await confirm_properties(
@@ -814,22 +819,22 @@ async def confirm_token_minting(
                 format_amount(token.mint_amount, 0),
             ),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def warn_tx_network_unverifiable(ctx: wire.Context) -> None:
+async def warn_tx_network_unverifiable(ctx: Context) -> None:
     await confirm_metadata(
         ctx,
         "warning_no_outputs",
         "Warning",
         "Transaction has no outputs, network cannot be verified.",
         larger_vspace=True,
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
-async def confirm_script_data_hash(ctx: wire.Context, script_data_hash: bytes) -> None:
+async def confirm_script_data_hash(ctx: Context, script_data_hash: bytes) -> None:
     await confirm_properties(
         ctx,
         "confirm_script_data_hash",
@@ -840,12 +845,12 @@ async def confirm_script_data_hash(ctx: wire.Context, script_data_hash: bytes) -
                 bech32.encode(bech32.HRP_SCRIPT_DATA_HASH, script_data_hash),
             ),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_collateral_input(
-    ctx: wire.Context, collateral_input: messages.CardanoTxCollateralInput
+    ctx: Context, collateral_input: messages.CardanoTxCollateralInput
 ) -> None:
     await confirm_properties(
         ctx,
@@ -855,12 +860,12 @@ async def confirm_collateral_input(
             ("Collateral input ID:", collateral_input.prev_hash),
             ("Collateral input index:", str(collateral_input.prev_index)),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_reference_input(
-    ctx: wire.Context, reference_input: messages.CardanoTxReferenceInput
+    ctx: Context, reference_input: messages.CardanoTxReferenceInput
 ) -> None:
     await confirm_properties(
         ctx,
@@ -870,12 +875,12 @@ async def confirm_reference_input(
             ("Reference input ID:", reference_input.prev_hash),
             ("Reference input index:", str(reference_input.prev_index)),
         ),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def confirm_required_signer(
-    ctx: wire.Context, required_signer: messages.CardanoTxRequiredSigner
+    ctx: Context, required_signer: messages.CardanoTxRequiredSigner
 ) -> None:
     assert (
         required_signer.key_hash is not None or required_signer.key_path
@@ -891,12 +896,12 @@ async def confirm_required_signer(
         "confirm_required_signer",
         "Confirm transaction",
         (("Required signer", formatted_signer),),
-        br_code=ButtonRequestType.Other,
+        br_code=BRT_Other,
     )
 
 
 async def show_cardano_address(
-    ctx: wire.Context,
+    ctx: Context,
     address_parameters: messages.CardanoAddressParametersType,
     address: str,
     protocol_magic: int,
@@ -925,7 +930,7 @@ async def show_cardano_address(
             address_extra = address_n_to_str(address_parameters.address_n_staking)
             title_qr = address_n_to_str(address_parameters.address_n_staking)
 
-    await show_address(
+    await layouts.show_address(
         ctx,
         address,
         title=title,

@@ -21,7 +21,7 @@ def address_from_bytes(address_bytes: bytes, network: NetworkInfo | None = None)
     address_hex = hexlify(address_bytes).decode()
     digest = sha3_256((prefix + address_hex).encode(), keccak=True).digest()
 
-    def maybe_upper(i: int) -> str:
+    def _maybe_upper(i: int) -> str:
         """Uppercase i-th letter only if the corresponding nibble has high bit set."""
         digest_byte = digest[i // 2]
         hex_letter = address_hex[i]
@@ -36,7 +36,7 @@ def address_from_bytes(address_bytes: bytes, network: NetworkInfo | None = None)
         else:
             return hex_letter
 
-    return "0x" + "".join(maybe_upper(i) for i in range(len(address_hex)))
+    return "0x" + "".join(_maybe_upper(i) for i in range(len(address_hex)))
 
 
 def bytes_from_address(address: str) -> bytes:

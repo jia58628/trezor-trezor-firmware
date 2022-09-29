@@ -2,10 +2,7 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor import messages
-from trezor.crypto import hashlib
-from trezor.crypto.curve import ed25519
 from trezor.enums import (
-    CardanoAddressType,
     CardanoCertificateType,
     CardanoTxOutputSerializationFormat,
     CardanoTxWitnessType,
@@ -13,41 +10,23 @@ from trezor.enums import (
 from trezor.messages import CardanoTxItemAck, CardanoTxOutput
 from trezor.wire import DataError, ProcessError
 
-from apps.common import cbor, safety_checks
+from apps.common import safety_checks
 
-from .. import addresses, auxiliary_data, certificates, layout, seed
-from ..helpers import (
-    ADDRESS_KEY_HASH_SIZE,
-    INPUT_PREV_HASH_SIZE,
-    LOVELACE_MAX_SUPPLY,
-    OUTPUT_DATUM_HASH_SIZE,
-    SCRIPT_DATA_HASH_SIZE,
-)
-from ..helpers.account_path_check import AccountPathChecker
-from ..helpers.credential import Credential, should_show_credentials
-from ..helpers.hash_builder_collection import (
-    HashBuilderDict,
-    HashBuilderEmbeddedCBOR,
-    HashBuilderList,
-)
-from ..helpers.paths import (
-    CERTIFICATE_PATH_NAME,
-    CHANGE_OUTPUT_PATH_NAME,
-    CHANGE_OUTPUT_STAKING_PATH_NAME,
-    POOL_OWNER_STAKING_PATH_NAME,
-    SCHEMA_STAKING,
-)
-from ..helpers.utils import (
-    derive_public_key,
-    get_public_key_hash,
-    validate_network_info,
-    validate_stake_credential,
-)
+from .. import addresses, certificates, layout, seed
+from ..helpers import INPUT_PREV_HASH_SIZE, LOVELACE_MAX_SUPPLY
+from ..helpers.credential import Credential
+from ..helpers.hash_builder_collection import HashBuilderDict, HashBuilderList
+from ..helpers.paths import SCHEMA_STAKING
+from ..helpers.utils import derive_public_key
 
 if TYPE_CHECKING:
     from typing import Any, Awaitable, ClassVar
-    from apps.common.paths import PathSchema
     from trezor.wire import Context
+    from trezor.enums import CardanoAddressType
+    from apps.common.paths import PathSchema
+    from apps.common import cbor
+
+    from ..helpers.hash_builder_collection import HashBuilderEmbeddedCBOR
 
     CardanoTxResponseType = CardanoTxItemAck | messages.CardanoTxWitnessResponse
 
@@ -101,6 +80,8 @@ class Signer:
         msg: messages.CardanoSignTxInit,
         keychain: seed.Keychain,
     ) -> None:
+        from ..helpers.account_path_check import AccountPathChecker
+
         self.ctx = ctx
         self.msg = msg
         self.keychain = keychain
@@ -132,6 +113,8 @@ class Signer:
         self.should_show_details = False
 
     async def sign(self) -> None:
+        from trezor.crypto import hashlib
+
         hash_fn = hashlib.blake2b(outlen=32)
         self.tx_dict.start(hash_fn)
         with self.tx_dict:
@@ -233,6 +216,8 @@ class Signer:
                 await self._process_reference_inputs(reference_inputs_list)
 
     def _validate_tx_init(self) -> None:
+        from ..helpers.utils import validate_network_info
+
         self_msg = self.msg  # cache
 
         if self_msg.fee > LOVELACE_MAX_SUPPLY:
@@ -321,12 +306,16 @@ class Signer:
             raise RuntimeError  # should be unreachable
 
     def _validate_output(self, output: CardanoTxOutput) -> None:
-        if output.address_parameters is not None and output.address is not None:
+        from ..helpers import OUTPUT_DATUM_HASH_SIZE
+
+        output_address_parameters = output.address_parameters  # cache
+
+        if output_address_parameters is not None and output.address is not None:
             raise ProcessError("Invalid output")
 
-        if output.address_parameters is not None:
-            addresses.validate_output_address_parameters(output.address_parameters)
-            self._fail_if_strict_and_unusual(output.address_parameters)
+        if output_address_parameters is not None:
+            addresses.validate_output_address_parameters(output_address_parameters)
+            self._fail_if_strict_and_unusual(output_address_parameters)
         elif output.address is not None:
             addresses.validate_output_address(
                 output.address, self.msg.protocol_magic, self.msg.network_id
@@ -428,6 +417,8 @@ class Signer:
 
     def _is_simple_change_output(self, output: CardanoTxOutput) -> bool:
         """Used to determine whether an output is a change output with ordinary credentials."""
+        from ..helpers.credential import should_show_credentials
+
         return output.address_parameters is not None and not should_show_credentials(
             output.address_parameters
         )
@@ -467,6 +458,8 @@ class Signer:
         This output format corresponds to the post-Alonzo format in CDDL.
         Note that it is to be used also for outputs with no Plutus elements.
         """
+        from ..helpers.hash_builder_collection import HashBuilderEmbeddedCBOR
+
         address = self._get_output_address(output)
         output_dict.add(_BABBAGE_OUTPUT_KEY_ADDRESS, address)
 
@@ -728,6 +721,8 @@ class Signer:
     async def _show_certificate(
         self, certificate: messages.CardanoTxCertificate
     ) -> None:
+        from ..helpers.paths import CERTIFICATE_PATH_NAME
+
         if certificate.path:
             await self._fail_or_warn_if_invalid_path(
                 SCHEMA_STAKING, certificate.path, CERTIFICATE_PATH_NAME
@@ -766,6 +761,8 @@ class Signer:
         certificates.assert_cond(owners_as_path_count == 1)
 
     async def _show_pool_owner(self, owner: messages.CardanoPoolOwner) -> None:
+        from ..helpers.paths import POOL_OWNER_STAKING_PATH_NAME
+
         if owner.staking_key_path:
             await self._fail_or_warn_if_invalid_path(
                 SCHEMA_STAKING, owner.staking_key_path, POOL_OWNER_STAKING_PATH_NAME
@@ -808,6 +805,8 @@ class Signer:
             withdrawals_dict.add(address_bytes, withdrawal.amount)
 
     def _validate_withdrawal(self, withdrawal: messages.CardanoTxWithdrawal) -> None:
+        from ..helpers.utils import validate_stake_credential
+
         validate_stake_credential(
             withdrawal.path,
             withdrawal.script_hash,
@@ -823,6 +822,8 @@ class Signer:
     # auxiliary data
 
     async def _process_auxiliary_data(self) -> None:
+        from .. import auxiliary_data
+
         self_msg = self.msg  # cache
 
         data: messages.CardanoTxAuxiliaryData = await self.ctx.call(
@@ -905,6 +906,8 @@ class Signer:
         self.tx_dict.add(_TX_BODY_KEY_SCRIPT_DATA_HASH, self.msg.script_data_hash)
 
     def _validate_script_data_hash(self) -> None:
+        from ..helpers import SCRIPT_DATA_HASH_SIZE
+
         assert self.msg.script_data_hash is not None
         if len(self.msg.script_data_hash) != SCRIPT_DATA_HASH_SIZE:
             raise ProcessError("Invalid script data hash")
@@ -943,6 +946,8 @@ class Signer:
     async def _process_required_signers(
         self, required_signers_list: HashBuilderList[bytes]
     ) -> None:
+        from ..helpers.utils import get_public_key_hash
+
         for _ in range(self.msg.required_signers_count):
             required_signer: messages.CardanoTxRequiredSigner = await self.ctx.call(
                 CardanoTxItemAck(), messages.CardanoTxRequiredSigner
@@ -960,19 +965,23 @@ class Signer:
     def _validate_required_signer(
         self, required_signer: messages.CardanoTxRequiredSigner
     ) -> None:
+        from ..helpers import ADDRESS_KEY_HASH_SIZE
+
+        required_signer_key_path = required_signer.key_path  # cache
+
         INVALID_REQUIRED_SIGNER = ProcessError("Invalid required signer")
 
-        if required_signer.key_hash and required_signer.key_path:
+        if required_signer.key_hash and required_signer_key_path:
             raise INVALID_REQUIRED_SIGNER
 
         if required_signer.key_hash:
             if len(required_signer.key_hash) != ADDRESS_KEY_HASH_SIZE:
                 raise INVALID_REQUIRED_SIGNER
-        elif required_signer.key_path:
+        elif required_signer_key_path:
             if not (
-                seed.is_shelley_path(required_signer.key_path)
-                or seed.is_multisig_path(required_signer.key_path)
-                or seed.is_minting_path(required_signer.key_path)
+                seed.is_shelley_path(required_signer_key_path)
+                or seed.is_multisig_path(required_signer_key_path)
+                or seed.is_minting_path(required_signer_key_path)
             ):
                 raise INVALID_REQUIRED_SIGNER
         else:
@@ -1164,6 +1173,8 @@ class Signer:
     def _derive_withdrawal_address_bytes(
         self, withdrawal: messages.CardanoTxWithdrawal
     ) -> bytes:
+        from trezor.enums import CardanoAddressType
+
         reward_address_type = (
             CardanoAddressType.REWARD
             if withdrawal.path or withdrawal.key_hash
@@ -1218,6 +1229,8 @@ class Signer:
         )
 
     def _sign_tx_hash(self, tx_body_hash: bytes, path: list[int]) -> bytes:
+        from trezor.crypto.curve import ed25519
+
         node = self.keychain.derive(path)
         return ed25519.sign_ext(
             node.private_key(), node.private_key_ext(), tx_body_hash
@@ -1238,6 +1251,11 @@ class Signer:
     def _fail_if_strict_and_unusual(
         self, address_parameters: messages.CardanoAddressParametersType
     ) -> None:
+        from ..helpers.paths import (
+            CHANGE_OUTPUT_PATH_NAME,
+            CHANGE_OUTPUT_STAKING_PATH_NAME,
+        )
+
         if not safety_checks.is_strict():
             return
 

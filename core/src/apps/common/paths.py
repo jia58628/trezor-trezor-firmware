@@ -367,7 +367,7 @@ def path_is_hardened(address_n: Bip32Path) -> bool:
 
 
 def address_n_to_str(address_n: Iterable[int]) -> str:
-    def path_item(i: int) -> str:
+    def _path_item(i: int) -> str:
         if i & HARDENED:
             return str(i ^ HARDENED) + "'"
         else:
@@ -376,4 +376,4 @@ def address_n_to_str(address_n: Iterable[int]) -> str:
     if not address_n:
         return "m"
 
-    return "m/" + "/".join(path_item(i) for i in address_n)
+    return "m/" + "/".join(_path_item(i) for i in address_n)

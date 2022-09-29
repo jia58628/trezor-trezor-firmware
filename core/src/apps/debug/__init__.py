@@ -68,7 +68,7 @@ if __debug__:
         if storage.watch_layout_changes or layout_change_chan.takers:
             layout_change_chan.publish(storage.current_content)
 
-    async def dispatch_debuglink_decision(msg: DebugLinkDecision) -> None:
+    async def _dispatch_debuglink_decision(msg: DebugLinkDecision) -> None:
         from trezor.enums import DebugButton, DebugSwipeDirection
         from trezor.ui import Result
         from trezor.ui.components.common import (
@@ -108,7 +108,7 @@ if __debug__:
     async def debuglink_decision_dispatcher() -> None:
         while True:
             msg = await debuglink_decision_chan.take()
-            await dispatch_debuglink_decision(msg)
+            await _dispatch_debuglink_decision(msg)
 
     async def return_layout_change() -> None:
         content = await layout_change_chan.take()

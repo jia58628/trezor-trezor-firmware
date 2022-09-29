@@ -1,13 +1,8 @@
 from typing import TYPE_CHECKING
 
-from trezor import strings, ui
+from trezor import ui
 from trezor.enums import ButtonRequestType
-from trezor.ui.layouts import (
-    confirm_action,
-    confirm_blob,
-    confirm_metadata,
-    confirm_output,
-)
+from trezor.ui.layouts import confirm_action, confirm_metadata
 from trezor.ui.popup import Popup
 
 DUMMY_PAYMENT_ID = b"\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -24,7 +19,12 @@ if TYPE_CHECKING:
     from .signing.state import State
 
 
+BRT_SignTx = ButtonRequestType.SignTx  # cache
+
+
 def _format_amount(value: int) -> str:
+    from trezor import strings
+
     return f"{strings.format_amount(value, 12)} XMR"
 
 
@@ -36,7 +36,7 @@ async def require_confirm_watchkey(ctx: Context) -> None:
         description="Do you really want to export watch-only credentials?",
         icon=ui.ICON_SEND,
         icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
@@ -48,7 +48,7 @@ async def require_confirm_keyimage_sync(ctx: Context) -> None:
         description="Do you really want to\nsync key images?",
         icon=ui.ICON_SEND,
         icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
@@ -60,7 +60,7 @@ async def require_confirm_live_refresh(ctx: Context) -> None:
         description="Do you really want to\nstart refresh?",
         icon=ui.ICON_SEND,
         icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
@@ -77,7 +77,7 @@ async def require_confirm_tx_key(ctx: Context, export_key: bool = False) -> None
         description=description,
         icon=ui.ICON_SEND,
         icon_color=ui.GREEN,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
@@ -135,6 +135,7 @@ async def _require_confirm_output(
     """
     from apps.monero.xmr.addresses import encode_addr
     from apps.monero.xmr.networks import net_version
+    from trezor.ui.layouts import confirm_output
 
     version = net_version(network_type, dst.is_subaddress, payment_id is not None)
     addr = encode_addr(
@@ -146,17 +147,19 @@ async def _require_confirm_output(
         addr,
         _format_amount(dst.amount),
         ui.BOLD,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
 async def _require_confirm_payment_id(ctx: Context, payment_id: bytes) -> None:
+    from trezor.ui.layouts import confirm_blob
+
     await confirm_blob(
         ctx,
         "confirm_payment_id",
         "Payment ID",
         payment_id,
-        br_code=ButtonRequestType.SignTx,
+        br_code=BRT_SignTx,
     )
 
 
@@ -179,7 +182,7 @@ async def _require_confirm_unlock_time(ctx: Context, unlock_time: int) -> None:
         "Confirm unlock time",
         "Unlock time for this transaction is set to {}",
         str(unlock_time),
-        ButtonRequestType.SignTx,
+        BRT_SignTx,
     )
 
 
@@ -190,14 +193,22 @@ class TransactionStep(ui.Component):
         self.info = info
 
     def on_render(self) -> None:
+        _ui = ui  # cache
+
         state = self.state
         info = self.info
-        ui.header("Signing transaction", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
+        _ui.header(
+            "Signing transaction", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE
+        )
         p = 1000 * state.progress_cur // state.progress_total
-        ui.display.loader(p, False, -4, ui.WHITE, ui.BG)
-        ui.display.text_center(ui.WIDTH // 2, 210, info[0], ui.NORMAL, ui.FG, ui.BG)
+        _ui.display.loader(p, False, -4, _ui.WHITE, _ui.BG)
+        _ui.display.text_center(
+            _ui.WIDTH // 2, 210, info[0], _ui.NORMAL, _ui.FG, _ui.BG
+        )
         if len(info) > 1:
-            ui.display.text_center(ui.WIDTH // 2, 235, info[1], ui.NORMAL, ui.FG, ui.BG)
+            _ui.display.text_center(
+                _ui.WIDTH // 2, 235, info[1], _ui.NORMAL, _ui.FG, _ui.BG
+            )
 
 
 class KeyImageSyncStep(ui.Component):
@@ -207,11 +218,13 @@ class KeyImageSyncStep(ui.Component):
         self.total_num = total_num
 
     def on_render(self) -> None:
+        _ui = ui  # cache
+
         current = self.current
         total_num = self.total_num
-        ui.header("Syncing", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
+        _ui.header("Syncing", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE)
         p = (1000 * (current + 1) // total_num) if total_num > 0 else 0
-        ui.display.loader(p, False, 18, ui.WHITE, ui.BG)
+        _ui.display.loader(p, False, 18, _ui.WHITE, _ui.BG)
 
 
 class LiveRefreshStep(ui.Component):

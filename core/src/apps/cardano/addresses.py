@@ -5,7 +5,7 @@ from trezor.crypto import base58
 from trezor.enums import CardanoAddressType
 from trezor.wire import ProcessError
 
-from . import byron_addresses, seed
+from . import byron_addresses
 from .helpers import bech32
 from .helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
 from .helpers.utils import get_public_key_hash
@@ -13,6 +13,7 @@ from .helpers.utils import get_public_key_hash
 if TYPE_CHECKING:
     from typing import Any
     from trezor import messages
+    from .seed import Keychain
 
 
 ADDRESS_TYPES_SHELLEY = (
@@ -55,6 +56,8 @@ def assert_params_cond(condition: bool) -> None:
 def validate_address_parameters(
     parameters: messages.CardanoAddressParametersType,
 ) -> None:
+    from . import seed
+
     _validate_address_parameters_structure(parameters)
 
     address_type = parameters.address_type  # cache
@@ -327,7 +330,7 @@ def _get_network_id(address: bytes) -> int:
 
 
 def derive_human_readable(
-    keychain: seed.Keychain,
+    keychain: Keychain,
     parameters: messages.CardanoAddressParametersType,
     protocol_magic: int,
     network_id: int,
@@ -348,7 +351,7 @@ def encode_human_readable(address_bytes: bytes) -> str:
 
 
 def derive_bytes(
-    keychain: seed.Keychain,
+    keychain: Keychain,
     parameters: messages.CardanoAddressParametersType,
     protocol_magic: int,
     network_id: int,
@@ -364,7 +367,7 @@ def derive_bytes(
 
 
 def _derive_shelley_address(
-    keychain: seed.Keychain,
+    keychain: Keychain,
     parameters: messages.CardanoAddressParametersType,
     network_id: int,
 ) -> bytes:
@@ -379,7 +382,7 @@ def _derive_shelley_address(
 
 
 def _get_payment_part(
-    keychain: seed.Keychain, parameters: messages.CardanoAddressParametersType
+    keychain: Keychain, parameters: messages.CardanoAddressParametersType
 ) -> bytes:
     if parameters.address_n:
         return get_public_key_hash(keychain, parameters.address_n)
@@ -390,7 +393,7 @@ def _get_payment_part(
 
 
 def _get_staking_part(
-    keychain: seed.Keychain, parameters: messages.CardanoAddressParametersType
+    keychain: Keychain, parameters: messages.CardanoAddressParametersType
 ) -> bytes:
     from .helpers.utils import variable_length_encode
 

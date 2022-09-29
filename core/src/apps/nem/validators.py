@@ -90,6 +90,8 @@ def validate(msg: NEMSignTx) -> None:
             raise _ProcessError("Invalid creation sink address")
 
         msg_mosaic_creation_definition = msg_mosaic_creation.definition  # cache
+        supply = msg_mosaic_creation_definition.supply  # cache
+        divisibility = msg_mosaic_creation_definition.divisibility  # cache
 
         if msg_mosaic_creation_definition.name is not None:
             raise _ProcessError("Name not allowed in mosaic creation transactions")
@@ -98,17 +100,11 @@ def validate(msg: NEMSignTx) -> None:
         if msg_mosaic_creation_definition.networks:
             raise _ProcessError("Networks not allowed in mosaic creation transactions")
 
-        if (
-            msg_mosaic_creation_definition.supply is not None
-            and msg_mosaic_creation_definition.divisibility is None
-        ):
+        if supply is not None and divisibility is None:
             raise _ProcessError(
                 "Definition divisibility needs to be provided when supply is"
             )
-        if (
-            msg_mosaic_creation_definition.supply is None
-            and msg_mosaic_creation_definition.divisibility is not None
-        ):
+        if supply is None and divisibility is not None:
             raise _ProcessError(
                 "Definition supply needs to be provided when divisibility is"
             )
@@ -123,9 +119,9 @@ def validate(msg: NEMSignTx) -> None:
             if msg_mosaic_creation_definition.levy_mosaic is None:
                 raise _ProcessError("No levy mosaic name provided")
 
-            if msg_mosaic_creation_definition.divisibility is None:
+            if divisibility is None:
                 raise _ProcessError("No divisibility provided")
-            if msg_mosaic_creation_definition.supply is None:
+            if supply is None:
                 raise _ProcessError("No supply provided")
             if msg_mosaic_creation_definition.mutable_supply is None:
                 raise _ProcessError("No supply mutability provided")
@@ -134,9 +130,9 @@ def validate(msg: NEMSignTx) -> None:
             if msg_mosaic_creation_definition.description is None:
                 raise _ProcessError("No description provided")
 
-            if msg_mosaic_creation_definition.divisibility > NEM_MAX_DIVISIBILITY:
+            if divisibility > NEM_MAX_DIVISIBILITY:
                 raise _ProcessError("Invalid divisibility provided")
-            if msg_mosaic_creation_definition.supply > NEM_MAX_SUPPLY:
+            if supply > NEM_MAX_SUPPLY:
                 raise _ProcessError("Invalid supply provided")
 
             if not nem_validate_address(

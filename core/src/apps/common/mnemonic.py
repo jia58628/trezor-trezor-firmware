@@ -1,6 +1,10 @@
+from typing import TYPE_CHECKING
+
 import storage.device as storage_device
-from trezor import ui, utils
-from trezor.enums import BackupType
+from trezor import utils
+
+if TYPE_CHECKING:
+    from trezor.enums import BackupType
 
 
 def get() -> tuple[bytes | None, BackupType]:
@@ -20,6 +24,8 @@ def is_bip39() -> bool:
     If False then SLIP-39 (either Basic or Advanced).
     Other invalid values are checked directly in storage.
     """
+    from trezor.enums import BackupType
+
     return get_type() == BackupType.Bip39
 
 
@@ -94,6 +100,8 @@ def _start_progress() -> None:
 
 
 def _render_progress(progress: int, total: int) -> None:
+    from trezor import ui
+
     p = 1000 * progress // total
     ui.display.loader(p, False, 18, ui.WHITE, ui.BG)
     ui.refresh()

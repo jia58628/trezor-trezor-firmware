@@ -1,11 +1,7 @@
 from micropython import const
 from typing import TYPE_CHECKING
 
-from trezor.crypto.hashlib import sha256
-from trezor.utils import HashWriter
-
 from .. import common, writers
-from .matchcheck import MultisigFingerprintChecker, WalletPathChecker
 
 if TYPE_CHECKING:
     from typing import Protocol
@@ -15,6 +11,7 @@ if TYPE_CHECKING:
         TxInput,
         TxOutput,
     )
+    from trezor.utils import HashWriter
     from .sig_hasher import SigHasher
 
     from apps.common.coininfo import CoinInfo
@@ -59,6 +56,10 @@ _MAX_BIP125_RBF_SEQUENCE = const(0xFFFF_FFFD)
 
 class TxInfoBase:
     def __init__(self, signer: Signer, tx: SignTx | PrevTx) -> None:
+        from trezor.crypto.hashlib import sha256
+        from trezor.utils import HashWriter
+        from .matchcheck import MultisigFingerprintChecker, WalletPathChecker
+
         # Checksum of multisig inputs, used to validate change-output.
         self.multisig_fingerprint = MultisigFingerprintChecker()
 

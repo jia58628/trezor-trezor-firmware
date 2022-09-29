@@ -3,7 +3,7 @@ from micropython import const
 from typing import TYPE_CHECKING, Tuple
 
 import storage.cache
-from trezor import config, io, ui
+from trezor import config, ui
 
 from . import HomescreenBase
 
@@ -46,7 +46,7 @@ class Homescreen(HomescreenBase):
         return super().create_tasks() + (self.usb_checker_task(),)
 
     async def usb_checker_task(self) -> None:
-        from trezor import loop
+        from trezor import loop, io
 
         usbcheck = loop.wait(io.USB_CHECK)
         while True:

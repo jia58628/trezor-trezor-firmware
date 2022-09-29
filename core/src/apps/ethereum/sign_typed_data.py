@@ -2,23 +2,23 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor.enums import EthereumDataType
-from trezor.messages import (
-    EthereumFieldType,
-    EthereumTypedDataStructAck,
-    EthereumTypedDataStructRequest,
-)
-from trezor.utils import HashWriter
 from trezor.wire import DataError
 
 from .helpers import get_type_name
 from .keychain import PATTERNS_ADDRESS, with_keychain_from_path
-from .layout import confirm_typed_value, should_show_array, should_show_struct
+from .layout import should_show_struct
 
 if TYPE_CHECKING:
     from apps.common.keychain import Keychain
     from trezor.wire import Context
+    from trezor.utils import HashWriter
 
-    from trezor.messages import EthereumSignTypedData, EthereumTypedDataSignature
+    from trezor.messages import (
+        EthereumSignTypedData,
+        EthereumFieldType,
+        EthereumTypedDataSignature,
+        EthereumTypedDataStructAck,
+    )
 
 
 # Maximum data size we support
@@ -110,6 +110,7 @@ async def _generate_typed_data_hash(
 
 def get_hash_writer() -> HashWriter:
     from trezor.crypto.hashlib import sha3_256
+    from trezor.utils import HashWriter
 
     return HashWriter(sha3_256(keccak=True))
 
@@ -141,6 +142,11 @@ class TypedDataEnvelope:
 
     async def _collect_types(self, type_name: str) -> None:
         """Recursively collect types from the client."""
+        from trezor.messages import (
+            EthereumTypedDataStructRequest,
+            EthereumTypedDataStructAck,
+        )
+
         req = EthereumTypedDataStructRequest(name=type_name)
         current_type = await self.ctx.call(req, EthereumTypedDataStructAck)
         self.types[type_name] = current_type
@@ -241,6 +247,8 @@ class TypedDataEnvelope:
         i.e. the concatenation of the encoded member values in the order that they appear in the type.
         Each encoded member value is exactly 32-byte long.
         """
+        from .layout import confirm_typed_value, should_show_array
+
         self_ctx = self.ctx  # cache
 
         type_members = self.types[primary_type].members
@@ -498,6 +506,8 @@ def validate_field_type(field: EthereumFieldType) -> None:
 
 async def _get_array_size(ctx: Context, member_path: list[int]) -> int:
     """Get the length of an array at specific `member_path` from the client."""
+    from trezor.messages import EthereumFieldType
+
     # Field type for getting the array length from client, so we can check the return value
     ARRAY_LENGTH_TYPE = EthereumFieldType(data_type=EthereumDataType.UINT, size=2)
     length_value = await get_value(ctx, ARRAY_LENGTH_TYPE, member_path)
