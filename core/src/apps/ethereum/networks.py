@@ -3,9 +3,8 @@
 # do not edit manually!
 from typing import Iterator
 
-from trezor.messages import EthereumNetworkInfo
-
 from apps.common.paths import HARDENED
+from trezor.messages import EthereumNetworkInfo
 
 UNKNOWN_NETWORK_SHORTCUT = "UNKN"
 

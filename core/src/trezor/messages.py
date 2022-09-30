@@ -3638,6 +3638,7 @@ if TYPE_CHECKING:
         address_n: "list[int]"
         domain_separator_hash: "bytes"
         message_hash: "bytes | None"
+        encoded_network: "bytes | None"
 
         def __init__(
             self,
@@ -3645,6 +3646,7 @@ if TYPE_CHECKING:
             domain_separator_hash: "bytes",
             address_n: "list[int] | None" = None,
             message_hash: "bytes | None" = None,
+            encoded_network: "bytes | None" = None,
         ) -> None:
             pass
 
