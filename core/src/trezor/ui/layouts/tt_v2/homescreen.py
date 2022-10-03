@@ -26,6 +26,11 @@ class HomescreenBase(_RustLayout):
             storage.cache.homescreen_shown = None
             raise
 
+    def _first_paint(self) -> None:
+        if storage.cache.homescreen_shown is not self.RENDER_INDICATOR:
+            super()._first_paint()
+            storage.cache.homescreen_shown = self.RENDER_INDICATOR
+
 
 class Homescreen(HomescreenBase):
     RENDER_INDICATOR = storage.cache.HOMESCREEN_ON
@@ -45,12 +50,14 @@ class Homescreen(HomescreenBase):
             elif notification_is_error:
                 level = 0
 
+        skip = storage.cache.homescreen_shown is self.RENDER_INDICATOR
         super().__init__(
             layout=trezorui2.show_homescreen(
                 label=label or "My Trezor",
                 notification=notification,
                 notification_level=level,
                 hold=hold_to_lock,
+                skip_first_paint=skip,
             ),
         )
 
@@ -80,10 +87,14 @@ class Lockscreen(HomescreenBase):
         if bootscreen:
             self.BACKLIGHT_LEVEL = ui.BACKLIGHT_NORMAL
 
+        skip = (
+            not bootscreen and storage.cache.homescreen_shown is self.RENDER_INDICATOR
+        )
         super().__init__(
             layout=trezorui2.show_lockscreen(
                 label=label or "My Trezor",
                 bootscreen=bootscreen,
+                skip_first_paint=skip,
             ),
         )
 
@@ -92,11 +103,13 @@ class Busyscreen(HomescreenBase):
     RENDER_INDICATOR = storage.cache.BUSYSCREEN_ON
 
     def __init__(self, delay_ms: int) -> None:
+        skip = storage.cache.homescreen_shown is self.RENDER_INDICATOR
         super().__init__(
             layout=trezorui2.show_busyscreen(
                 title="PLEASE WAIT",
                 description="CoinJoin in progress.\n\nDo not disconnect your\nTrezor.",
                 time_ms=delay_ms,
+                skip_first_paint=skip,
             )
         )
 
