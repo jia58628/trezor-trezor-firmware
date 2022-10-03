@@ -33,8 +33,8 @@ def init(tx: SignTx) -> None:
 def init_signing(
     external: int,
     segwit: int,
+    presigned: int,
     taproot_only: bool,
-    has_presigned: bool,
     serialize: bool,
     coin: CoinInfo,
     tx: SignTx,
@@ -50,8 +50,7 @@ def init_signing(
 
     # Step 3 - verify inputs
     if taproot_only or (coin.overwintered and tx.version == 5):
-        if has_presigned:
-            _steps += external
+        _steps += presigned
     else:
         _steps = tx.inputs_count * _PREV_TX_MULTIPLIER
 
@@ -74,8 +73,14 @@ def init_signing(
 
     # Steps 4 and 6 - serialize and sign inputs
     if serialize:
-        _steps += tx.inputs_count + segwit
+        # Step 4 - serialize all inputs.
+        _steps += tx.inputs_count
+
+        # Step 6 - serialize witnesses for all segwit inputs except for the
+        # external ones that are not presigned.
+        _steps += segwit - (external - presigned)
     else:
+        # Add the number of inputs to be signed.
         _steps += tx.inputs_count - external
 
     # Step 5 - serialize outputs
