@@ -20,7 +20,7 @@ pub enum PinCallbackResult {
 /// `message` is a message to show to the user.
 pub type PinDelayCallback = fn(wait: u32, progress: u32, message: &str) -> PinCallbackResult;
 
-type ExternalSalt = [u8; ffi::EXTERNAL_SALT_SIZE as usize];
+pub type ExternalSalt = [u8; ffi::EXTERNAL_SALT_SIZE as usize];
 
 /// Static reference to the currently set PIN callback function.
 static mut PIN_UI_CALLBACK: Option<PinDelayCallback> = None;
@@ -69,6 +69,8 @@ impl From<StorageError> for Error {
         }
     }
 }
+
+pub type StorageResult<T> = Result<T, StorageError>;
 
 /// Initialize the storage layer.
 /// This function must be called before any other storage function.
@@ -144,14 +146,20 @@ pub fn get_pin_remaining() -> u32 {
     unsafe { ffi::storage_get_pin_rem() }
 }
 
-/// Check if value for `appkey` exists.
+pub fn ensure_not_wipe_pin(pin: &str) {
+    unsafe {
+        ffi::storage_ensure_not_wipe_code(pin.as_ptr(), pin.len());
+    }
+}
+
+/// Check if value for `appkey` exists.
 pub fn has(appkey: u16) -> bool {
     ffi::sectrue == unsafe { ffi::storage_has(appkey) }
 }
 
 /// Get length of value stored for `appkey`.
 /// Returns an error if the value does not exist.
-pub fn get_length(appkey: u16) -> Result<usize, StorageError> {
+pub fn get_length(appkey: u16) -> StorageResult<usize> {
     let mut len = 0;
     if ffi::sectrue == unsafe { ffi::storage_get(appkey, ptr::null_mut() as _, 0, &mut len) } {
         Ok(len as usize)
@@ -163,12 +171,12 @@ pub fn get_length(appkey: u16) -> Result<usize, StorageError> {
 /// Get value for `appkey` from storage.
 /// The provided `data` buffer must be long enough to hold the value. If the
 /// buffer is shorter than the stored value, an error is returned. Use
-/// `get_length` to find the size of the value beforehand. On success, the data
+/// `get_length` to find the size of the value beforehand. On success, the data
 /// is copied to `data`, and length of copied data is returned. Data previously
 /// in the buffer beyond the copied data is not modified.
-/// If `appkey` is not present in storage, or the value is private and storage
+/// If `appkey` is not present in storage, or the value is private and storage
 /// is locked, returns an error.
-pub fn get(appkey: u16, data: &mut [u8]) -> Result<usize, StorageError> {
+pub fn get(appkey: u16, data: &mut [u8]) -> StorageResult<usize> {
     let max_len = data.len().min(u16::MAX as usize) as u16;
     let mut len = 0u16;
     if ffi::sectrue
@@ -184,7 +192,7 @@ pub fn get(appkey: u16, data: &mut [u8]) -> Result<usize, StorageError> {
 /// The maximum length of the value is `u16::MAX`. Passing longer buffers will
 /// result in an error.
 /// If storage is locked and the value is not public-writable, returns an error.
-pub fn set(appkey: u16, data: &[u8]) -> Result<(), StorageError> {
+pub fn set(appkey: u16, data: &[u8]) -> StorageResult<()> {
     if data.len() > u16::MAX as usize {
         Err(StorageError::InvalidData)
     } else if ffi::sectrue
@@ -197,7 +205,7 @@ pub fn set(appkey: u16, data: &[u8]) -> Result<(), StorageError> {
 }
 
 /// Set value for monotonic counter `appkey` in storage.
-pub fn set_counter(appkey: u16, counter: u32) -> Result<(), StorageError> {
+pub fn set_counter(appkey: u16, counter: u32) -> StorageResult<()> {
     if ffi::sectrue == unsafe { ffi::storage_set_counter(appkey, counter) } {
         Ok(())
     } else {
@@ -207,7 +215,7 @@ pub fn set_counter(appkey: u16, counter: u32) -> Result<(), StorageError> {
 
 /// Atomically get and increment the value for monotonic counter `appkey` in
 /// storage.
-pub fn get_next_counter(appkey: u16) -> Result<u32, StorageError> {
+pub fn get_next_counter(appkey: u16) -> StorageResult<u32> {
     let mut counter = 0u32;
     if ffi::sectrue == unsafe { ffi::storage_next_counter(appkey, &mut counter) } {
         Ok(counter)

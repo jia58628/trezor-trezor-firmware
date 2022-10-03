@@ -249,6 +249,7 @@ fn generate_trezorhal_bindings() {
         .allowlist_function("storage_has_pin")
         .allowlist_function("storage_get_pin_rem")
         .allowlist_function("storage_change_pin")
+        .allowlist_function("storage_ensure_not_wipe_code")
         .allowlist_function("storage_has")
         .allowlist_function("storage_get")
         .allowlist_function("storage_set")
