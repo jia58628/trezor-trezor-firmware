@@ -76,6 +76,9 @@ yamllint = "^1.25.0"
 scan-build = "*"
 towncrier = "^21.9.0"
 
+# tools
+binsize = "^0.1.1"
+
 [build-system]
 requires = ["poetry>=1;<1.1", "pip>=20"]
 build-backend = "poetry.masonry.api"
