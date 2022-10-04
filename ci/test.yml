@@ -106,11 +106,12 @@ core device ui2 test:
     - mv tests/ui_tests/reporting/reports/test/ test_ui_report
     - nix-shell --run "poetry run python ci/prepare_ui_artifacts.py TTui2 | ts -s"
     - diff tests/ui_tests/fixtures.json tests/ui_tests/fixtures.suggestion.json
-    - nix-shell --run "cd tests/ui_tests ; poetry run python reporting/report_master_diff.py TTui2_"
+    - nix-shell --run "cd tests/ui_tests ; poetry run python reporting/report_master_diff.py TTui2_ || echo FAIL"
     - mv tests/ui_tests/reporting/reports/master_diff/ .
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_SHORT_SHA"
     paths:
+      - tests/ui_tests/reporting/reports/master_diff/
       - ci/ui_test_records/
       - test_ui_report
       - tests/ui_tests/screens/
