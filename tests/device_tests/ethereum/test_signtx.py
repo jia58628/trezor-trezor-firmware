@@ -340,8 +340,11 @@ def input_flow_skip(client: Client, cancel=False):
 
 def input_flow_scroll_down(client: Client, cancel=False):
     yield  # confirm sending
-    client.debug.wait_layout()
+    content = client.debug.wait_layout()
     client.debug.press_yes()
+
+    # prevent this test from getting stuck on UI2
+    assert "SwipePage" not in content.text
 
     yield  # confirm data
     client.debug.wait_layout()
@@ -365,8 +368,11 @@ def input_flow_scroll_down(client: Client, cancel=False):
 
 def input_flow_go_back(client: Client, cancel=False):
     br = yield  # confirm sending
-    client.debug.wait_layout()
+    content = client.debug.wait_layout()
     client.debug.press_yes()
+
+    # prevent this test from getting stuck on UI2
+    assert "SwipePage" not in content.text
 
     br = yield  # confirm data
     client.debug.wait_layout()

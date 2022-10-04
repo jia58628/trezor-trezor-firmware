@@ -2614,7 +2614,7 @@
 "TTui2_test_basic.py::test_features": "e0db5107ba371eb8d7039e6ad3138f6bbb731c779f405b75c2e14128dfad756f",
 "TTui2_test_basic.py::test_ping": "e0db5107ba371eb8d7039e6ad3138f6bbb731c779f405b75c2e14128dfad756f",
 "TTui2_test_busy_state.py::test_busy_expiry": "b0f19c66469df6ee9cc0cda06692f22d34c6e448cfc0d713276bcebdd83081a6",
-"TTui2_test_busy_state.py::test_busy_state": "ca995148003b7cad89f243ab526bbd38cf708ce04a290c6bc3f620718f3782ad",
+"TTui2_test_busy_state.py::test_busy_state": "76be5e7fd3817b66034272330878fe170e946eacd1a1096187456ab72602d40b",
 "TTui2_test_cancel.py::test_cancel_message_via_cancel[message0]": "d08c7576b47d42aa5e783813905f0ce837f2b26bf1f99dd34f9e369229955643",
 "TTui2_test_cancel.py::test_cancel_message_via_cancel[message1]": "d08c7576b47d42aa5e783813905f0ce837f2b26bf1f99dd34f9e369229955643",
 "TTui2_test_cancel.py::test_cancel_message_via_initialize[message0]": "d08c7576b47d42aa5e783813905f0ce837f2b26bf1f99dd34f9e369229955643",
