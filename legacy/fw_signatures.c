@@ -51,8 +51,15 @@ static const uint8_t * const pubkey[PUBKEYS] = {
 #define FLASH_META_SIG2 (FLASH_META_START + 0x0080)
 #define FLASH_META_SIG3 (FLASH_META_START + 0x00C0)
 
-#define VERIFYMESSAGE_PREFIX ("\x18" "Bitcoin Signed Message:\n\x20")
-#define PREFIX_LENGTH (sizeof (VERIFYMESSAGE_PREFIX) -1)
+/*
+ * 0x18 in message prefix is coin info, 0x20 is the length of hash
+ * that follows.
+ * See `core/src/apps/bitcoin/sign_message.py`.
+ */
+#define VERIFYMESSAGE_PREFIX \
+  ("\x18"                    \
+   "Bitcoin Signed Message:\n\x20")
+#define PREFIX_LENGTH (sizeof(VERIFYMESSAGE_PREFIX) - 1)
 #define SIGNED_LENGTH (PREFIX_LENGTH + 32)
 
 void compute_firmware_fingerprint(const image_header *hdr, uint8_t hash[32]) {
@@ -67,12 +74,19 @@ void compute_firmware_fingerprint(const image_header *hdr, uint8_t hash[32]) {
   sha256_Raw((const uint8_t *)&copy, sizeof(image_header), hash);
 }
 
-void compute_firmware_fingerprint_for_verifymessage(const image_header *hdr, uint8_t hash[32]) {
+void compute_firmware_fingerprint_for_verifymessage(const image_header *hdr,
+                                                    uint8_t hash[32]) {
   uint8_t prefixed_header[SIGNED_LENGTH] = VERIFYMESSAGE_PREFIX;
   uint8_t header_hash[32];
+  uint8_t hash_before_double_hashing[32];
   compute_firmware_fingerprint(hdr, header_hash);
   memcpy(prefixed_header + PREFIX_LENGTH, header_hash, sizeof(header_hash));
-  sha256_Raw(prefixed_header, sizeof(prefixed_header), hash);
+  sha256_Raw(prefixed_header, sizeof(prefixed_header),
+             hash_before_double_hashing);
+  // We need to do hash the previous result again because SignMessage
+  // computes it this way, see `core/src/apps/bitcoin/sign_message.py`
+  sha256_Raw(hash_before_double_hashing, sizeof(hash_before_double_hashing),
+             hash);
 }
 
 bool firmware_present_new(void) {
@@ -90,7 +104,8 @@ bool firmware_present_new(void) {
   return true;
 }
 
-int signatures_new_ok(const image_header *hdr, uint8_t store_fingerprint[32], bool use_verifymessage) {
+int signatures_new_ok(const image_header *hdr, uint8_t store_fingerprint[32],
+                      bool use_verifymessage) {
   uint8_t hash[32] = {0};
   if (use_verifymessage) {
     compute_firmware_fingerprint_for_verifymessage(hdr, hash);

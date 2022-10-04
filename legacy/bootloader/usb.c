@@ -276,7 +276,8 @@ static void rx_callback(usbd_device *dev, uint8_t ep) {
         if (firmware_present_new()) {
           const image_header *hdr =
               (const image_header *)FLASH_PTR(FLASH_FWHEADER_START);
-          // previous firmware was signed either by "new" xor "verify message" style
+          // previous firmware was signed either by "new" xor "verify message"
+          // style
           old_was_signed =
               signatures_match(hdr, NULL) & check_firmware_hashes(hdr);
           fix_version_current = hdr->fix_version;
