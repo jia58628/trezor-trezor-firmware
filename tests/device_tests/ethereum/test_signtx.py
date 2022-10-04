@@ -340,11 +340,8 @@ def input_flow_skip(client: Client, cancel=False):
 
 def input_flow_scroll_down(client: Client, cancel=False):
     yield  # confirm sending
-    content = client.debug.wait_layout()
+    client.debug.wait_layout()
     client.debug.press_yes()
-
-    # prevent this test from getting stuck on UI2
-    assert "SwipePage" not in content.text
 
     yield  # confirm data
     client.debug.wait_layout()
@@ -368,11 +365,8 @@ def input_flow_scroll_down(client: Client, cancel=False):
 
 def input_flow_go_back(client: Client, cancel=False):
     br = yield  # confirm sending
-    content = client.debug.wait_layout()
+    client.debug.wait_layout()
     client.debug.press_yes()
-
-    # prevent this test from getting stuck on UI2
-    assert "SwipePage" not in content.text
 
     br = yield  # confirm data
     client.debug.wait_layout()
@@ -406,6 +400,10 @@ HEXDATA = "0123456789abcd000023456789abcd010003456789abcd020000456789abcd0300000
 )
 @pytest.mark.skip_t1
 def test_signtx_data_pagination(client: Client, flow):
+    # prevent this test from getting stuck on UI2
+    import os
+    assert os.getenv("UI2") != "1"
+
     with client:
         client.watch_layout()
         client.set_input_flow(flow(client))
