@@ -402,6 +402,7 @@ HEXDATA = "0123456789abcd000023456789abcd010003456789abcd020000456789abcd0300000
 def test_signtx_data_pagination(client: Client, flow):
     # prevent this test from getting stuck on UI2
     import os
+
     assert os.getenv("UI2") != "1"
 
     with client:

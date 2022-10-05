@@ -6,13 +6,14 @@ use crate::{
         event::{TouchEvent, USBEvent},
         geometry::{Offset, Point, Rect},
         model_tt::constant,
+        util::icon_text_center,
     },
 };
 
-use super::{icon_text_center, theme, Loader, LoaderMsg, NotificationFrame};
+use super::{theme, Loader, LoaderMsg, NotificationFrame};
 
 const AREA: Rect = constant::screen();
-const TOP_CENTER: Point = AREA.top_left().center(AREA.top_right());
+const TOP_CENTER: Point = AREA.top_center();
 const LABEL_Y: i16 = 216;
 const LOCKED_Y: i16 = 101;
 const TAP_Y: i16 = 134;
@@ -40,7 +41,7 @@ where
     T: AsRef<str>,
 {
     pub fn new(label: T, notification: Option<(T, u32)>, hold_to_lock: bool) -> Self {
-        Homescreen {
+        Self {
             label,
             notification,
             hold_to_lock,
@@ -80,9 +81,8 @@ where
     }
 
     fn paint_loader(&mut self) {
-        let top_center = AREA.top_left().center(AREA.top_right());
         display::text_center(
-            top_center + Offset::y(HOLD_Y),
+            TOP_CENTER + Offset::y(HOLD_Y),
             "HOLD TO LOCK",
             Font::BOLD,
             theme::FG,
@@ -150,8 +150,8 @@ where
     type Msg = HomescreenMsg;
 
     fn place(&mut self, bounds: Rect) -> Rect {
-        self.pad.place(AREA.translate(LOADER_OFFSET));
-        self.loader.place(AREA);
+        self.pad.place(AREA);
+        self.loader.place(AREA.translate(LOADER_OFFSET));
         bounds
     }
 
