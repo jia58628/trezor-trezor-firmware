@@ -671,7 +671,20 @@ def confirm_amount(
     icon: str = ui.ICON_SEND,  # TODO cleanup @ redesign
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
 ) -> Awaitable[None]:
-    raise NotImplementedError
+    return raise_if_not_confirmed(
+        interact(
+            ctx,
+            _RustLayout(
+                trezorui2.confirm_total(
+                    title=title.upper(),
+                    description=description,
+                    value=amount,
+                )
+            ),
+            br_type,
+            br_code,
+        )
+    )
 
 
 async def confirm_properties(
@@ -693,8 +706,8 @@ async def confirm_total(
     fee_amount: str,
     fee_rate_amount: str | None = None,
     title: str = "SENDING",
-    total_label: str = "Total amount:\n",
-    fee_label: str = "\nincluding fee:\n",
+    total_label: str = "Total amount:",
+    fee_label: str = "Fee:",
     icon_color: int = ui.GREEN,
     br_type: str = "confirm_total",
     br_code: ButtonRequestType = ButtonRequestType.SignTx,
@@ -705,11 +718,11 @@ async def confirm_total(
             _RustLayout(
                 trezorui2.confirm_output(
                     title=title.upper(),
-                    description="Fee:",
+                    description=fee_label,
                     value=fee_amount,
                 )
             ),
-            "confirm_total",
+            br_type,
             br_code,
         )
     )
@@ -720,11 +733,11 @@ async def confirm_total(
             _RustLayout(
                 trezorui2.confirm_total(
                     title=title.upper(),
-                    description="Total amount:",
+                    description=total_label,
                     value=total_amount,
                 )
             ),
-            "confirm_total",
+            br_type,
             br_code,
         )
     )
@@ -783,6 +796,7 @@ async def confirm_metadata(
 
         layout = trezorui2.confirm_action(
             title=title.upper(),
+            action="",
             verb="NEXT",
             description=content,
             hold=hold,
