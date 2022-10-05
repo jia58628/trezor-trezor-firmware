@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     set_root_dir(str(CORE_DIR))
 
-    sizes = get_sections_sizes(BIN_TO_ANALYZE)
+    sizes = get_sections_sizes(BIN_TO_ANALYZE, sections=(".flash", ".flash2"))
 
     report_section(".flash", sizes[".flash"] // 1024, FLASH_SIZE_KB)
     report_section(".flash2", sizes[".flash2"] // 1024, FLASH_2_SIZE_KB)
