@@ -84,7 +84,6 @@ stdenvNoCC.mkDerivation ({
     libjpeg
     libusb1
     llvmPackages.clang
-    nm  # for binsize
     openssl
     pkgconfig
     poetry
