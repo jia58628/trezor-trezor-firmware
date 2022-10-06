@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern const uint32_t FIRMWARE_MAGIC_OLD;  // TRZR
 extern const uint32_t FIRMWARE_MAGIC_NEW;  // TRZF
 
 #define SIG_OK 0x5A3CA5C3
