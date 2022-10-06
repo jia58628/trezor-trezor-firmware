@@ -675,7 +675,7 @@ def confirm_amount(
         interact(
             ctx,
             _RustLayout(
-                trezorui2.confirm_total(
+                trezorui2.confirm_output(
                     title=title.upper(),
                     description=description,
                     value=amount,
