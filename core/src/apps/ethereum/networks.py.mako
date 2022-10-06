@@ -31,7 +31,7 @@ def all_slip44_ids_hardened() -> Iterator[int]:
 
 # fmt: off
 def _networks_iterator() -> Iterator[EthereumNetworkInfo]:
-% for n in supported_on("trezor2", eth):
+% for n in sorted(supported_on("trezor2", eth), key=lambda network: (int(network.chain_id), network.name)):
     yield EthereumNetworkInfo(
         chain_id=${n.chain_id},
         slip44=${n.slip44},
