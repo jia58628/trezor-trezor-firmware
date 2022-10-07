@@ -89,6 +89,7 @@ def sign_tx(
     version_group_id=0x26A7270A,  # protocol spec §7.1.2
     branch_id=0xC2D6D0B4,  # https://zips.z.cash/zip-0252
     expiry=0,
+    account=0,
     anchor=EMPTY_ANCHOR,
     verbose=False,
 ):
@@ -96,25 +97,23 @@ def sign_tx(
         if verbose:
             print(*args, **kwargs)
 
-    msg = messages.SignTx()
+    msg = messages.SignTx(
+        inputs_count=len(t_inputs),
+        outputs_count=len(t_outputs),
+        coin_name=coin_name,
+        version=5,
+        version_group_id=version_group_id,
+        branch_id=branch_id,
+        expiry=expiry,
+        orchard_inputs_count=len(o_inputs),
+        orchard_outputs_count=len(o_outputs),
+        orchard_anchor=anchor,
+        account=account,
 
-    msg.inputs_count = len(t_inputs)
-    msg.outputs_count = len(t_outputs)
-    msg.coin_name = coin_name
-    msg.version = 5
-    msg.version_group_id = version_group_id
-    msg.branch_id = branch_id
-    msg.expiry = expiry
+    )
 
-    orchard = messages.ZcashOrchardBundleInfo()
-    orchard.outputs_count = len(o_outputs)
-    orchard.inputs_count = len(o_inputs)
-    orchard.anchor = anchor
-    orchard.enable_spends = True
-    orchard.enable_outputs = True
-    msg.orchard = orchard
     actions_count = (
-        min(len(o_outputs), len(o_inputs), 2)
+        max(len(o_outputs), len(o_inputs), 2)
         if len(o_outputs) + len(o_inputs) > 0
         else 0)
 

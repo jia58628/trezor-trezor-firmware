@@ -257,16 +257,15 @@ class MessageType(IntEnum):
     WebAuthnCredentials = 801
     WebAuthnAddResidentCredential = 802
     WebAuthnRemoveResidentCredential = 803
-    ZcashGetFullViewingKey = 893
-    ZcashFullViewingKey = 894
-    ZcashGetIncomingViewingKey = 895
-    ZcashIncomingViewingKey = 896
-    ZcashGetAddress = 897
-    ZcashAddress = 898
-    ZcashOrchardBundleInfo = 899
-    ZcashOrchardInput = 900
-    ZcashOrchardOutput = 901
-    ZcashAck = 907
+    ZcashGetAddress = 900
+    ZcashAddress = 901
+    ZcashGetFullViewingKey = 902
+    ZcashFullViewingKey = 903
+    ZcashGetIncomingViewingKey = 904
+    ZcashIncomingViewingKey = 905
+    ZcashOrchardInput = 906
+    ZcashOrchardOutput = 907
+    ZcashAck = 908
 
 
 class FailureType(IntEnum):
@@ -952,7 +951,7 @@ class HDNodeType(protobuf.MessageType):
 
 
 class ZcashGetFullViewingKey(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 893
+    MESSAGE_WIRE_TYPE = 902
     FIELDS = {
         1: protobuf.Field("coin_name", "string", repeated=False, required=False),
         2: protobuf.Field("z_address_n", "uint32", repeated=True, required=False),
@@ -969,7 +968,7 @@ class ZcashGetFullViewingKey(protobuf.MessageType):
 
 
 class ZcashFullViewingKey(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 894
+    MESSAGE_WIRE_TYPE = 903
     FIELDS = {
         1: protobuf.Field("fvk", "bytes", repeated=False, required=True),
     }
@@ -983,7 +982,7 @@ class ZcashFullViewingKey(protobuf.MessageType):
 
 
 class ZcashGetIncomingViewingKey(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 895
+    MESSAGE_WIRE_TYPE = 904
     FIELDS = {
         1: protobuf.Field("coin_name", "string", repeated=False, required=False),
         2: protobuf.Field("z_address_n", "uint32", repeated=True, required=False),
@@ -1000,7 +999,7 @@ class ZcashGetIncomingViewingKey(protobuf.MessageType):
 
 
 class ZcashIncomingViewingKey(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 896
+    MESSAGE_WIRE_TYPE = 905
     FIELDS = {
         1: protobuf.Field("ivk", "bytes", repeated=False, required=True),
     }
@@ -1014,7 +1013,7 @@ class ZcashIncomingViewingKey(protobuf.MessageType):
 
 
 class ZcashGetAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 897
+    MESSAGE_WIRE_TYPE = 900
     FIELDS = {
         1: protobuf.Field("coin_name", "string", repeated=False, required=False),
         2: protobuf.Field("t_address_n", "uint32", repeated=True, required=False),
@@ -1040,7 +1039,7 @@ class ZcashGetAddress(protobuf.MessageType):
 
 
 class ZcashAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 898
+    MESSAGE_WIRE_TYPE = 901
     FIELDS = {
         1: protobuf.Field("address", "string", repeated=False, required=False),
     }
@@ -1054,7 +1053,7 @@ class ZcashAddress(protobuf.MessageType):
 
 
 class ZcashOrchardInput(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 900
+    MESSAGE_WIRE_TYPE = 906
     FIELDS = {
         1: protobuf.Field("recipient", "bytes", repeated=False, required=True),
         2: protobuf.Field("value", "uint64", repeated=False, required=True),
@@ -1077,7 +1076,7 @@ class ZcashOrchardInput(protobuf.MessageType):
 
 
 class ZcashOrchardOutput(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 901
+    MESSAGE_WIRE_TYPE = 907
     FIELDS = {
         1: protobuf.Field("address", "string", repeated=False, required=False),
         2: protobuf.Field("amount", "uint64", repeated=False, required=True),
@@ -1097,7 +1096,7 @@ class ZcashOrchardOutput(protobuf.MessageType):
 
 
 class ZcashAck(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 907
+    MESSAGE_WIRE_TYPE = 908
 
 
 class MultisigRedeemScriptType(protobuf.MessageType):
@@ -1339,7 +1338,10 @@ class SignTx(protobuf.MessageType):
         10: protobuf.Field("branch_id", "uint32", repeated=False, required=False),
         11: protobuf.Field("amount_unit", "AmountUnit", repeated=False, required=False),
         12: protobuf.Field("decred_staking_ticket", "bool", repeated=False, required=False),
-        13: protobuf.Field("orchard", "ZcashOrchardBundleInfo", repeated=False, required=False),
+        13: protobuf.Field("orchard_inputs_count", "uint32", repeated=False, required=False),
+        14: protobuf.Field("orchard_outputs_count", "uint32", repeated=False, required=False),
+        15: protobuf.Field("orchard_anchor", "bytes", repeated=False, required=False),
+        16: protobuf.Field("account", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -1357,7 +1359,10 @@ class SignTx(protobuf.MessageType):
         branch_id: Optional["int"] = None,
         amount_unit: Optional["AmountUnit"] = AmountUnit.BITCOIN,
         decred_staking_ticket: Optional["bool"] = False,
-        orchard: Optional["ZcashOrchardBundleInfo"] = None,
+        orchard_inputs_count: Optional["int"] = 0,
+        orchard_outputs_count: Optional["int"] = 0,
+        orchard_anchor: Optional["bytes"] = None,
+        account: Optional["int"] = 0,
     ) -> None:
         self.outputs_count = outputs_count
         self.inputs_count = inputs_count
@@ -1371,7 +1376,10 @@ class SignTx(protobuf.MessageType):
         self.branch_id = branch_id
         self.amount_unit = amount_unit
         self.decred_staking_ticket = decred_staking_ticket
-        self.orchard = orchard
+        self.orchard_inputs_count = orchard_inputs_count
+        self.orchard_outputs_count = orchard_outputs_count
+        self.orchard_anchor = orchard_anchor
+        self.account = account
 
 
 class TxRequest(protobuf.MessageType):
@@ -1798,29 +1806,6 @@ class HDNodePathType(protobuf.MessageType):
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.node = node
-
-
-class ZcashOrchardBundleInfo(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 899
-    FIELDS = {
-        1: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
-        2: protobuf.Field("outputs_count", "uint32", repeated=False, required=True),
-        3: protobuf.Field("anchor", "bytes", repeated=False, required=True),
-        4: protobuf.Field("account", "uint32", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        inputs_count: "int",
-        outputs_count: "int",
-        anchor: "bytes",
-        account: Optional["int"] = 0,
-    ) -> None:
-        self.inputs_count = inputs_count
-        self.outputs_count = outputs_count
-        self.anchor = anchor
-        self.account = account
 
 
 class TxRequestDetailsType(protobuf.MessageType):

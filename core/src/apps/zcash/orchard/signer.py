@@ -14,6 +14,7 @@ from apps.common.paths import HARDENED
 from .. import unified_addresses
 from ..debug import watch_gc, watch_gc_async
 from ..hasher import ZcashHasher
+from ..layout import ConfirmOrchardInputsCountOverThreshold
 from .accumulator import MessageAccumulator
 from .crypto import builder, redpallas
 from .crypto.address import Address
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
 OVERWINTERED = const(0x8000_0000)
 FLAGS = const(0b0000_0011)  # spends enbled and output enabled
+MAX_SILENT_ORCHARD_INPUTS = const(8)
 
 
 def skip_if_empty(func):
@@ -61,22 +63,17 @@ class OrchardSigner:
     ) -> None:
         assert tx_req.serialized is not None  # typing
 
-        if tx_info.tx.orchard is None:
-            self.actions_count = 0
-            self.inputs_count = 0
-            self.outputs_count = 0
-        else:
-            self.inputs_count = tx_info.tx.orchard.inputs_count
-            self.outputs_count = tx_info.tx.orchard.outputs_count
+        self.inputs_count = tx_info.tx.orchard_inputs_count
+        self.outputs_count = tx_info.tx.orchard_outputs_count
 
-            if self.inputs_count + self.outputs_count > 0:
-                self.actions_count = max(
-                    2,  # minimal required amount of actions
-                    self.inputs_count,
-                    self.outputs_count,
-                )
-            else:
-                self.actions_count = 0
+        if self.inputs_count + self.outputs_count > 0:
+            self.actions_count = max(
+                2,  # minimal required amount of actions
+                self.inputs_count,
+                self.outputs_count,
+            )
+        else:
+            self.actions_count = 0
 
         if self.actions_count == 0:
             return  # no need to initialize other attributes
@@ -89,8 +86,7 @@ class OrchardSigner:
         assert isinstance(tx_info.sig_hasher, ZcashHasher)
         self.sig_hasher: ZcashHasher = tx_info.sig_hasher
 
-        assert tx_info.tx.orchard is not None
-        account = tx_info.tx.orchard.account
+        account = tx_info.tx.account
         assert account is not None  # typing
         key_path = [
             32 | HARDENED,  # ZIP-32 constant
@@ -110,10 +106,15 @@ class OrchardSigner:
     @skip_if_empty
     @watch_gc_async
     async def process_inputs(self) -> None:
+        await self.check_orchard_inputs_count()
         for i in range(self.inputs_count):
             txi = await self.get_input(i)
             self.msg_acc.xor_message(txi, i)  # add message to the accumulator
             self.approver.add_orchard_input(txi)
+
+    def check_orchard_inputs_count(self) -> Awaitable[None]:  # type: ignore [awaitable-is-generator]
+        if self.inputs_count > MAX_SILENT_ORCHARD_INPUTS:
+            yield ConfirmOrchardInputsCountOverThreshold(self.inputs_count)
 
     @skip_if_empty
     @watch_gc_async
@@ -179,15 +180,15 @@ class OrchardSigner:
         self.msg_acc.check()
 
         # hash orchard footer
-        assert self.tx_info.tx.orchard is not None  # typing
+        assert self.tx_info.tx.orchard_anchor is not None  # typing
         self.sig_hasher.orchard.finalize(
             flags=FLAGS,
             value_balance=self.approver.orchard_balance,
-            anchor=self.tx_info.tx.orchard.anchor,
+            anchor=self.tx_info.tx.orchard_anchor,
         )
 
     def derive_shielding_seed(self) -> bytes:
-        assert self.tx_info.tx.orchard is not None  # typing
+        assert self.tx_info.tx.orchard_anchor is not None  # typing
         ss_slip21 = self.keychain.derive_slip21(
             [b"Zcash Orchard", b"bundle_shielding_seed"],
         ).key()
@@ -195,7 +196,7 @@ class OrchardSigner:
         ss_hasher.update(self.sig_hasher.header.digest())
         ss_hasher.update(self.sig_hasher.transparent.digest())
         ss_hasher.update(self.msg_acc.state)
-        ss_hasher.update(self.tx_info.tx.orchard.anchor)
+        ss_hasher.update(self.tx_info.tx.orchard_anchor)
         ss_hasher.update(ss_slip21)
         return ss_hasher.digest()
 
@@ -246,7 +247,7 @@ class OrchardSigner:
     @watch_gc_async
     async def sign_inputs(self) -> None:
         sighash = self.sig_hasher.signature_digest()
-        self.tx_req.serialized.tx_sighash = sighash
+        self.set_sighash(sighash)
         sig_type = ZcashSignatureType.ORCHARD_SPEND_AUTH
         ask = self.key_node.spend_authorizing_key()
         assert self.rng is not None
@@ -256,7 +257,11 @@ class OrchardSigner:
             rng = self.rng.for_action(i)
             rsk = redpallas.randomize(ask, rng.alpha())
             signature = redpallas.sign_spend_auth(rsk, sighash, rng)
-            await self.set_serialized_signature(j, signature, sig_type)
+            await self.set_serialized_signature(i, signature, sig_type)
+
+    def set_sighash(self, sighash: bytes) -> None:
+        assert self.tx_req.serialized is not None
+        self.tx_req.serialized.tx_sighash = sighash
 
     async def set_serialized_signature(
         self, i: int, signature: bytes, sig_type: ZcashSignatureType

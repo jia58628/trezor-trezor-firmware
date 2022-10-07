@@ -9,7 +9,7 @@ from .crypto.address import Address
 from .crypto.keys import sk_to_ask
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Iterable
     from trezor.crypto.pallas import Scalar, Fp
 
 
@@ -31,7 +31,7 @@ class BundleShieldingRng:
         rng = self._blake2b_ctr_mode_rng(personal=b"Outs_Permutation")
         _shuffle(outputs, rng)
 
-    def _blake2b_ctr_mode_rng(self, personal: bytes) -> list[int]:
+    def _blake2b_ctr_mode_rng(self, personal: bytes) -> Iterable[int]:
         i = 0
         while True:
             h = blake2b(personal=personal, outlen=64)

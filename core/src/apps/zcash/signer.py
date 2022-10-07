@@ -89,7 +89,6 @@ class Zcash(Bitcoinlike):
     async def step4_serialize_inputs(self):
         # shield actions first to get a sighash
         await self.orchard.compute_digest()
-
         await super().step4_serialize_inputs()
 
     async def step5_serialize_outputs(self):
@@ -155,13 +154,13 @@ class Zcash(Bitcoinlike):
     def output_derive_script(self, txo: TxOutput) -> bytes:
         # unified addresses
         if txo.address is not None and txo.address[0] == "u":
-            assert txo.script_type is OutputScriptType.PAYTOADDRESS
-
             receivers = unified_addresses.decode(txo.address, self.coin)
             if Typecode.P2PKH in receivers:
+                ensure(txo.script_type is OutputScriptType.PAYTOADDRESS)
                 pubkeyhash = receivers[Typecode.P2PKH]
                 return scripts.output_script_p2pkh(pubkeyhash)
             if Typecode.P2SH in receivers:
+                ensure(txo.script_type is OutputScriptType.PAYTOSCRIPTHASH)
                 scripthash = receivers[Typecode.P2SH]
                 return scripts.output_script_p2sh(scripthash)
             raise DataError("Unified address does not include a transparent receiver.")

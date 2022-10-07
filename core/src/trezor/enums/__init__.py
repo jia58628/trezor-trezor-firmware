@@ -249,16 +249,15 @@ if TYPE_CHECKING:
         WebAuthnCredentials = 801
         WebAuthnAddResidentCredential = 802
         WebAuthnRemoveResidentCredential = 803
-        ZcashGetFullViewingKey = 893
-        ZcashFullViewingKey = 894
-        ZcashGetIncomingViewingKey = 895
-        ZcashIncomingViewingKey = 896
-        ZcashGetAddress = 897
-        ZcashAddress = 898
-        ZcashOrchardBundleInfo = 899
-        ZcashOrchardInput = 900
-        ZcashOrchardOutput = 901
-        ZcashAck = 907
+        ZcashGetAddress = 900
+        ZcashAddress = 901
+        ZcashGetFullViewingKey = 902
+        ZcashFullViewingKey = 903
+        ZcashGetIncomingViewingKey = 904
+        ZcashIncomingViewingKey = 905
+        ZcashOrchardInput = 906
+        ZcashOrchardOutput = 907
+        ZcashAck = 908
 
     class FailureType(IntEnum):
         UnexpectedMessage = 1

@@ -359,14 +359,13 @@ enum MessageType {
     MessageType_WebAuthnRemoveResidentCredential = 803 [(wire_in) = true];
 
     // Zcash
-    MessageType_ZcashGetFullViewingKey = 893 [(wire_in) = true];
-    MessageType_ZcashFullViewingKey = 894 [(wire_out) = true];
-    MessageType_ZcashGetIncomingViewingKey = 895 [(wire_in) = true];
-    MessageType_ZcashIncomingViewingKey = 896[(wire_out) = true];
-    MessageType_ZcashGetAddress = 897 [(wire_in) = true];
-    MessageType_ZcashAddress = 898 [(wire_out) = true];
-    MessageType_ZcashOrchardBundleInfo = 899 [(wire_in) = true];
-    MessageType_ZcashOrchardInput = 900 [(wire_in) = true];
-    MessageType_ZcashOrchardOutput = 901 [(wire_in) = true];
-    MessageType_ZcashAck = 907 [(wire_in) = true];
+    MessageType_ZcashGetAddress = 900 [(wire_in) = true];
+    MessageType_ZcashAddress = 901 [(wire_out) = true];
+    MessageType_ZcashGetFullViewingKey = 902 [(wire_in) = true];
+    MessageType_ZcashFullViewingKey = 903 [(wire_out) = true];
+    MessageType_ZcashGetIncomingViewingKey = 904 [(wire_in) = true];
+    MessageType_ZcashIncomingViewingKey = 905 [(wire_out) = true];
+    MessageType_ZcashOrchardInput = 906 [(wire_in) = true];
+    MessageType_ZcashOrchardOutput = 907 [(wire_in) = true];
+    MessageType_ZcashAck = 908 [(wire_in) = true];
 }

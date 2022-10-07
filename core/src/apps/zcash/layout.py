@@ -1,11 +1,12 @@
 from typing import TYPE_CHECKING
 
 from trezor import strings, ui
+from trezor.enums import ButtonRequestType
 from trezor.ui.components.common.confirm import CONFIRMED, SHOW_PAGINATED
 from trezor.ui.components.tt.scroll import AskPaginated, Paginated, paginate_paragraphs
 from trezor.ui.components.tt.text import Text
 from trezor.ui.constants.tt import MONO_ADDR_PER_LINE
-from trezor.ui.layouts import confirm_action, confirm_address
+from trezor.ui.layouts import confirm_address, confirm_metadata
 from trezor.ui.layouts.tt import Confirm, interact, raise_if_cancelled
 from trezor.utils import chunks, chunks_intersperse, ensure
 
@@ -18,6 +19,21 @@ if TYPE_CHECKING:
     from trezor.messages import ZcashOrchardOutput, TxOutput
     from trezor.ui import Component
     from trezor.ui.layouts.common import LayoutType
+
+
+class ConfirmOrchardInputsCountOverThreshold(UiConfirm):
+    def __init__(self, orchard_inputs_count):
+        self.orchard_inputs_count = orchard_inputs_count
+
+    def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
+        return confirm_metadata(
+            ctx,
+            "orchard_inputs_count_over_threshold",
+            "Warning",
+            "There are {}\nshielded inputs.",
+            str(self.orchard_inputs_count),
+            ButtonRequestType.SignTx,
+        )
 
 
 def _format_amount(value: int, coin: CoinInfo) -> str:
