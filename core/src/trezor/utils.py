@@ -8,6 +8,7 @@ from trezorutils import (  # noqa: F401
     VERSION_MAJOR,
     VERSION_MINOR,
     VERSION_PATCH,
+    ZCASH_SHIELDED,
     consteq,
     firmware_hash,
     firmware_vendor,
@@ -39,8 +40,6 @@ if TYPE_CHECKING:
     )
 
     from trezor.protobuf import MessageType
-
-    from trezorutils import ZCASH_SHIELDED  # noqa: F401
 
 
 def unimport_begin() -> set[str]:

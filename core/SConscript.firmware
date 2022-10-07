@@ -12,7 +12,7 @@ FEATURE_FLAGS = {
     "RDI": True,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
     "SYSTEM_VIEW": False,
-    "ZCASH_SHIELDED": EVERYTHING,
+    "ZCASH_SHIELDED": False,
 }
 
 CCFLAGS_MOD = ''
