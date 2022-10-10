@@ -57,12 +57,12 @@ class Homescreen(HomescreenBase):
 
     def do_render(self) -> None:
         from trezor import utils
+        from trezor import ui  # local_cache_global
         import storage.device as storage_device
 
-        local_ui = ui  # local_cache_global
-        header_error = local_ui.header_error  # local_cache_attribute
-        header_warning = local_ui.header_warning  # local_cache_attribute
-        display = local_ui.display  # local_cache_attribute
+        header_error = ui.header_error  # local_cache_attribute
+        header_warning = ui.header_warning  # local_cache_attribute
+        display = ui.display  # local_cache_attribute
         model = utils.MODEL  # local_cache_attribute
 
         # warning bar on top
@@ -77,7 +77,7 @@ class Homescreen(HomescreenBase):
         elif storage_device.get_experimental_features():
             header_warning("EXPERIMENTAL MODE!")
         else:
-            display.bar(0, 0, local_ui.WIDTH, local_ui.HEIGHT, local_ui.BG)
+            display.bar(0, 0, ui.WIDTH, ui.HEIGHT, ui.BG)
 
         # homescreen with shifted avatar and text on bottom
         # Differs for each model
@@ -87,31 +87,25 @@ class Homescreen(HomescreenBase):
 
         # TODO: support homescreen avatar change for R and 1
         if model in ("T",):
-            display.avatar(
-                48, 48 - 10, self.get_image(), local_ui.WHITE, local_ui.BLACK
-            )
+            display.avatar(48, 48 - 10, self.get_image(), ui.WHITE, ui.BLACK)
         elif model in ("R",):
             icon = "trezor/res/homescreen_model_r.toif"  # 92x92 px
-            display.icon(
-                18, 18, local_ui.res.load(icon), local_ui.style.FG, local_ui.style.BG
-            )
+            display.icon(18, 18, ui.res.load(icon), ui.style.FG, ui.style.BG)
         elif model in ("1",):
             icon = "trezor/res/homescreen_model_1.toif"  # 64x36 px
-            display.icon(
-                33, 14, local_ui.res.load(icon), local_ui.style.FG, local_ui.style.BG
-            )
+            display.icon(33, 14, ui.res.load(icon), ui.style.FG, ui.style.BG)
 
         label_heights = {"1": 60, "R": 120, "T": 220}
         display.text_center(
-            local_ui.WIDTH // 2,
+            ui.WIDTH // 2,
             label_heights[model],
             self.label,
-            local_ui.BOLD,
-            local_ui.FG,
-            local_ui.BG,
+            ui.BOLD,
+            ui.FG,
+            ui.BG,
         )
 
-        local_ui.refresh()
+        ui.refresh()
 
     def on_touch_start(self, _x: int, _y: int) -> None:
         if self.loader.start_ms is not None:

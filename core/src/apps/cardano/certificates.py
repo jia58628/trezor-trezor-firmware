@@ -36,7 +36,7 @@ def validate(
 
     _validate_structure(certificate)
 
-    CCT = CardanoCertificateType  # local_cache_attribute
+    CCT = CardanoCertificateType  # local_cache_global
 
     if certificate.type in (
         CCT.STAKE_DELEGATION,
@@ -177,16 +177,14 @@ def _validate_pool_parameters(
 ) -> None:
     from .helpers import LOVELACE_MAX_SUPPLY
 
-    _assert = assert_cond  # local_cache_global
-
-    _assert(len(pool_parameters.pool_id) == _POOL_HASH_SIZE)
-    _assert(len(pool_parameters.vrf_key_hash) == _VRF_KEY_HASH_SIZE)
-    _assert(0 <= pool_parameters.pledge <= LOVELACE_MAX_SUPPLY)
-    _assert(0 <= pool_parameters.cost <= LOVELACE_MAX_SUPPLY)
-    _assert(pool_parameters.margin_numerator >= 0)
-    _assert(pool_parameters.margin_denominator > 0)
-    _assert(pool_parameters.margin_numerator <= pool_parameters.margin_denominator)
-    _assert(pool_parameters.owners_count > 0)
+    assert_cond(len(pool_parameters.pool_id) == _POOL_HASH_SIZE)
+    assert_cond(len(pool_parameters.vrf_key_hash) == _VRF_KEY_HASH_SIZE)
+    assert_cond(0 <= pool_parameters.pledge <= LOVELACE_MAX_SUPPLY)
+    assert_cond(0 <= pool_parameters.cost <= LOVELACE_MAX_SUPPLY)
+    assert_cond(pool_parameters.margin_numerator >= 0)
+    assert_cond(pool_parameters.margin_denominator > 0)
+    assert_cond(pool_parameters.margin_numerator <= pool_parameters.margin_denominator)
+    assert_cond(pool_parameters.owners_count > 0)
 
     addresses.validate_reward_address(
         pool_parameters.reward_account, protocol_magic, network_id
@@ -195,9 +193,9 @@ def _validate_pool_parameters(
     pool_metadata = pool_parameters.metadata  # local_cache_attribute
     if pool_metadata:
         # _validate_pool_metadata
-        _assert(len(pool_metadata.url) <= _MAX_URL_LENGTH)
-        _assert(len(pool_metadata.hash) == _POOL_METADATA_HASH_SIZE)
-        _assert(all((32 <= ord(c) < 127) for c in pool_metadata.url))
+        assert_cond(len(pool_metadata.url) <= _MAX_URL_LENGTH)
+        assert_cond(len(pool_metadata.hash) == _POOL_METADATA_HASH_SIZE)
+        assert_cond(all((32 <= ord(c) < 127) for c in pool_metadata.url))
 
 
 def validate_pool_owner(
@@ -220,22 +218,25 @@ def validate_pool_owner(
 def validate_pool_relay(pool_relay: messages.CardanoPoolRelayParameters) -> None:
     relay_port = pool_relay.port  # local_cache_attribute
     relay_host_name = pool_relay.host_name  # local_cache_attribute
-    _assert = assert_cond  # local_cache_global
 
     if pool_relay.type == CardanoPoolRelayType.SINGLE_HOST_IP:
-        _assert(
+        assert_cond(
             pool_relay.ipv4_address is not None or pool_relay.ipv6_address is not None
         )
         if pool_relay.ipv4_address is not None:
-            _assert(len(pool_relay.ipv4_address) == _IPV4_ADDRESS_SIZE)
+            assert_cond(len(pool_relay.ipv4_address) == _IPV4_ADDRESS_SIZE)
         if pool_relay.ipv6_address is not None:
-            _assert(len(pool_relay.ipv6_address) == _IPV6_ADDRESS_SIZE)
-        _assert(relay_port is not None and 0 <= relay_port <= _MAX_PORT_NUMBER)
+            assert_cond(len(pool_relay.ipv6_address) == _IPV6_ADDRESS_SIZE)
+        assert_cond(relay_port is not None and 0 <= relay_port <= _MAX_PORT_NUMBER)
     elif pool_relay.type == CardanoPoolRelayType.SINGLE_HOST_NAME:
-        _assert(relay_host_name is not None and len(relay_host_name) <= _MAX_URL_LENGTH)
-        _assert(relay_port is not None and 0 <= relay_port <= _MAX_PORT_NUMBER)
+        assert_cond(
+            relay_host_name is not None and len(relay_host_name) <= _MAX_URL_LENGTH
+        )
+        assert_cond(relay_port is not None and 0 <= relay_port <= _MAX_PORT_NUMBER)
     elif pool_relay.type == CardanoPoolRelayType.MULTIPLE_HOST_NAME:
-        _assert(relay_host_name is not None and len(relay_host_name) <= _MAX_URL_LENGTH)
+        assert_cond(
+            relay_host_name is not None and len(relay_host_name) <= _MAX_URL_LENGTH
+        )
     else:
         raise RuntimeError  # should be unreachable
 

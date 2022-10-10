@@ -26,6 +26,7 @@ def serialize_transfer(
     encrypted: bool,
 ) -> bytearray:
     from ..helpers import NEM_TRANSACTION_TYPE_TRANSFER
+    from ..writers import write_uint32_le
 
     version = common.network << 24 | 2 if transfer.mosaics else common.network << 24 | 1
     tx = serialize_tx_common(
@@ -38,21 +39,19 @@ def serialize_transfer(
     write_bytes_with_len(tx, transfer.recipient.encode())
     write_uint64_le(tx, transfer.amount)
 
-    write_uint32_le_local = write_uint32_le  # local_cache_global
-
     if payload:
         # payload + payload size (u32) + encryption flag (u32)
-        write_uint32_le_local(tx, len(payload) + 2 * 4)
+        write_uint32_le(tx, len(payload) + 2 * 4)
         if encrypted:
-            write_uint32_le_local(tx, 0x02)
+            write_uint32_le(tx, 0x02)
         else:
-            write_uint32_le_local(tx, 0x01)
+            write_uint32_le(tx, 0x01)
         write_bytes_with_len(tx, payload)
     else:
-        write_uint32_le_local(tx, 0)
+        write_uint32_le(tx, 0)
 
     if transfer.mosaics:
-        write_uint32_le_local(tx, len(transfer.mosaics))
+        write_uint32_le(tx, len(transfer.mosaics))
 
     return tx
 

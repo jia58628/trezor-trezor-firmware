@@ -63,41 +63,39 @@ def _header(typ: int, l: int) -> bytes:
 
 
 def _cbor_encode(value: Value) -> Iterator[bytes]:
-    header = _header  # local_cache_global
-
     if isinstance(value, int):
         if value >= 0:
-            yield header(_CBOR_UNSIGNED_INT, value)
+            yield _header(_CBOR_UNSIGNED_INT, value)
         else:
-            yield header(_CBOR_NEGATIVE_INT, -1 - value)
+            yield _header(_CBOR_NEGATIVE_INT, -1 - value)
     elif isinstance(value, bytes):
-        yield header(_CBOR_BYTE_STRING, len(value))
+        yield _header(_CBOR_BYTE_STRING, len(value))
         yield value
     elif isinstance(value, bytearray):
-        yield header(_CBOR_BYTE_STRING, len(value))
+        yield _header(_CBOR_BYTE_STRING, len(value))
         yield bytes(value)
     elif isinstance(value, str):
         encoded_value = value.encode()
-        yield header(_CBOR_TEXT_STRING, len(encoded_value))
+        yield _header(_CBOR_TEXT_STRING, len(encoded_value))
         yield encoded_value
     elif isinstance(value, (list, tuple)):
         # definite-length valued list
-        yield header(_CBOR_ARRAY, len(value))
+        yield _header(_CBOR_ARRAY, len(value))
         for x in value:
             yield from _cbor_encode(x)
     elif isinstance(value, dict):
-        yield header(_CBOR_MAP, len(value))
+        yield _header(_CBOR_MAP, len(value))
         sorted_map = sorted((encode(k), v) for k, v in value.items())
         for k, v in sorted_map:
             yield k
             yield from _cbor_encode(v)
     elif isinstance(value, OrderedMap):
-        yield header(_CBOR_MAP, len(value))
+        yield _header(_CBOR_MAP, len(value))
         for k, v in value:
             yield encode(k)
             yield from _cbor_encode(v)
     elif isinstance(value, Tagged):
-        yield header(_CBOR_TAG, value.tag)
+        yield _header(_CBOR_TAG, value.tag)
         yield from _cbor_encode(value.value)
     elif isinstance(value, IndefiniteLengthArray):
         yield bytes([_CBOR_ARRAY + 31])
@@ -137,21 +135,19 @@ def _read_length(r: BufferReader, aux: int) -> int:
 
 
 def _cbor_decode(r: BufferReader) -> Value:
-    read_length = _read_length  # local_cache_global
-
     fb = r.get()
     fb_type = fb & _CBOR_TYPE_MASK
     fb_aux = fb & _CBOR_INFO_BITS
     if fb_type == _CBOR_UNSIGNED_INT:
-        return read_length(r, fb_aux)
+        return _read_length(r, fb_aux)
     elif fb_type == _CBOR_NEGATIVE_INT:
-        val = read_length(r, fb_aux)
+        val = _read_length(r, fb_aux)
         return -1 - val
     elif fb_type == _CBOR_BYTE_STRING:
-        ln = read_length(r, fb_aux)
+        ln = _read_length(r, fb_aux)
         return r.read(ln)
     elif fb_type == _CBOR_TEXT_STRING:
-        ln = read_length(r, fb_aux)
+        ln = _read_length(r, fb_aux)
         return r.read(ln).decode()
     elif fb_type == _CBOR_ARRAY:
         if fb_aux == _CBOR_VAR_FOLLOWS:
@@ -163,7 +159,7 @@ def _cbor_decode(r: BufferReader) -> Value:
                 res.append(item)
             return res
         else:
-            ln = read_length(r, fb_aux)
+            ln = _read_length(r, fb_aux)
             res = []
             for _ in range(ln):
                 item = _cbor_decode(r)
@@ -181,7 +177,7 @@ def _cbor_decode(r: BufferReader) -> Value:
                 value = _cbor_decode(r)
                 res[key] = value
         else:
-            ln = read_length(r, fb_aux)
+            ln = _read_length(r, fb_aux)
             for _ in range(ln):
                 key = _cbor_decode(r)
                 if key in res:
@@ -190,7 +186,7 @@ def _cbor_decode(r: BufferReader) -> Value:
                 res[key] = value
         return res
     elif fb_type == _CBOR_TAG:
-        val = read_length(r, fb_aux)
+        val = _read_length(r, fb_aux)
         item = _cbor_decode(r)
         if val == _CBOR_RAW_TAG:  # only tag 24 (0x18) is supported
             return item

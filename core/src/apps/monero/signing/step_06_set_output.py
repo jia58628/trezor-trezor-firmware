@@ -250,7 +250,9 @@ def _range_proof(
     from apps.monero.signing import Error
 
     state_rsig_offload = state.rsig_offload  # local_cache_attribute
-    state_is_processing_offloaded = state.is_processing_offloaded  # local_cache_attribute
+    state_is_processing_offloaded = (
+        state.is_processing_offloaded
+    )  # local_cache_attribute
 
     provided_rsig = None
     if rsig_data and rsig_data.rsig and len(rsig_data.rsig) > 0:

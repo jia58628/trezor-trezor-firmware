@@ -230,12 +230,11 @@ def frame_init() -> uctypes.StructDict:
     # uint8_t bcnth;    // Message byte count - high part
     # uint8_t bcntl;    // Message byte count - low part
     # uint8_t data[HID_RPT_SIZE - 7];   // Data payload
-    _uctypes = uctypes  # local_cache_global
     return {
-        "cid": 0 | _uctypes.UINT32,
-        "cmd": 4 | _uctypes.UINT8,
-        "bcnt": 5 | _uctypes.UINT16,
-        "data": (7 | _uctypes.ARRAY, (_HID_RPT_SIZE - 7) | _uctypes.UINT8),
+        "cid": 0 | uctypes.UINT32,
+        "cmd": 4 | uctypes.UINT8,
+        "bcnt": 5 | uctypes.UINT16,
+        "data": (7 | uctypes.ARRAY, (_HID_RPT_SIZE - 7) | uctypes.UINT8),
     }
 
 
@@ -243,11 +242,10 @@ def frame_cont() -> uctypes.StructDict:
     # uint32_t cid;                     // Channel identifier
     # uint8_t seq;                      // Sequence number - b7 cleared
     # uint8_t data[HID_RPT_SIZE - 5];   // Data payload
-    _uctypes = uctypes  # local_cache_global
     return {
-        "cid": 0 | _uctypes.UINT32,
-        "seq": 4 | _uctypes.UINT8,
-        "data": (5 | _uctypes.ARRAY, (_HID_RPT_SIZE - 5) | _uctypes.UINT8),
+        "cid": 0 | uctypes.UINT32,
+        "seq": 4 | uctypes.UINT8,
+        "data": (5 | uctypes.ARRAY, (_HID_RPT_SIZE - 5) | uctypes.UINT8),
     }
 
 
@@ -320,12 +318,11 @@ def _resp_cmd_authenticate(siglen: int) -> uctypes.StructDict:
     # uint32_t ctr;         // Counter field (big-endian)
     # uint8_t sig[siglen];  // Signature
     # uint16_t status;
-    _uctypes = uctypes  # local_cache_global
     return {
-        "flags": 0 | _uctypes.UINT8,
-        "ctr": 1 | _uctypes.UINT32,
-        "sig": (5 | _uctypes.ARRAY, siglen | _uctypes.UINT8),
-        "status": status_ofs | _uctypes.UINT16,
+        "flags": 0 | uctypes.UINT8,
+        "ctr": 1 | uctypes.UINT32,
+        "sig": (5 | uctypes.ARRAY, siglen | uctypes.UINT8),
+        "status": status_ofs | uctypes.UINT16,
     }
 
 
@@ -1320,24 +1317,23 @@ def _msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
     req_cid = req.cid  # local_cache_attribute
     req_data = req.data  # local_cache_attribute
     log_info = log.info  # local_cache_attribute
-    _msg_error = msg_error  # local_cache_global
 
     if not config.is_unlocked():
         new_state: State = U2fUnlock(req_cid, dialog_mgr.iface)
         dialog_mgr.set_state(new_state)
-        return _msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
+        return msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
 
     if not storage_device.is_initialized():
         if __debug__:
             log.warning(__name__, "not initialized")
         # Device is not registered with the RP.
-        return _msg_error(req_cid, _SW_WRONG_DATA)
+        return msg_error(req_cid, _SW_WRONG_DATA)
 
     # we need at least keyHandleLen
     if len(req_data) <= _REQ_CMD_AUTHENTICATE_KHLEN:
         if __debug__:
             log.warning(__name__, "_SW_WRONG_LENGTH req_data")
-        return _msg_error(req_cid, _SW_WRONG_LENGTH)
+        return msg_error(req_cid, _SW_WRONG_LENGTH)
 
     # check keyHandleLen
     khlen = req_data[_REQ_CMD_AUTHENTICATE_KHLEN]
@@ -1350,7 +1346,7 @@ def _msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
         cred = Credential.from_bytes(key_handle, rp_id_hash)
     except Exception:
         # specific error logged in _node_from_key_handle
-        return _msg_error(req_cid, _SW_WRONG_DATA)
+        return msg_error(req_cid, _SW_WRONG_DATA)
 
     # if _AUTH_CHECK_ONLY is requested, return, because keyhandle has been checked already
     if req.p1 == _AUTH_CHECK_ONLY:
@@ -1358,24 +1354,24 @@ def _msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
             log_info(__name__, "_AUTH_CHECK_ONLY")
         global _last_good_auth_check_cid
         _last_good_auth_check_cid = req_cid
-        return _msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
+        return msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
 
     # from now on, only _AUTH_ENFORCE is supported
     if req.p1 != _AUTH_ENFORCE:
         if __debug__:
             log_info(__name__, "_AUTH_ENFORCE")
-        return _msg_error(req_cid, _SW_WRONG_DATA)
+        return msg_error(req_cid, _SW_WRONG_DATA)
 
     # check equality with last request
     new_state = U2fConfirmAuthenticate(req_cid, dialog_mgr.iface, req.data, cred)
     if not dialog_mgr.set_state(new_state):
-        return _msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
+        return msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
 
     # wait for a button or continue
     if dialog_mgr.result == _RESULT_NONE:
         if __debug__:
             log_info(__name__, "waiting for button")
-        return _msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
+        return msg_error(req_cid, _SW_CONDITIONS_NOT_SATISFIED)
 
     if dialog_mgr.result != _RESULT_CONFIRM:
         if __debug__:
@@ -1501,12 +1497,11 @@ def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State 
     from . import knownapps
 
     req_cid = req.cid  # local_cache_attribute
-    _cbor_error = cbor_error  # local_cache_global
 
     if not storage_device.is_initialized():
         if __debug__:
             log.warning(__name__, "not initialized")
-        return _cbor_error(req_cid, _ERR_OTHER)
+        return cbor_error(req_cid, _ERR_OTHER)
 
     try:
         param = cbor.decode(req.data, offset=1)
@@ -1544,7 +1539,7 @@ def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State 
                 cred.curve = common.COSE_CURVE_ED25519
                 break
         else:
-            return _cbor_error(req_cid, _ERR_UNSUPPORTED_ALGORITHM)
+            return cbor_error(req_cid, _ERR_UNSUPPORTED_ALGORITHM)
 
         # Get options.
         options = param.get(_MAKECRED_CMD_OPTIONS, {})
@@ -1558,11 +1553,11 @@ def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State 
 
         client_data_hash = param[_MAKECRED_CMD_CLIENT_DATA_HASH]
     except TypeError:
-        return _cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
+        return cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
     except KeyError:
-        return _cbor_error(req_cid, _ERR_MISSING_PARAMETER)
+        return cbor_error(req_cid, _ERR_MISSING_PARAMETER)
     except Exception:
-        return _cbor_error(req_cid, _ERR_INVALID_CBOR)
+        return cbor_error(req_cid, _ERR_INVALID_CBOR)
 
     app = knownapps.by_rp_id_hash(rp_id_hash)
     if app is not None and app.use_sign_count is not None:
@@ -1579,14 +1574,14 @@ def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State 
         or not isinstance(resident_key, bool)
         or not isinstance(user_verification, bool)
     ):
-        return _cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
+        return cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
 
     # Check options.
     if "up" in options:
-        return _cbor_error(req_cid, _ERR_INVALID_OPTION)
+        return cbor_error(req_cid, _ERR_INVALID_OPTION)
 
     if resident_key and not _ALLOW_RESIDENT_CREDENTIALS:
-        return _cbor_error(req_cid, _ERR_UNSUPPORTED_OPTION)
+        return cbor_error(req_cid, _ERR_UNSUPPORTED_OPTION)
 
     if user_verification and not config.has_pin():
         # User verification requested, but PIN is not enabled.
@@ -1594,7 +1589,7 @@ def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State 
 
     # Check that the pinAuth parameter is absent. Client PIN is not supported.
     if _MAKECRED_CMD_PIN_AUTH in param:
-        return _cbor_error(req_cid, _ERR_PIN_AUTH_INVALID)
+        return cbor_error(req_cid, _ERR_PIN_AUTH_INVALID)
 
     # Ask user to confirm registration.
     return Fido2ConfirmMakeCredential(
@@ -1683,12 +1678,11 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
     from .resident_credentials import find_by_rp_id_hash
 
     req_cid = req.cid  # local_cache_attribute
-    _cbor_error = cbor_error  # local_cache_global
 
     if not storage_device.is_initialized():
         if __debug__:
             log.warning(__name__, "not initialized")
-        return _cbor_error(req_cid, _ERR_OTHER)
+        return cbor_error(req_cid, _ERR_OTHER)
 
     try:
         param = cbor.decode(req.data, offset=1)
@@ -1718,7 +1712,7 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
 
         # Check that the pinAuth parameter is absent. Client PIN is not supported.
         if _GETASSERT_CMD_PIN_AUTH in param:
-            return _cbor_error(req_cid, _ERR_PIN_AUTH_INVALID)
+            return cbor_error(req_cid, _ERR_PIN_AUTH_INVALID)
 
         # Get options.
         options = param.get(_GETASSERT_CMD_OPTIONS, {})
@@ -1730,11 +1724,11 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
 
         client_data_hash = param[_GETASSERT_CMD_CLIENT_DATA_HASH]
     except TypeError:
-        return _cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
+        return cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
     except KeyError:
-        return _cbor_error(req_cid, _ERR_MISSING_PARAMETER)
+        return cbor_error(req_cid, _ERR_MISSING_PARAMETER)
     except Exception:
-        return _cbor_error(req_cid, _ERR_INVALID_CBOR)
+        return cbor_error(req_cid, _ERR_INVALID_CBOR)
 
     # Check data types.
     if (
@@ -1743,11 +1737,11 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
         or not isinstance(user_presence, bool)
         or not isinstance(user_verification, bool)
     ):
-        return _cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
+        return cbor_error(req_cid, _ERR_CBOR_UNEXPECTED_TYPE)
 
     # Check options.
     if "rk" in options:
-        return _cbor_error(req_cid, _ERR_INVALID_OPTION)
+        return cbor_error(req_cid, _ERR_INVALID_OPTION)
 
     if user_verification and not config.has_pin():
         # User verification requested, but PIN is not enabled.
@@ -1758,7 +1752,7 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
         if user_presence:
             return Fido2ConfirmNoCredentials(req_cid, dialog_mgr.iface, rp_id)
         else:
-            return _cbor_error(req_cid, _ERR_NO_CREDENTIALS)
+            return cbor_error(req_cid, _ERR_NO_CREDENTIALS)
     elif not user_presence and not user_verification:
         # Silent authentication.
         try:
@@ -1776,7 +1770,7 @@ def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | 
             # Firmware error.
             if __debug__:
                 log.exception(__name__, e)
-            return _cbor_error(req_cid, _ERR_OTHER)
+            return cbor_error(req_cid, _ERR_OTHER)
     else:
         # Ask user to confirm one of the credentials.
         return Fido2ConfirmGetAssertion(
@@ -1797,19 +1791,17 @@ def _cbor_get_assertion_hmac_secret(
     from trezor.crypto import aes
     from trezor.crypto import hmac
 
-    _common = common  # local_cache_global
-
     key_agreement = hmac_secret[1]  # The public key of platform key agreement key.
     # NOTE: We should check the key_agreement[COSE_KEY_ALG] here, but to avoid compatibility issues we don't,
     # because there is currently no valid value which describes the actual key agreement algorithm.
     if (
-        key_agreement[_common.COSE_KEY_KTY] != _common.COSE_KEYTYPE_EC2
-        or key_agreement[_common.COSE_KEY_CRV] != _common.COSE_CURVE_P256
+        key_agreement[common.COSE_KEY_KTY] != common.COSE_KEYTYPE_EC2
+        or key_agreement[common.COSE_KEY_CRV] != common.COSE_CURVE_P256
     ):
         return None
 
-    x = key_agreement[_common.COSE_KEY_X]
-    y = key_agreement[_common.COSE_KEY_Y]
+    x = key_agreement[common.COSE_KEY_X]
+    y = key_agreement[common.COSE_KEY_Y]
     salt_enc = hmac_secret[2]  # The encrypted salt.
     salt_auth = hmac_secret[3]  # The HMAC of the encrypted salt.
     if (
@@ -1926,7 +1918,6 @@ def _cbor_client_pin(req: Cmd) -> Cmd:
     from storage.fido2 import KEY_AGREEMENT_PUBKEY
 
     req_cid = req.cid  # local_cache_attribute
-    _common = common  # local_cache_global
 
     try:
         param = cbor.decode(req.data, offset=1)
@@ -1948,11 +1939,11 @@ def _cbor_client_pin(req: Cmd) -> Cmd:
     # recommended by the latest draft of the CTAP2 spec.
     response_data = {
         _CLIENTPIN_RESP_KEY_AGREEMENT: {
-            _common.COSE_KEY_ALG: _common.COSE_ALG_ECDH_ES_HKDF_256,
-            _common.COSE_KEY_KTY: _common.COSE_KEYTYPE_EC2,
-            _common.COSE_KEY_CRV: _common.COSE_CURVE_P256,
-            _common.COSE_KEY_X: KEY_AGREEMENT_PUBKEY[1:33],
-            _common.COSE_KEY_Y: KEY_AGREEMENT_PUBKEY[33:],
+            common.COSE_KEY_ALG: common.COSE_ALG_ECDH_ES_HKDF_256,
+            common.COSE_KEY_KTY: common.COSE_KEYTYPE_EC2,
+            common.COSE_KEY_CRV: common.COSE_CURVE_P256,
+            common.COSE_KEY_X: KEY_AGREEMENT_PUBKEY[1:33],
+            common.COSE_KEY_Y: KEY_AGREEMENT_PUBKEY[33:],
         }
     }
 

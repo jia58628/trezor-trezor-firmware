@@ -53,7 +53,9 @@ async def sign_tx(ctx: Context, msg: TezosSignTx, keychain: Keychain) -> TezosSi
         # if the transaction operation is used to execute code on a smart contract
         if msg_transaction.parameters_manager is not None:
             parameters_manager = msg_transaction.parameters_manager
-            parameters_manager_transfer = parameters_manager.transfer  # local_cache_attribute
+            parameters_manager_transfer = (
+                parameters_manager.transfer
+            )  # local_cache_attribute
 
             # operation to delegate from a smart contract with manager.tz
             if parameters_manager.set_delegate is not None:
@@ -190,11 +192,9 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
     from apps.common.writers import write_bytes_unchecked
     from .helpers import PROPOSAL_HASH_SIZE
 
-    write_bytes_fixed_local = write_bytes_fixed  # local_cache_global
-
-    write_bytes_fixed_local(w, msg.branch, helpers.BRANCH_HASH_SIZE)
-
     msg_reveal = msg.reveal  # local_cache_attribute
+
+    write_bytes_fixed(w, msg.branch, helpers.BRANCH_HASH_SIZE)
 
     # when the account sends first operation in lifetime,
     # we need to reveal its public key
@@ -207,7 +207,7 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
         except KeyError:
             raise DataError("Invalid tag in public key")
 
-        write_bytes_fixed_local(w, msg_reveal.public_key, 1 + public_key_size)
+        write_bytes_fixed(w, msg_reveal.public_key, 1 + public_key_size)
 
     # transaction operation
     if msg.transaction is not None:
@@ -218,19 +218,21 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
         # _encode_contract_id
         contract_id = transaction.destination
         write_uint8(w, contract_id.tag)
-        write_bytes_fixed_local(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
+        write_bytes_fixed(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
 
         # support delegation and transfer from the old scriptless contracts (now with manager.tz script)
         if transaction.parameters_manager is not None:
             parameters_manager = transaction.parameters_manager  # local_cache_attribute
-            parameters_manager_transfer = parameters_manager.transfer  # local_cache_attribute
+            parameters_manager_transfer = (
+                parameters_manager.transfer
+            )  # local_cache_attribute
 
             if parameters_manager.set_delegate is not None:
                 # _encode_manager_delegation
                 delegate = parameters_manager.set_delegate
                 michelson_length = 42
                 _encode_manager_common(w, michelson_length, "PUSH")
-                write_bytes_fixed_local(w, delegate, TAGGED_PUBKEY_HASH_SIZE)
+                write_bytes_fixed(w, delegate, TAGGED_PUBKEY_HASH_SIZE)
                 for i in ("SOME", "SET_DELEGATE", "CONS"):
                     write_instruction(w, i)
             elif parameters_manager.cancel_delegate is not None:
@@ -253,7 +255,7 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
                     sequence_length = michelson_length + len(value_natural)
 
                     _encode_manager_common(w, sequence_length, "PUSH")
-                    write_bytes_fixed_local(
+                    write_bytes_fixed(
                         w, manager_transfer.destination.hash, TAGGED_PUBKEY_HASH_SIZE
                     )
                     for i in ("IMPLICIT_ACCOUNT", "PUSH", "mutez"):
@@ -275,7 +277,7 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
                     # _encode_contract_id
                     contract_id = manager_transfer.destination
                     write_uint8(w, contract_id.tag)
-                    write_bytes_fixed_local(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
+                    write_bytes_fixed(w, contract_id.hash, CONTRACT_ID_SIZE - 1)
 
                     for i in ("CONTRACT", "unit", "ASSERT_SOME", "PUSH", "mutez"):
                         write_instruction(w, i)
@@ -309,18 +311,18 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
         # _encode_proposal
         proposal = msg.proposal
         write_uint8(w, helpers.OP_TAG_PROPOSALS)
-        write_bytes_fixed_local(w, proposal.source, TAGGED_PUBKEY_HASH_SIZE)
+        write_bytes_fixed(w, proposal.source, TAGGED_PUBKEY_HASH_SIZE)
         write_uint32_be(w, proposal.period)
         write_uint32_be(w, len(proposal.proposals) * PROPOSAL_HASH_SIZE)
         for proposal_hash in proposal.proposals:
-            write_bytes_fixed_local(w, proposal_hash, PROPOSAL_HASH_SIZE)
+            write_bytes_fixed(w, proposal_hash, PROPOSAL_HASH_SIZE)
     elif msg.ballot is not None:
         # _encode_ballot
         ballot = msg.ballot
         write_uint8(w, helpers.OP_TAG_BALLOT)
-        write_bytes_fixed_local(w, ballot.source, TAGGED_PUBKEY_HASH_SIZE)
+        write_bytes_fixed(w, ballot.source, TAGGED_PUBKEY_HASH_SIZE)
         write_uint32_be(w, ballot.period)
-        write_bytes_fixed_local(w, ballot.proposal, PROPOSAL_HASH_SIZE)
+        write_bytes_fixed(w, ballot.proposal, PROPOSAL_HASH_SIZE)
         write_uint8(w, ballot.ballot)
 
 

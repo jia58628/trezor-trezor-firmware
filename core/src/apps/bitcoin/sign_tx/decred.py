@@ -212,7 +212,9 @@ class Decred(Bitcoin):
         from . import progress
         from .. import multisig
 
-        self_tx_info_tx_inputs_count = self.tx_info.tx.inputs_count  # local_cache_attribute
+        self_tx_info_tx_inputs_count = (
+            self.tx_info.tx.inputs_count
+        )  # local_cache_attribute
         self_coin = self.coin  # local_cache_attribute
 
         write_compact_size(self.serialized_tx, self_tx_info_tx_inputs_count)

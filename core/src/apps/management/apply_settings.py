@@ -49,7 +49,9 @@ async def apply_settings(ctx: Context, msg: ApplySettings) -> Success:
     msg_label = msg.label  # local_cache_attribute
     msg_auto_lock_delay_ms = msg.auto_lock_delay_ms  # local_cache_attribute
     msg_use_passphrase = msg.use_passphrase  # local_cache_attribute
-    msg_passphrase_always_on_device = msg.passphrase_always_on_device  # local_cache_attribute
+    msg_passphrase_always_on_device = (
+        msg.passphrase_always_on_device
+    )  # local_cache_attribute
     msg_display_rotation = msg.display_rotation  # local_cache_attribute
     msg_safety_checks = msg.safety_checks  # local_cache_attribute
     msg_experimental_features = msg.experimental_features  # local_cache_attribute

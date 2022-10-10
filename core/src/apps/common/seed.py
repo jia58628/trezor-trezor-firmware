@@ -52,7 +52,6 @@ if not utils.BITCOIN_ONLY:
 
     async def derive_and_store_roots(ctx: Context) -> None:
         from trezor import wire
-        import storage.cache as storage_cache  # pylint: disable=reimported  # local_cache_global
 
         if not storage_device.is_initialized():
             raise wire.NotInitialized("Device is not initialized")

@@ -66,7 +66,9 @@ def _validate_native_script_structure(script: messages.CardanoNativeScript) -> N
     key_hash = script.key_hash  # local_cache_attribute
     key_path = script.key_path  # local_cache_attribute
     scripts = script.scripts  # local_cache_attribute
-    required_signatures_count = script.required_signatures_count  # local_cache_attribute
+    required_signatures_count = (
+        script.required_signatures_count
+    )  # local_cache_attribute
     invalid_before = script.invalid_before  # local_cache_attribute
     invalid_hereafter = script.invalid_hereafter  # local_cache_attribute
     CNST = CardanoNativeScriptType  # local_cache_global

@@ -50,7 +50,9 @@ def serialize(
     return w
 
 
-def _write(w: Writer, field_type: int, field_key: int, value: int | bytes | str | None) -> None:
+def _write(
+    w: Writer, field_type: int, field_key: int, value: int | bytes | str | None
+) -> None:
     from . import helpers
 
     if value is None:

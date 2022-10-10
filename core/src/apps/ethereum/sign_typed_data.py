@@ -426,29 +426,27 @@ def _validate_value(field: EthereumFieldType, value: bytes) -> None:
 
     Raise DataError if encountering a problem, so clients are notified.
     """
-    _DataError = DataError  # local_cache_global
-
     # Checking if the size corresponds to what is defined in types,
     # and also setting our maximum supported size in bytes
     if field.size is not None:
         if len(value) != field.size:
-            raise _DataError("Invalid length")
+            raise DataError("Invalid length")
     else:
         if len(value) > _MAX_VALUE_BYTE_SIZE:
-            raise _DataError(f"Invalid length, bigger than {_MAX_VALUE_BYTE_SIZE}")
+            raise DataError(f"Invalid length, bigger than {_MAX_VALUE_BYTE_SIZE}")
 
     # Specific tests for some data types
     if field.data_type == EthereumDataType.BOOL:
         if value not in (b"\x00", b"\x01"):
-            raise _DataError("Invalid boolean value")
+            raise DataError("Invalid boolean value")
     elif field.data_type == EthereumDataType.ADDRESS:
         if len(value) != 20:
-            raise _DataError("Invalid address")
+            raise DataError("Invalid address")
     elif field.data_type == EthereumDataType.STRING:
         try:
             value.decode()
         except UnicodeError:
-            raise _DataError("Invalid UTF-8")
+            raise DataError("Invalid UTF-8")
 
 
 def validate_field_type(field: EthereumFieldType) -> None:
@@ -457,7 +455,6 @@ def validate_field_type(field: EthereumFieldType) -> None:
 
     Raise DataError if encountering a problem, so clients are notified.
     """
-    _DataError = DataError  # local_cache_global
     EDT = EthereumDataType  # local_cache_global
 
     data_type = field.data_type
@@ -465,43 +462,43 @@ def validate_field_type(field: EthereumFieldType) -> None:
     # entry_type is only for arrays
     if data_type == EDT.ARRAY:
         if field.entry_type is None:
-            raise _DataError("Missing entry_type in array")
+            raise DataError("Missing entry_type in array")
         # We also need to validate it recursively
         validate_field_type(field.entry_type)
     else:
         if field.entry_type is not None:
-            raise _DataError("Unexpected entry_type in nonarray")
+            raise DataError("Unexpected entry_type in nonarray")
 
     # struct_name is only for structs
     if data_type == EDT.STRUCT:
         if field.struct_name is None:
-            raise _DataError("Missing struct_name in struct")
+            raise DataError("Missing struct_name in struct")
     else:
         if field.struct_name is not None:
-            raise _DataError("Unexpected struct_name in nonstruct")
+            raise DataError("Unexpected struct_name in nonstruct")
 
     field_size = field.size  # local_cache_attribute
 
     # size is special for each type
     if data_type == EDT.STRUCT:
         if field_size is None:
-            raise _DataError("Missing size in struct")
+            raise DataError("Missing size in struct")
     elif data_type == EDT.BYTES:
         if field_size is not None and not 1 <= field_size <= 32:
-            raise _DataError("Invalid size in bytes")
+            raise DataError("Invalid size in bytes")
     elif data_type in (
         EDT.UINT,
         EDT.INT,
     ):
         if field_size is None or not 1 <= field_size <= 32:
-            raise _DataError("Invalid size in int/uint")
+            raise DataError("Invalid size in int/uint")
     elif data_type in (
         EDT.STRING,
         EDT.BOOL,
         EDT.ADDRESS,
     ):
         if field_size is not None:
-            raise _DataError("Unexpected size in str/bool/addr")
+            raise DataError("Unexpected size in str/bool/addr")
 
 
 async def _get_array_size(ctx: Context, member_path: list[int]) -> int:

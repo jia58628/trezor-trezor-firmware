@@ -46,18 +46,17 @@ if __debug__:
 
     async def diag(ctx, msg, **kwargs) -> Failure:
         msg_ins = msg.ins  # local_cache_attribute
-        mem_check = check_mem  # local_cache_global
         log_debug = log.debug  # local_cache_attribute
 
         log_debug(__name__, "----diagnostics")
         gc.collect()
 
         if msg_ins == 0:
-            mem_check(0)
+            check_mem(0)
             return retit()
 
         elif msg_ins == 1:
-            mem_check(1)
+            check_mem(1)
             micropython.mem_info(1)
             return retit()
 
@@ -83,13 +82,13 @@ if __debug__:
             return retit()
 
         elif msg_ins in [5, 6, 7]:
-            mem_check()
+            check_mem()
             from apps.monero.xmr import bulletproof as bp
 
-            mem_check("BP Imported")
+            check_mem("BP Imported")
             from apps.monero.xmr import crypto
 
-            mem_check("Crypto Imported")
+            check_mem("Crypto Imported")
 
             bpi = bp.BulletProofBuilder()
             bpi.gc_fnc = gc.collect
@@ -97,25 +96,25 @@ if __debug__:
 
             vals = [crypto.Scalar((1 << 30) - 1 + 16), crypto.Scalar(22222)]
             masks = [crypto.random_scalar(), crypto.random_scalar()]
-            mem_check("BP pre input")
+            check_mem("BP pre input")
 
             if msg_ins == 5:
                 bp_res = bpi.prove_testnet(vals[0], masks[0])
-                mem_check("BP post prove")
+                check_mem("BP post prove")
                 bpi.verify_testnet(bp_res)
-                mem_check("BP post verify")
+                check_mem("BP post verify")
 
             elif msg_ins == 6:
                 bp_res = bpi.prove(vals[0], masks[0])
-                mem_check("BP post prove")
+                check_mem("BP post prove")
                 bpi.verify(bp_res)
-                mem_check("BP post verify")
+                check_mem("BP post verify")
 
             elif msg_ins == 7:
                 bp_res = bpi.prove_batch(vals, masks)
-                mem_check("BP post prove")
+                check_mem("BP post prove")
                 bpi.verify(bp_res)
-                mem_check("BP post verify")
+                check_mem("BP post verify")
 
             return retit()
 

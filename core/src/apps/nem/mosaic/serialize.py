@@ -21,21 +21,19 @@ def serialize_mosaic_creation(
 ) -> bytes:
     from ..helpers import NEM_TRANSACTION_TYPE_MOSAIC_CREATION
 
-    write_bytes_with_len_local = write_bytes_with_len  # local_cache_global
-
     w = serialize_tx_common(common, public_key, NEM_TRANSACTION_TYPE_MOSAIC_CREATION)
 
     mosaics_w = bytearray()
-    write_bytes_with_len_local(mosaics_w, public_key)
+    write_bytes_with_len(mosaics_w, public_key)
 
     creation_definition = creation.definition  # local_cache_attribute
 
     identifier_w = bytearray()
-    write_bytes_with_len_local(identifier_w, creation_definition.namespace.encode())
-    write_bytes_with_len_local(identifier_w, creation_definition.mosaic.encode())
+    write_bytes_with_len(identifier_w, creation_definition.namespace.encode())
+    write_bytes_with_len(identifier_w, creation_definition.mosaic.encode())
 
-    write_bytes_with_len_local(mosaics_w, identifier_w)
-    write_bytes_with_len_local(mosaics_w, creation_definition.description.encode())
+    write_bytes_with_len(mosaics_w, identifier_w)
+    write_bytes_with_len(mosaics_w, creation_definition.description.encode())
     write_uint32_le(mosaics_w, 4)  # number of properties
 
     _write_property(mosaics_w, "divisibility", creation_definition.divisibility)
@@ -51,26 +49,26 @@ def serialize_mosaic_creation(
         assert creation_definition.fee is not None
 
         levy_identifier_w = bytearray()
-        write_bytes_with_len_local(
+        write_bytes_with_len(
             levy_identifier_w, creation_definition.levy_namespace.encode()
         )
-        write_bytes_with_len_local(
+        write_bytes_with_len(
             levy_identifier_w, creation_definition.levy_mosaic.encode()
         )
 
         levy_w = bytearray()
         write_uint32_le(levy_w, creation_definition.levy)
-        write_bytes_with_len_local(levy_w, creation_definition.levy_address.encode())
-        write_bytes_with_len_local(levy_w, levy_identifier_w)
+        write_bytes_with_len(levy_w, creation_definition.levy_address.encode())
+        write_bytes_with_len(levy_w, levy_identifier_w)
         write_uint64_le(levy_w, creation_definition.fee)
 
-        write_bytes_with_len_local(mosaics_w, levy_w)
+        write_bytes_with_len(mosaics_w, levy_w)
     else:
         write_uint32_le(mosaics_w, 0)  # no levy
 
-    write_bytes_with_len_local(w, mosaics_w)
+    write_bytes_with_len(w, mosaics_w)
 
-    write_bytes_with_len_local(w, creation.sink.encode())
+    write_bytes_with_len(w, creation.sink.encode())
     write_uint64_le(w, creation.fee)
 
     return w

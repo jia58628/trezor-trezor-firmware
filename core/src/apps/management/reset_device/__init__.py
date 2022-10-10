@@ -111,15 +111,13 @@ async def reset_device(ctx: Context, msg: ResetDevice) -> Success:
 
 
 async def _backup_slip39_basic(ctx: Context, encrypted_master_secret: bytes) -> None:
-    local_layout = layout  # local_cache_global
-
     # get number of shares
-    await local_layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_BASIC)
-    shares_count = await local_layout.slip39_prompt_number_of_shares(ctx)
+    await layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_BASIC)
+    shares_count = await layout.slip39_prompt_number_of_shares(ctx)
 
     # get threshold
-    await local_layout.slip39_show_checklist(ctx, 1, BAK_T_SLIP39_BASIC)
-    threshold = await local_layout.slip39_prompt_threshold(ctx, shares_count)
+    await layout.slip39_show_checklist(ctx, 1, BAK_T_SLIP39_BASIC)
+    threshold = await layout.slip39_prompt_threshold(ctx, shares_count)
 
     identifier = storage_device.get_slip39_identifier()
     iteration_exponent = storage_device.get_slip39_iteration_exponent()
@@ -136,31 +134,27 @@ async def _backup_slip39_basic(ctx: Context, encrypted_master_secret: bytes) -> 
     )[0]
 
     # show and confirm individual shares
-    await local_layout.slip39_show_checklist(ctx, 2, BAK_T_SLIP39_BASIC)
-    await local_layout.slip39_basic_show_and_confirm_shares(ctx, mnemonics)
+    await layout.slip39_show_checklist(ctx, 2, BAK_T_SLIP39_BASIC)
+    await layout.slip39_basic_show_and_confirm_shares(ctx, mnemonics)
 
 
 async def _backup_slip39_advanced(ctx: Context, encrypted_master_secret: bytes) -> None:
-    local_layout = layout  # local_cache_global
-
     # get number of groups
-    await local_layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_ADVANCED)
-    groups_count = await local_layout.slip39_advanced_prompt_number_of_groups(ctx)
+    await layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_ADVANCED)
+    groups_count = await layout.slip39_advanced_prompt_number_of_groups(ctx)
 
     # get group threshold
-    await local_layout.slip39_show_checklist(ctx, 1, BAK_T_SLIP39_ADVANCED)
-    group_threshold = await local_layout.slip39_advanced_prompt_group_threshold(
+    await layout.slip39_show_checklist(ctx, 1, BAK_T_SLIP39_ADVANCED)
+    group_threshold = await layout.slip39_advanced_prompt_group_threshold(
         ctx, groups_count
     )
 
     # get shares and thresholds
-    await local_layout.slip39_show_checklist(ctx, 2, BAK_T_SLIP39_ADVANCED)
+    await layout.slip39_show_checklist(ctx, 2, BAK_T_SLIP39_ADVANCED)
     groups = []
     for i in range(groups_count):
-        share_count = await local_layout.slip39_prompt_number_of_shares(ctx, i)
-        share_threshold = await local_layout.slip39_prompt_threshold(
-            ctx, share_count, i
-        )
+        share_count = await layout.slip39_prompt_number_of_shares(ctx, i)
+        share_threshold = await layout.slip39_prompt_threshold(ctx, share_count, i)
         groups.append((share_threshold, share_count))
 
     identifier = storage_device.get_slip39_identifier()

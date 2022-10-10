@@ -214,16 +214,15 @@ async def confirm_action_deleteauth(ctx: Context, msg: EosActionDeleteAuth) -> N
 
 
 async def confirm_action_linkauth(ctx: Context, msg: EosActionLinkAuth) -> None:
-    name_to_str = eos_name_to_string  # local_cache_global
     await _confirm_properties(
         ctx,
         "confirm_linkauth",
         "Link Auth",
         (
-            ("Account:", name_to_str(msg.account)),
-            ("Code:", name_to_str(msg.code)),
-            ("Type:", name_to_str(msg.type)),
-            ("Requirement:", name_to_str(msg.requirement)),
+            ("Account:", eos_name_to_string(msg.account)),
+            ("Code:", eos_name_to_string(msg.code)),
+            ("Type:", eos_name_to_string(msg.type)),
+            ("Requirement:", eos_name_to_string(msg.requirement)),
         ),
     )
 

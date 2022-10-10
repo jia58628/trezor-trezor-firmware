@@ -35,6 +35,7 @@ async def sign_tx_eip1559(
     from trezor.crypto.hashlib import sha3_256
     from trezor.utils import HashWriter
     from trezor import wire
+    from trezor.crypto import rlp  # local_cache_global
     from apps.common import paths
     from .layout import (
         require_confirm_data,
@@ -43,7 +44,6 @@ async def sign_tx_eip1559(
     )
     from .sign_tx import handle_erc20, send_request_chunk, check_common_fields
 
-    _rlp = rlp  # local_cache_global
     msg_gas_limit = msg.gas_limit  # local_cache_attribute
 
     # check
@@ -82,9 +82,9 @@ async def sign_tx_eip1559(
 
     sha = HashWriter(sha3_256(keccak=True))
 
-    _rlp.write(sha, _TX_TYPE)
+    rlp.write(sha, _TX_TYPE)
 
-    _rlp.write_header(sha, total_length, _rlp.LIST_HEADER_BYTE)
+    rlp.write_header(sha, total_length, rlp.LIST_HEADER_BYTE)
 
     fields: tuple[rlp.RLPItem, ...] = (
         msg.chain_id,
@@ -96,12 +96,12 @@ async def sign_tx_eip1559(
         msg.value,
     )
     for field in fields:
-        _rlp.write(sha, field)
+        rlp.write(sha, field)
 
     if data_left == 0:
-        _rlp.write(sha, data)
+        rlp.write(sha, data)
     else:
-        _rlp.write_header(sha, data_total, _rlp.STRING_HEADER_BYTE, data)
+        rlp.write_header(sha, data_total, rlp.STRING_HEADER_BYTE, data)
         sha.extend(data)
 
     while data_left > 0:
@@ -111,14 +111,14 @@ async def sign_tx_eip1559(
 
     # write_access_list
     payload_length = sum(access_list_item_length(i) for i in msg.access_list)
-    _rlp.write_header(sha, payload_length, _rlp.LIST_HEADER_BYTE)
+    rlp.write_header(sha, payload_length, rlp.LIST_HEADER_BYTE)
     for item in msg.access_list:
         address_bytes = bytes_from_address(item.address)
-        address_length = _rlp.length(address_bytes)
-        keys_length = _rlp.length(item.storage_keys)
-        _rlp.write_header(sha, address_length + keys_length, _rlp.LIST_HEADER_BYTE)
-        _rlp.write(sha, address_bytes)
-        _rlp.write(sha, item.storage_keys)
+        address_length = rlp.length(address_bytes)
+        keys_length = rlp.length(item.storage_keys)
+        rlp.write_header(sha, address_length + keys_length, rlp.LIST_HEADER_BYTE)
+        rlp.write(sha, address_bytes)
+        rlp.write(sha, item.storage_keys)
 
     digest = sha.get_digest()
     result = _sign_digest(msg, keychain, digest)

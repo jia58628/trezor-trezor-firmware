@@ -134,18 +134,17 @@ def _scalarmult_key(
     s_raw: int | None = None,
     tmp_pt: crypto.Point = _tmp_pt_1,
 ):
-    _crypto = crypto  # local_cache_global
 
     # TODO: two functions based on s/s_raw ?
     dst = _ensure_dst_key(dst)
-    _crypto.decodepoint_into(tmp_pt, P)
+    crypto.decodepoint_into(tmp_pt, P)
     if s:
         crypto_decodeint_into_noreduce(_tmp_sc_1, s)
-        _crypto.scalarmult_into(tmp_pt, tmp_pt, _tmp_sc_1)
+        crypto.scalarmult_into(tmp_pt, tmp_pt, _tmp_sc_1)
     else:
         assert s_raw is not None
-        _crypto.scalarmult_into(tmp_pt, tmp_pt, s_raw)
-    _crypto.encodepoint_into(dst, tmp_pt)
+        crypto.scalarmult_into(tmp_pt, tmp_pt, s_raw)
+    crypto.encodepoint_into(dst, tmp_pt)
     return dst
 
 
@@ -194,30 +193,28 @@ def _sc_sub(
     a: bytes | crypto.Scalar,
     b: bytes | crypto.Scalar,
 ) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
-    if not isinstance(a, _crypto.Scalar):
+    if not isinstance(a, crypto.Scalar):
         crypto_decodeint_into_noreduce(_tmp_sc_1, a)
         a = _tmp_sc_1
-    if not isinstance(b, _crypto.Scalar):
+    if not isinstance(b, crypto.Scalar):
         crypto_decodeint_into_noreduce(_tmp_sc_2, b)
         b = _tmp_sc_2
-    _crypto.sc_sub_into(_tmp_sc_3, a, b)
-    _crypto.encodeint_into(dst, _tmp_sc_3)
+    crypto.sc_sub_into(_tmp_sc_3, a, b)
+    crypto.encodeint_into(dst, _tmp_sc_3)
     return dst
 
 
 def _sc_mul(dst: bytearray | None, a: bytes, b: bytes | crypto.Scalar) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
-    if not isinstance(b, _crypto.Scalar):
+    if not isinstance(b, crypto.Scalar):
         crypto_decodeint_into_noreduce(_tmp_sc_2, b)
         b = _tmp_sc_2
-    _crypto.sc_mul_into(_tmp_sc_3, _tmp_sc_1, b)
-    _crypto.encodeint_into(dst, _tmp_sc_3)
+    crypto.sc_mul_into(_tmp_sc_3, _tmp_sc_1, b)
+    crypto.encodeint_into(dst, _tmp_sc_3)
     return dst
 
 
@@ -248,48 +245,44 @@ def _sc_muladd(
 
 
 def _sc_mulsub(dst: bytearray | None, a: bytes, b: bytes, c: bytes) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
     crypto_decodeint_into_noreduce(_tmp_sc_2, b)
     crypto_decodeint_into_noreduce(_tmp_sc_3, c)
-    _crypto.sc_mulsub_into(_tmp_sc_4, _tmp_sc_1, _tmp_sc_2, _tmp_sc_3)
-    _crypto.encodeint_into(dst, _tmp_sc_4)
+    crypto.sc_mulsub_into(_tmp_sc_4, _tmp_sc_1, _tmp_sc_2, _tmp_sc_3)
+    crypto.encodeint_into(dst, _tmp_sc_4)
     return dst
 
 
 def _add_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
-    _crypto.decodepoint_into(_tmp_pt_1, A)
-    _crypto.decodepoint_into(_tmp_pt_2, B)
-    _crypto.point_add_into(_tmp_pt_3, _tmp_pt_1, _tmp_pt_2)
-    _crypto.encodepoint_into(dst, _tmp_pt_3)
+    crypto.decodepoint_into(_tmp_pt_1, A)
+    crypto.decodepoint_into(_tmp_pt_2, B)
+    crypto.point_add_into(_tmp_pt_3, _tmp_pt_1, _tmp_pt_2)
+    crypto.encodepoint_into(dst, _tmp_pt_3)
     return dst
 
 
 def _sub_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
-    _crypto.decodepoint_into(_tmp_pt_1, A)
-    _crypto.decodepoint_into(_tmp_pt_2, B)
-    _crypto.point_sub_into(_tmp_pt_3, _tmp_pt_1, _tmp_pt_2)
-    _crypto.encodepoint_into(dst, _tmp_pt_3)
+    crypto.decodepoint_into(_tmp_pt_1, A)
+    crypto.decodepoint_into(_tmp_pt_2, B)
+    crypto.point_sub_into(_tmp_pt_3, _tmp_pt_1, _tmp_pt_2)
+    crypto.encodepoint_into(dst, _tmp_pt_3)
     return dst
 
 
 def _add_keys2(dst: bytearray | None, a: bytes, b: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
     crypto_decodeint_into_noreduce(_tmp_sc_2, b)
-    _crypto.decodepoint_into(_tmp_pt_1, B)
-    _crypto.add_keys2_into(_tmp_pt_2, _tmp_sc_1, _tmp_sc_2, _tmp_pt_1)
-    _crypto.encodepoint_into(dst, _tmp_pt_2)
+    crypto.decodepoint_into(_tmp_pt_1, B)
+    crypto.add_keys2_into(_tmp_pt_2, _tmp_sc_1, _tmp_sc_2, _tmp_pt_1)
+    crypto.encodepoint_into(dst, _tmp_pt_2)
     return dst
 
 
@@ -1246,10 +1239,9 @@ class KeyR0(KeyVBase):
         item = self.idxize(item)
         self.last_idx = item
 
-        _crypto = crypto  # local_cache_global
         self_res = self.res  # local_cache_attribute
         self_p2 = self.p2  # local_cache_attribute
-        _crypto_sc_mul_into = _crypto.sc_mul_into  # local_cache_attribute
+        _crypto_sc_mul_into = crypto.sc_mul_into  # local_cache_attribute
 
         # Const init for eval
         if item == 0:  # Reset on first item access
@@ -1275,16 +1267,16 @@ class KeyR0(KeyVBase):
             item == 0 or item != prev
         ):  # if True not present, fails with cross dot product
             crypto_decodeint_into_noreduce(self_res, self.aR.to(item))  # aR[i]
-            _crypto.sc_add_into(self_res, self_res, self.z)  # aR[i] + z
+            crypto.sc_add_into(self_res, self_res, self.z)  # aR[i] + z
             _crypto_sc_mul_into(self_res, self_res, self.yp)  # (aR[i] + z) * y^i
-            _crypto.sc_muladd_into(
+            crypto.sc_muladd_into(
                 self_res, self.zt, self_p2, self_res
             )  # (aR[i] + z) * y^i + z^{2 + \floor{i/N}} 2^{i \% N}
 
         if self.raw:
             return self_res
 
-        _crypto.encodeint_into(self.cur, self_res)
+        crypto.encodeint_into(self.cur, self_res)
         return self.cur
 
 
@@ -1301,28 +1293,27 @@ def _vector_exponent_custom(A, B, a, b, dst=None, a_raw=None, b_raw=None):
     """
     \\sum_{i=0}^{|A|}  a_i A_i + b_i B_i
     """
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
-    _crypto.identity_into(_tmp_pt_2)
+    crypto.identity_into(_tmp_pt_2)
 
     for i in range(len(a or a_raw)):
         if a:
             crypto_decodeint_into_noreduce(_tmp_sc_1, a.to(i))
-        _crypto.decodepoint_into(_tmp_pt_3, A.to(i))
+        crypto.decodepoint_into(_tmp_pt_3, A.to(i))
         if b:
             crypto_decodeint_into_noreduce(_tmp_sc_2, b.to(i))
-        _crypto.decodepoint_into(_tmp_pt_4, B.to(i))
-        _crypto.add_keys3_into(
+        crypto.decodepoint_into(_tmp_pt_4, B.to(i))
+        crypto.add_keys3_into(
             _tmp_pt_1,
             _tmp_sc_1 if a else a_raw.to(i),
             _tmp_pt_3,
             _tmp_sc_2 if b else b_raw.to(i),
             _tmp_pt_4,
         )
-        _crypto.point_add_into(_tmp_pt_2, _tmp_pt_2, _tmp_pt_1)
+        crypto.point_add_into(_tmp_pt_2, _tmp_pt_2, _tmp_pt_1)
         _gc_iter(i)
-    _crypto.encodepoint_into(dst, _tmp_pt_2)
+    crypto.encodepoint_into(dst, _tmp_pt_2)
     return dst
 
 
@@ -1354,7 +1345,6 @@ def _vector_power_sum(x, n, dst=None):
     """
     \\sum_{i=0}^{n-1} x^i
     """
-    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     if n == 0:
@@ -1364,35 +1354,34 @@ def _vector_power_sum(x, n, dst=None):
 
     crypto_decodeint_into_noreduce(_tmp_sc_1, x)
     crypto_decodeint_into_noreduce(_tmp_sc_3, _ONE)
-    _crypto.sc_add_into(_tmp_sc_3, _tmp_sc_3, _tmp_sc_1)
-    _crypto.sc_copy(_tmp_sc_2, _tmp_sc_1)
+    crypto.sc_add_into(_tmp_sc_3, _tmp_sc_3, _tmp_sc_1)
+    crypto.sc_copy(_tmp_sc_2, _tmp_sc_1)
 
     for i in range(2, n):
-        _crypto.sc_mul_into(_tmp_sc_2, _tmp_sc_2, _tmp_sc_1)
-        _crypto.sc_add_into(_tmp_sc_3, _tmp_sc_3, _tmp_sc_2)
+        crypto.sc_mul_into(_tmp_sc_2, _tmp_sc_2, _tmp_sc_1)
+        crypto.sc_add_into(_tmp_sc_3, _tmp_sc_3, _tmp_sc_2)
         _gc_iter(i)
 
-    return _crypto.encodeint_into(dst, _tmp_sc_3)
+    return crypto.encodeint_into(dst, _tmp_sc_3)
 
 
 def _inner_product(a, b, dst=None):
     """
     \\sum_{i=0}^{|a|} a_i b_i
     """
-    _crypto = crypto  # local_cache_global
 
     if len(a) != len(b):
         raise ValueError("Incompatible sizes of a and b")
     dst = _ensure_dst_key(dst)
-    _crypto.sc_copy(_tmp_sc_1, 0)
+    crypto.sc_copy(_tmp_sc_1, 0)
 
     for i in range(len(a)):
         crypto_decodeint_into_noreduce(_tmp_sc_2, a.to(i))
         crypto_decodeint_into_noreduce(_tmp_sc_3, b.to(i))
-        _crypto.sc_muladd_into(_tmp_sc_1, _tmp_sc_2, _tmp_sc_3, _tmp_sc_1)
+        crypto.sc_muladd_into(_tmp_sc_1, _tmp_sc_2, _tmp_sc_3, _tmp_sc_1)
         _gc_iter(i)
 
-    _crypto.encodeint_into(dst, _tmp_sc_1)
+    crypto.encodeint_into(dst, _tmp_sc_1)
     return dst
 
 
@@ -1402,25 +1391,22 @@ def _weighted_inner_product(
     """
     Output a_0*b_0*y**1 + a_1*b_1*y**2 + ... + a_{n-1}*b_{n-1}*y**n
     """
-    _crypto = crypto  # local_cache_global
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
-
     if len(a) != len(b):
         raise ValueError("Incompatible sizes of a and b")
     dst = _ensure_dst_key(dst)
-    y_sc = _crypto_decodeint_into_noreduce(_tmp_sc_4, y)
-    y_pow = _crypto.sc_copy(_tmp_sc_5, _tmp_sc_4)
-    _crypto_decodeint_into_noreduce(_tmp_sc_1, _ZERO)
+    y_sc = crypto_decodeint_into_noreduce(_tmp_sc_4, y)
+    y_pow = crypto.sc_copy(_tmp_sc_5, _tmp_sc_4)
+    crypto_decodeint_into_noreduce(_tmp_sc_1, _ZERO)
 
     for i in range(len(a)):
-        _crypto_decodeint_into_noreduce(_tmp_sc_2, a.to(i))
-        _crypto_decodeint_into_noreduce(_tmp_sc_3, b.to(i))
-        _crypto.sc_mul_into(_tmp_sc_2, _tmp_sc_2, _tmp_sc_3)
-        _crypto.sc_muladd_into(_tmp_sc_1, _tmp_sc_2, y_pow, _tmp_sc_1)
-        _crypto.sc_mul_into(y_pow, y_pow, y_sc)
+        crypto_decodeint_into_noreduce(_tmp_sc_2, a.to(i))
+        crypto_decodeint_into_noreduce(_tmp_sc_3, b.to(i))
+        crypto.sc_mul_into(_tmp_sc_2, _tmp_sc_2, _tmp_sc_3)
+        crypto.sc_muladd_into(_tmp_sc_1, _tmp_sc_2, y_pow, _tmp_sc_1)
+        crypto.sc_mul_into(y_pow, y_pow, y_sc)
         _gc_iter(i)
 
-    _crypto.encodeint_into(dst, _tmp_sc_1)
+    crypto.encodeint_into(dst, _tmp_sc_1)
     return dst
 
 
@@ -1431,7 +1417,6 @@ def _hadamard_fold(v, a, b, into=None, into_offset: int = 0, vR=None, vRoff=0):
     ln = len(v); h = ln // 2
     v_i = a v_i + b v_{h + i}
     """
-    _crypto = crypto  # local_cache_global
 
     h = len(v) // 2
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -1439,10 +1424,10 @@ def _hadamard_fold(v, a, b, into=None, into_offset: int = 0, vR=None, vRoff=0):
     into = into if into else v
 
     for i in range(h):
-        _crypto.decodepoint_into(_tmp_pt_1, v.to(i))
-        _crypto.decodepoint_into(_tmp_pt_2, v.to(h + i) if not vR else vR.to(i + vRoff))
-        _crypto.add_keys3_into(_tmp_pt_3, _tmp_sc_1, _tmp_pt_1, _tmp_sc_2, _tmp_pt_2)
-        _crypto.encodepoint_into(_tmp_bf_0, _tmp_pt_3)
+        crypto.decodepoint_into(_tmp_pt_1, v.to(i))
+        crypto.decodepoint_into(_tmp_pt_2, v.to(h + i) if not vR else vR.to(i + vRoff))
+        crypto.add_keys3_into(_tmp_pt_3, _tmp_sc_1, _tmp_pt_1, _tmp_sc_2, _tmp_pt_2)
+        crypto.encodepoint_into(_tmp_bf_0, _tmp_pt_3)
         into.read(i + into_offset, _tmp_bf_0)
         _gc_iter(i)
 
@@ -1454,16 +1439,14 @@ def _scalar_fold(v, a, b, into=None, into_offset: int = 0):
     ln = len(v); h = ln // 2
     v_i = a v_i + b v_{h + i}
     """
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
-
     h = len(v) // 2
-    _crypto_decodeint_into_noreduce(_tmp_sc_1, a)
-    _crypto_decodeint_into_noreduce(_tmp_sc_2, b)
+    crypto_decodeint_into_noreduce(_tmp_sc_1, a)
+    crypto_decodeint_into_noreduce(_tmp_sc_2, b)
     into = into if into else v
 
     for i in range(h):
-        _crypto_decodeint_into_noreduce(_tmp_sc_3, v.to(i))
-        _crypto_decodeint_into_noreduce(_tmp_sc_4, v.to(h + i))
+        crypto_decodeint_into_noreduce(_tmp_sc_3, v.to(i))
+        crypto_decodeint_into_noreduce(_tmp_sc_4, v.to(h + i))
         crypto_sc_mul_into(_tmp_sc_3, _tmp_sc_3, _tmp_sc_1)
         crypto.sc_muladd_into(_tmp_sc_3, _tmp_sc_4, _tmp_sc_2, _tmp_sc_3)
         crypto_encodeint_into(_tmp_bf_0, _tmp_sc_3)
@@ -1478,9 +1461,7 @@ def _cross_inner_product(l0, r0, l1, r1):
     t1   = l0 . r1 + l1 . r0
     t2   = l1 . r1
     """
-    _crypto = crypto  # local_cache_global
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
-    Scalar = _crypto.Scalar  # local_cache_attribute
+    Scalar = crypto.Scalar  # local_cache_attribute
 
     sc_t1 = Scalar()
     sc_t2 = Scalar()
@@ -1488,15 +1469,15 @@ def _cross_inner_product(l0, r0, l1, r1):
     tr = Scalar()
 
     for i in range(len(l0)):
-        _crypto_decodeint_into_noreduce(tl, l0.to(i))
-        _crypto_decodeint_into_noreduce(tr, r1.to(i))
-        _crypto.sc_muladd_into(sc_t1, tl, tr, sc_t1)
+        crypto_decodeint_into_noreduce(tl, l0.to(i))
+        crypto_decodeint_into_noreduce(tr, r1.to(i))
+        crypto.sc_muladd_into(sc_t1, tl, tr, sc_t1)
 
-        _crypto_decodeint_into_noreduce(tl, l1.to(i))
-        _crypto.sc_muladd_into(sc_t2, tl, tr, sc_t2)
+        crypto_decodeint_into_noreduce(tl, l1.to(i))
+        crypto.sc_muladd_into(sc_t2, tl, tr, sc_t2)
 
-        _crypto_decodeint_into_noreduce(tr, r0.to(i))
-        _crypto.sc_muladd_into(sc_t1, tl, tr, sc_t1)
+        crypto_decodeint_into_noreduce(tr, r0.to(i))
+        crypto.sc_muladd_into(sc_t1, tl, tr, sc_t1)
 
         _gc_iter(i)
 
@@ -1780,9 +1761,7 @@ class BulletProofBuilder:
         )
 
     def _prove_phase1(self, N, M, V, gamma, hash_cache) -> tuple:
-        ensure_dst_key = _ensure_dst_key  # local_cache_global
         self_gc = self.gc  # local_cache_attribute
-        sc_muladd = _sc_muladd  # local_cache_global
 
         MN = M * N
         aL = self.aL
@@ -1792,7 +1771,7 @@ class BulletProofBuilder:
 
         # PAPER LINES 38-39, compute A = 8^{-1} ( \alpha G + \sum_{i=0}^{MN-1} a_{L,i} \Gi_i + a_{R,i} \Hi_i)
         alpha = _sc_gen()
-        A = ensure_dst_key()
+        A = _ensure_dst_key()
         _vector_exponent_custom(Gprec, Hprec, aL, aR, A)
         _add_keys(A, A, _scalarmult_base(_tmp_bf_1, alpha))
         _scalarmult_key(A, A, _INV_EIGHT)
@@ -1802,19 +1781,19 @@ class BulletProofBuilder:
         sL = self.sL_vct(MN)
         sR = self.sR_vct(MN)
         rho = _sc_gen()
-        S = ensure_dst_key()
+        S = _ensure_dst_key()
         _vector_exponent_custom(Gprec, Hprec, sL, sR, S)
         _add_keys(S, S, _scalarmult_base(_tmp_bf_1, rho))
         _scalarmult_key(S, S, _INV_EIGHT)
         self_gc(12)
 
         # PAPER LINES 43-45
-        y = ensure_dst_key()
+        y = _ensure_dst_key()
         _hash_cache_mash(y, hash_cache, A, S)
         if y == _ZERO:
             raise BulletProofGenException()
 
-        z = ensure_dst_key()
+        z = _ensure_dst_key()
         _hash_to_scalar(hash_cache, y)
         _copy_key(z, hash_cache)
         zc = crypto_decodeint_into_noreduce(None, z)
@@ -1847,7 +1826,7 @@ class BulletProofBuilder:
         # T1 = 8^{-1} (\tau_1G + t_1H )
         # T2 = 8^{-1} (\tau_2G + t_2H )
         tau1, tau2 = _sc_gen(), _sc_gen()
-        T1, T2 = ensure_dst_key(), ensure_dst_key()
+        T1, T2 = _ensure_dst_key(), _ensure_dst_key()
 
         _add_keys2(T1, tau1, t1, _XMR_H)
         _scalarmult_key(T1, T1, _INV_EIGHT)
@@ -1858,7 +1837,7 @@ class BulletProofBuilder:
         self_gc(16)
 
         # PAPER LINES 49-51, compute x
-        x = ensure_dst_key()
+        x = _ensure_dst_key()
         _hash_cache_mash(x, hash_cache, z, T1, T2)
         if x == _ZERO:
             raise BulletProofGenException()
@@ -1873,13 +1852,13 @@ class BulletProofBuilder:
         r = _ensure_dst_keyvect(None, MN)
         ts = crypto_Scalar()
         for i in range(MN):
-            sc_muladd(_tmp_bf_0, x, l1.to(i), l0.to(i))
+            _sc_muladd(_tmp_bf_0, x, l1.to(i), l0.to(i))
             l.read(i, _tmp_bf_0)
 
-            sc_muladd(_tmp_bf_1, x, r1.to(i), r0.to(i))
+            _sc_muladd(_tmp_bf_1, x, r1.to(i), r0.to(i))
             r.read(i, _tmp_bf_1)
 
-            sc_muladd(ts, _tmp_bf_0, _tmp_bf_1, ts)
+            _sc_muladd(ts, _tmp_bf_0, _tmp_bf_1, ts)
 
         t = crypto_helpers_encodeint(ts)
         self.aL = None
@@ -1888,21 +1867,21 @@ class BulletProofBuilder:
         self_gc(17)
 
         # PAPER LINES 52-53, Compute \tau_x
-        taux = ensure_dst_key()
+        taux = _ensure_dst_key()
         _sc_mul(taux, tau1, x)
         _sc_mul(_tmp_bf_0, x, x)
-        sc_muladd(taux, tau2, _tmp_bf_0, taux)
+        _sc_muladd(taux, tau2, _tmp_bf_0, taux)
         del (tau1, tau2)
 
         zpow = crypto_sc_mul_into(None, zc, zc)
         for j in range(1, len(V) + 1):
-            sc_muladd(taux, zpow, gamma[j - 1], taux)
+            _sc_muladd(taux, zpow, gamma[j - 1], taux)
             crypto_sc_mul_into(zpow, zpow, zc)
         del (zc, zpow)
 
         self_gc(18)
-        mu = ensure_dst_key()
-        sc_muladd(mu, x, rho, alpha)
+        mu = _ensure_dst_key()
+        _sc_muladd(mu, x, rho, alpha)
         del (rho, alpha)
         self_gc(19)
 
@@ -1921,7 +1900,6 @@ class BulletProofBuilder:
         self_gc = self.gc  # local_cache_attribute
         aprime_slice_view = aprime.slice_view  # local_cache_attribute
         bprime_slice_view = bprime.slice_view  # local_cache_attribute
-        ensure_dst_key = _ensure_dst_key  # local_cache_global
 
         Hprec = self._hprec_aux(MN)
 
@@ -1941,12 +1919,12 @@ class BulletProofBuilder:
 
         L = _ensure_dst_keyvect(None, logMN)
         R = _ensure_dst_keyvect(None, logMN)
-        cL = ensure_dst_key()
-        cR = ensure_dst_key()
-        winv = ensure_dst_key()
-        w_round = ensure_dst_key()
-        tmp = ensure_dst_key()
-        _tmp_k_1 = ensure_dst_key()
+        cL = _ensure_dst_key()
+        cR = _ensure_dst_key()
+        winv = _ensure_dst_key()
+        w_round = _ensure_dst_key()
+        tmp = _ensure_dst_key()
+        _tmp_k_1 = _ensure_dst_key()
         round = 0
 
         # PAPER LINE 13
@@ -2062,12 +2040,6 @@ class BulletProofBuilder:
         :param single_optim: single proof memory optimization
         :return:
         """
-        _ensure = utils_ensure  # local_cache_global
-        sc_mul = _sc_mul  # local_cache_global
-        sc_mulsub = _sc_mulsub  # local_cache_global
-        sc_muladd = _sc_muladd  # local_cache_global
-        init_key = _init_key  # local_cache_global
-
         max_length = 0
         for proof in proofs:
             for cond, msg in (
@@ -2080,11 +2052,11 @@ class BulletProofBuilder:
                 (len(proof.L) == len(proof.R), "|L| != |R|"),
                 (len(proof.L) > 0, "Empty proof"),
             ):
-                _ensure(cond, msg)
+                utils_ensure(cond, msg)
 
             max_length = max(max_length, len(proof.L))
 
-        _ensure(max_length < 32, "At least one proof is too large")
+        utils_ensure(max_length < 32, "At least one proof is too large")
 
         maxMN = 1 << max_length
         logN = 6
@@ -2093,13 +2065,13 @@ class BulletProofBuilder:
 
         # setup weighted aggregates
         is_single = len(proofs) == 1 and single_optim  # ph4
-        z1 = init_key(_ZERO)
-        z3 = init_key(_ZERO)
+        z1 = _init_key(_ZERO)
+        z3 = _init_key(_ZERO)
         m_z4 = _vector_dup(_ZERO, maxMN) if not is_single else None
         m_z5 = _vector_dup(_ZERO, maxMN) if not is_single else None
-        m_y0 = init_key(_ZERO)
-        y1 = init_key(_ZERO)
-        muex_acc = init_key(_ONE)
+        m_y0 = _init_key(_ZERO)
+        y1 = _init_key(_ZERO)
+        muex_acc = _init_key(_ONE)
 
         Gprec = self._gprec_aux(maxMN)
         Hprec = self._hprec_aux(maxMN)
@@ -2111,7 +2083,7 @@ class BulletProofBuilder:
                 logM += 1
                 M = 1 << logM
 
-            _ensure(len(proof.L) == 6 + logM, "Proof is not the expected size")
+            utils_ensure(len(proof.L) == 6 + logM, "Proof is not the expected size")
             MN = M * N
             weight_y = crypto_helpers_encodeint(crypto.random_scalar())
             weight_z = crypto_helpers_encodeint(crypto.random_scalar())
@@ -2119,55 +2091,55 @@ class BulletProofBuilder:
             # Reconstruct the challenges
             hash_cache = _hash_vct_to_scalar(None, proof.V)
             y = _hash_cache_mash(None, hash_cache, proof.A, proof.S)
-            _ensure(y != _ZERO, "y == 0")
+            utils_ensure(y != _ZERO, "y == 0")
             z = _hash_to_scalar(None, y)
             _copy_key(hash_cache, z)
-            _ensure(z != _ZERO, "z == 0")
+            utils_ensure(z != _ZERO, "z == 0")
 
             x = _hash_cache_mash(None, hash_cache, z, proof.T1, proof.T2)
-            _ensure(x != _ZERO, "x == 0")
+            utils_ensure(x != _ZERO, "x == 0")
             x_ip = _hash_cache_mash(None, hash_cache, x, proof.taux, proof.mu, proof.t)
-            _ensure(x_ip != _ZERO, "x_ip == 0")
+            utils_ensure(x_ip != _ZERO, "x_ip == 0")
 
             # PAPER LINE 61
-            sc_mulsub(m_y0, proof.taux, weight_y, m_y0)
+            _sc_mulsub(m_y0, proof.taux, weight_y, m_y0)
             zpow = _vector_powers(z, M + 3)
 
             k = _ensure_dst_key()
             ip1y = _vector_power_sum(y, MN)
-            sc_mulsub(k, zpow.to(2), ip1y, _ZERO)
+            _sc_mulsub(k, zpow.to(2), ip1y, _ZERO)
             for j in range(1, M + 1):
-                _ensure(j + 2 < len(zpow), "invalid zpow index")
-                sc_mulsub(k, zpow.to(j + 2), _BP_IP12, k)
+                utils_ensure(j + 2 < len(zpow), "invalid zpow index")
+                _sc_mulsub(k, zpow.to(j + 2), _BP_IP12, k)
 
             # VERIFY_line_61rl_new
-            sc_muladd(tmp, z, ip1y, k)
+            _sc_muladd(tmp, z, ip1y, k)
             _sc_sub(tmp, proof.t, tmp)
 
-            sc_muladd(y1, tmp, weight_y, y1)
-            weight_y8 = init_key(weight_y)
-            sc_mul(weight_y8, weight_y, _EIGHT)
+            _sc_muladd(y1, tmp, weight_y, y1)
+            weight_y8 = _init_key(weight_y)
+            _sc_mul(weight_y8, weight_y, _EIGHT)
 
             muex = MultiExpSequential(points=[pt for pt in proof.V])
             for j in range(len(proof.V)):
-                sc_mul(tmp, zpow.to(j + 2), weight_y8)
-                muex.add_scalar(init_key(tmp))
+                _sc_mul(tmp, zpow.to(j + 2), weight_y8)
+                muex.add_scalar(_init_key(tmp))
 
-            sc_mul(tmp, x, weight_y8)
-            muex.add_pair(init_key(tmp), proof.T1)
+            _sc_mul(tmp, x, weight_y8)
+            muex.add_pair(_init_key(tmp), proof.T1)
 
             xsq = _ensure_dst_key()
-            sc_mul(xsq, x, x)
+            _sc_mul(xsq, x, x)
 
-            sc_mul(tmp, xsq, weight_y8)
-            muex.add_pair(init_key(tmp), proof.T2)
+            _sc_mul(tmp, xsq, weight_y8)
+            muex.add_pair(_init_key(tmp), proof.T2)
 
-            weight_z8 = init_key(weight_z)
-            sc_mul(weight_z8, weight_z, _EIGHT)
+            weight_z8 = _init_key(weight_z)
+            _sc_mul(weight_z8, weight_z, _EIGHT)
 
             muex.add_pair(weight_z8, proof.A)
-            sc_mul(tmp, x, weight_z8)
-            muex.add_pair(init_key(tmp), proof.S)
+            _sc_mul(tmp, x, weight_z8)
+            muex.add_pair(_init_key(tmp), proof.S)
 
             _multiexp(tmp, muex)
             _add_keys(muex_acc, muex_acc, tmp)
@@ -2175,7 +2147,7 @@ class BulletProofBuilder:
 
             # Compute the number of rounds for the inner product
             rounds = logM + logN
-            _ensure(rounds > 0, "Zero rounds")
+            utils_ensure(rounds > 0, "Zero rounds")
 
             # PAPER LINES 21-22
             # The inner product challenges are computed per round
@@ -2183,12 +2155,12 @@ class BulletProofBuilder:
             for i in range(rounds):
                 _hash_cache_mash(_tmp_bf_0, hash_cache, proof.L[i], proof.R[i])
                 w.read(i, _tmp_bf_0)
-                _ensure(w.to(i) != _ZERO, "w[i] == 0")
+                utils_ensure(w.to(i) != _ZERO, "w[i] == 0")
 
             # Basically PAPER LINES 24-25
             # Compute the curvepoints from G[i] and H[i]
-            yinvpow = init_key(_ONE)
-            ypow = init_key(_ONE)
+            yinvpow = _init_key(_ONE)
+            ypow = _init_key(_ONE)
             yinv = _invert(None, y)
             self.gc(61)
 
@@ -2203,70 +2175,70 @@ class BulletProofBuilder:
             twoN = self._two_aux(N)
             for i in range(MN):
                 _copy_key(g_scalar, proof.a)
-                sc_mul(h_scalar, proof.b, yinvpow)
+                _sc_mul(h_scalar, proof.b, yinvpow)
 
                 for j in range(rounds - 1, -1, -1):
                     J = len(w) - j - 1
 
                     if (i & (1 << j)) == 0:
-                        sc_mul(g_scalar, g_scalar, winv.to(J))
-                        sc_mul(h_scalar, h_scalar, w.to(J))
+                        _sc_mul(g_scalar, g_scalar, winv.to(J))
+                        _sc_mul(h_scalar, h_scalar, w.to(J))
                     else:
-                        sc_mul(g_scalar, g_scalar, w.to(J))
-                        sc_mul(h_scalar, h_scalar, winv.to(J))
+                        _sc_mul(g_scalar, g_scalar, w.to(J))
+                        _sc_mul(h_scalar, h_scalar, winv.to(J))
 
                 # Adjust the scalars using the exponents from PAPER LINE 62
                 _sc_add(g_scalar, g_scalar, z)
-                _ensure(2 + i // N < len(zpow), "invalid zpow index")
-                _ensure(i % N < len(twoN), "invalid twoN index")
-                sc_mul(tmp, zpow.to(2 + i // N), twoN.to(i % N))
-                sc_muladd(tmp, z, ypow, tmp)
-                sc_mulsub(h_scalar, tmp, yinvpow, h_scalar)
+                utils_ensure(2 + i // N < len(zpow), "invalid zpow index")
+                utils_ensure(i % N < len(twoN), "invalid twoN index")
+                _sc_mul(tmp, zpow.to(2 + i // N), twoN.to(i % N))
+                _sc_muladd(tmp, z, ypow, tmp)
+                _sc_mulsub(h_scalar, tmp, yinvpow, h_scalar)
 
                 if not is_single:  # ph4
                     assert m_z4 is not None and m_z5 is not None
-                    m_z4.read(i, sc_mulsub(_tmp_bf_0, g_scalar, weight_z, m_z4[i]))
-                    m_z5.read(i, sc_mulsub(_tmp_bf_0, h_scalar, weight_z, m_z5[i]))
+                    m_z4.read(i, _sc_mulsub(_tmp_bf_0, g_scalar, weight_z, m_z4[i]))
+                    m_z5.read(i, _sc_mulsub(_tmp_bf_0, h_scalar, weight_z, m_z5[i]))
                 else:
-                    sc_mul(tmp, g_scalar, weight_z)
+                    _sc_mul(tmp, g_scalar, weight_z)
                     _sub_keys(
                         muex_acc, muex_acc, _scalarmult_key(tmp, Gprec.to(i), tmp)
                     )
 
-                    sc_mul(tmp, h_scalar, weight_z)
+                    _sc_mul(tmp, h_scalar, weight_z)
                     _sub_keys(
                         muex_acc, muex_acc, _scalarmult_key(tmp, Hprec.to(i), tmp)
                     )
 
                 if i != MN - 1:
-                    sc_mul(yinvpow, yinvpow, yinv)
-                    sc_mul(ypow, ypow, y)
+                    _sc_mul(yinvpow, yinvpow, yinv)
+                    _sc_mul(ypow, ypow, y)
                 if i & 15 == 0:
                     self.gc(62)
 
             del (g_scalar, h_scalar, twoN)
             self.gc(63)
 
-            sc_muladd(z1, proof.mu, weight_z, z1)
+            _sc_muladd(z1, proof.mu, weight_z, z1)
             muex = MultiExpSequential(
                 point_fnc=lambda i, d: proof.L[i // 2]
                 if i & 1 == 0
                 else proof.R[i // 2]
             )
             for i in range(rounds):
-                sc_mul(tmp, w.to(i), w.to(i))
-                sc_mul(tmp, tmp, weight_z8)
+                _sc_mul(tmp, w.to(i), w.to(i))
+                _sc_mul(tmp, tmp, weight_z8)
                 muex.add_scalar(tmp)
-                sc_mul(tmp, winv.to(i), winv.to(i))
-                sc_mul(tmp, tmp, weight_z8)
+                _sc_mul(tmp, winv.to(i), winv.to(i))
+                _sc_mul(tmp, tmp, weight_z8)
                 muex.add_scalar(tmp)
 
             acc = _multiexp(None, muex)
             _add_keys(muex_acc, muex_acc, acc)
 
-            sc_mulsub(tmp, proof.a, proof.b, proof.t)
-            sc_mul(tmp, tmp, x_ip)
-            sc_muladd(z3, tmp, weight_z, z3)
+            _sc_mulsub(tmp, proof.a, proof.b, proof.t)
+            _sc_mul(tmp, tmp, x_ip)
+            _sc_muladd(z3, tmp, weight_z, z3)
 
         _sc_sub(tmp, m_y0, z1)
         z3p = _sc_sub(None, z3, y1)
@@ -2323,18 +2295,17 @@ def _compute_LR(
     """
     muex = MultiExpSequential()
     muex_add_pair = muex.add_pair  # local_cache_attribute
-    sc_mul = _sc_mul  # local_cache_global
 
     for i in range(size):
-        sc_mul(tmp, a.to(a0 + i), y)
-        sc_mul(tmp, tmp, _INV_EIGHT)
+        _sc_mul(tmp, a.to(a0 + i), y)
+        _sc_mul(tmp, tmp, _INV_EIGHT)
         muex_add_pair(tmp, G.to(G0 + i))
 
-        sc_mul(tmp, b.to(b0 + i), _INV_EIGHT)
+        _sc_mul(tmp, b.to(b0 + i), _INV_EIGHT)
         muex_add_pair(tmp, H.to(H0 + i))
 
-    muex_add_pair(sc_mul(tmp, c, _INV_EIGHT), _XMR_H)
-    muex_add_pair(sc_mul(tmp, d, _INV_EIGHT), _XMR_G)
+    muex_add_pair(_sc_mul(tmp, c, _INV_EIGHT), _XMR_H)
+    muex_add_pair(_sc_mul(tmp, d, _INV_EIGHT), _XMR_G)
     return _multiexp(tmp, muex)
 
 
@@ -2465,32 +2436,26 @@ class BulletProofPlusBuilder:
         M: int,
         N: int,
     ) -> BulletproofPlus:
-        _crypto = crypto  # local_cache_global
-        _crypto_sc_mul_into = _crypto.sc_mul_into  # local_cache_attribute
-        _crypto_encodeint_into = _crypto.encodeint_into  # local_cache_attribute
-        _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
+
+        _crypto_sc_mul_into = crypto.sc_mul_into  # local_cache_attribute
+        _crypto_encodeint_into = crypto.encodeint_into  # local_cache_attribute
         self_save_mem = self.save_mem  # local_cache_attribute
         self_gc = self.gc  # local_cache_attribute
-        ensure_dst_key = _ensure_dst_key  # local_cache_global
-        sc_gen = _sc_gen  # local_cache_global
-        sc_mul = _sc_mul  # local_cache_global
-        sc_muladd = _sc_muladd  # local_cache_global
-        sc_square_mult = _sc_square_mult  # local_cache_global
 
         _hash_vct_to_scalar(hash_cache, V)
 
         MN = M * N
         logMN = logM + logN
 
-        tmp = ensure_dst_key()
-        tmp2 = ensure_dst_key()
+        tmp = _ensure_dst_key()
+        tmp2 = _ensure_dst_key()
         memcpy(hash_cache, 0, _INITIAL_TRANSCRIPT, 0, len(_INITIAL_TRANSCRIPT))
         _hash_cache_mash(hash_cache, hash_cache, _hash_vct_to_scalar(tmp, V))
 
         # compute A = 8^{-1} ( \alpha G + \sum_{i=0}^{MN-1} a_{L,i} \Gi_i + a_{R,i} \Hi_i)
         aL = self.aL
         aR = self.aR
-        inv_8_sc = _crypto_decodeint_into_noreduce(None, _INV_EIGHT)
+        inv_8_sc = crypto_decodeint_into_noreduce(None, _INV_EIGHT)
         aL8 = KeyVEval(
             len(aL),
             lambda i, d: _crypto_sc_mul_into(d, aL[i], inv_8_sc),  # noqa: F821
@@ -2501,13 +2466,13 @@ class BulletProofPlusBuilder:
             lambda i, d: _crypto_sc_mul_into(d, aR[i], inv_8_sc),  # noqa: F821
             raw=True,
         )
-        alpha = sc_gen()
+        alpha = _sc_gen()
 
-        A = ensure_dst_key()
+        A = _ensure_dst_key()
         Gprec = self._gprec_aux(MN)  # Extended precomputed GiHi
         Hprec = self._hprec_aux(MN)
         _vector_exponent_custom(Gprec, Hprec, None, None, A, aL8, aR8)
-        sc_mul(tmp, alpha, _INV_EIGHT)
+        _sc_mul(tmp, alpha, _INV_EIGHT)
         _add_keys(A, A, _scalarmult_base(_tmp_bf_1, tmp))
         del (aL8, aR8, inv_8_sc)
         self_gc(11)
@@ -2522,33 +2487,33 @@ class BulletProofPlusBuilder:
         _copy_key(hash_cache, z)
         self_gc(12)
 
-        zc = _crypto_decodeint_into_noreduce(None, z)
+        zc = crypto_decodeint_into_noreduce(None, z)
         z_squared = _crypto_encodeint_into(None, _crypto_sc_mul_into(_tmp_sc_1, zc, zc))
         d_vct = VctD(N, M, z_squared, raw=True)
         del (z,)
 
         # aL1 = aL - z
-        aL1_sc = _crypto.Scalar()
+        aL1_sc = crypto.Scalar()
 
         def aL1_fnc(i, d):
-            return _crypto_encodeint_into(d, _crypto.sc_sub_into(aL1_sc, aL.to(i), zc))
+            return _crypto_encodeint_into(d, crypto.sc_sub_into(aL1_sc, aL.to(i), zc))
 
         aprime = KeyVEval(MN, aL1_fnc, raw=False)  # aL1
 
         # aR1[i] = (aR[i] - z) + d[i] * y**(MN-i)
-        y_sc = _crypto_decodeint_into_noreduce(None, y)
-        yinv = _crypto.sc_inv_into(None, y_sc)
-        sc_square_mult(_tmp_sc_5, y_sc, MN - 1)  # y**(MN-1)
+        y_sc = crypto_decodeint_into_noreduce(None, y)
+        yinv = crypto.sc_inv_into(None, y_sc)
+        _sc_square_mult(_tmp_sc_5, y_sc, MN - 1)  # y**(MN-1)
         _crypto_sc_mul_into(_tmp_sc_5, _tmp_sc_5, y_sc)  # y**MN
 
         ypow_back = KeyVPowersBackwards(
             MN + 1, y, x_inv=yinv, x_max=_tmp_sc_5, raw=True
         )
-        aR1_sc1 = _crypto.Scalar()
+        aR1_sc1 = crypto.Scalar()
 
         def aR1_fnc(i, d):
-            _crypto.sc_add_into(aR1_sc1, aR.to(i), zc)
-            _crypto.sc_muladd_into(aR1_sc1, d_vct[i], ypow_back[MN - i], aR1_sc1)
+            crypto.sc_add_into(aR1_sc1, aR.to(i), zc)
+            crypto.sc_muladd_into(aR1_sc1, d_vct[i], ypow_back[MN - i], aR1_sc1)
             return _crypto_encodeint_into(d, aR1_sc1)
 
         bprime = KeyVEval(MN, aR1_fnc, raw=False)  # aR1
@@ -2559,33 +2524,33 @@ class BulletProofPlusBuilder:
         _crypto_sc_mul_into(_tmp_sc_4, ypow_back.x_max, y_sc)
         _crypto_encodeint_into(_tmp_bf_0, _tmp_sc_4)  # compute y**(MN+1)
         for j in range(len(V)):
-            sc_mul(tmp, tmp, z_squared)
-            sc_mul(tmp2, _tmp_bf_0, tmp)
-            sc_muladd(alpha1, tmp2, gamma[j], alpha1)
+            _sc_mul(tmp, tmp, z_squared)
+            _sc_mul(tmp2, _tmp_bf_0, tmp)
+            _sc_muladd(alpha1, tmp2, gamma[j], alpha1)
 
         # y, y**-1 powers
-        ypow = sc_square_mult(None, y_sc, MN >> 1)
-        yinvpow = sc_square_mult(None, yinv, MN >> 1)
+        ypow = _sc_square_mult(None, y_sc, MN >> 1)
+        yinvpow = _sc_square_mult(None, yinv, MN >> 1)
         del (z_squared, alpha)
 
         # Proof loop phase
-        challenge = ensure_dst_key()
-        challenge_inv = ensure_dst_key()
+        challenge = _ensure_dst_key()
+        challenge_inv = _ensure_dst_key()
         rnd = 0
         nprime = MN
         Gprime = Gprec
         Hprime = Hprec
         L = _ensure_dst_keyvect(None, logMN)
         R = _ensure_dst_keyvect(None, logMN)
-        tmp_sc_1 = _crypto.Scalar()
+        tmp_sc_1 = crypto.Scalar()
         del (logMN,)
         if not self_save_mem:
             del (Gprec, Hprec)
 
-        dL = ensure_dst_key()
-        dR = ensure_dst_key()
-        cL = ensure_dst_key()
-        cR = ensure_dst_key()
+        dL = _ensure_dst_key()
+        dR = _ensure_dst_key()
+        cL = _ensure_dst_key()
+        cR = _ensure_dst_key()
         while nprime > 1:
             npr2 = nprime
             nprime >>= 1
@@ -2599,7 +2564,7 @@ class BulletProofPlusBuilder:
             )
 
             def vec_sc_fnc(i, d):
-                _crypto_decodeint_into_noreduce(tmp_sc_1, aprime.to(i + nprime))
+                crypto_decodeint_into_noreduce(tmp_sc_1, aprime.to(i + nprime))
                 _crypto_sc_mul_into(tmp_sc_1, tmp_sc_1, ypow)
                 _crypto_encodeint_into(d, tmp_sc_1)
 
@@ -2610,8 +2575,8 @@ class BulletProofPlusBuilder:
             del (vec_aprime_x_ypownprime,)
             self_gc(25)
 
-            sc_gen(dL)
-            sc_gen(dR)
+            _sc_gen(dL)
+            _sc_gen(dR)
 
             # Compute L[r], R[r]
             # L[r] = cL * 8^{-1} * H + dL * 8^{-1} * G +
@@ -2661,7 +2626,7 @@ class BulletProofPlusBuilder:
                 raise BulletProofGenException()
 
             _invert(challenge_inv, challenge)
-            sc_mul(tmp, _crypto_encodeint_into(_tmp_bf_0, yinvpow), challenge)
+            _sc_mul(tmp, _crypto_encodeint_into(_tmp_bf_0, yinvpow), challenge)
             self_gc(27)
 
             # Hadamard fold Gprime, Hprime
@@ -2703,7 +2668,7 @@ class BulletProofPlusBuilder:
             # aprime[i] = challenge     * aprime[i] + tmp       * aprime[i + nprime]
             # bprime[i] = challenge_inv * bprime[i] + challenge * bprime[i + nprime]
             # When memory saving is enabled, aprime vector is folded in-memory for round=1
-            sc_mul(tmp, challenge_inv, ypow)
+            _sc_mul(tmp, challenge_inv, ypow)
 
             aprime_new = aprime
             if self_save_mem and rnd == 0:
@@ -2713,9 +2678,9 @@ class BulletProofPlusBuilder:
 
             if not self_save_mem or rnd != 0:
                 for i in range(nprime):
-                    sc_mul(tmp2, aprime.to(i), challenge)
+                    _sc_mul(tmp2, aprime.to(i), challenge)
                     aprime_new.read(
-                        i, sc_muladd(_tmp_bf_0, aprime.to(i + nprime), tmp, tmp2)
+                        i, _sc_muladd(_tmp_bf_0, aprime.to(i + nprime), tmp, tmp2)
                     )
 
                 aprime = aprime_new
@@ -2731,9 +2696,9 @@ class BulletProofPlusBuilder:
             if rnd == 0:
                 # Two-phase folding for bprime, so it can be linearly scanned (faster) for r=0 (eval vector)
                 for i in range(nprime):
-                    bprime_new.read(i, sc_mul(tmp, bprime[i], challenge_inv))
+                    bprime_new.read(i, _sc_mul(tmp, bprime[i], challenge_inv))
                 for i in range(nprime):
-                    sc_muladd(tmp, bprime[i + nprime], challenge, bprime_new[i])
+                    _sc_muladd(tmp, bprime[i + nprime], challenge, bprime_new[i])
                     bprime_new.read(i, tmp)
 
                 self.aR = None
@@ -2742,26 +2707,26 @@ class BulletProofPlusBuilder:
 
             else:
                 for i in range(nprime):
-                    sc_mul(tmp2, bprime.to(i), challenge_inv)
+                    _sc_mul(tmp2, bprime.to(i), challenge_inv)
                     bprime_new.read(
-                        i, sc_muladd(_tmp_bf_0, bprime.to(i + nprime), challenge, tmp2)
+                        i, _sc_muladd(_tmp_bf_0, bprime.to(i + nprime), challenge, tmp2)
                     )
 
             bprime = bprime_new
             bprime.resize(nprime)
             self_gc(32)
 
-            sc_muladd(alpha1, dL, sc_mul(tmp, challenge, challenge), alpha1)
-            sc_muladd(alpha1, dR, sc_mul(tmp, challenge_inv, challenge_inv), alpha1)
+            _sc_muladd(alpha1, dL, _sc_mul(tmp, challenge, challenge), alpha1)
+            _sc_muladd(alpha1, dR, _sc_mul(tmp, challenge_inv, challenge_inv), alpha1)
 
             # end: update ypow, yinvpow; reduce by halves
             nnprime = nprime >> 1
             if nnprime > 0:
                 _crypto_sc_mul_into(
-                    ypow, ypow, sc_square_mult(_tmp_sc_1, yinv, nnprime)
+                    ypow, ypow, _sc_square_mult(_tmp_sc_1, yinv, nnprime)
                 )
                 _crypto_sc_mul_into(
-                    yinvpow, yinvpow, sc_square_mult(_tmp_sc_1, y_sc, nnprime)
+                    yinvpow, yinvpow, _sc_square_mult(_tmp_sc_1, y_sc, nnprime)
                 )
 
             self_gc(49)
@@ -2771,41 +2736,41 @@ class BulletProofPlusBuilder:
         del (cL, cR, dL, dR)
         self_gc(50)
 
-        r = sc_gen()
-        s = sc_gen()
-        d_ = sc_gen()
-        eta = sc_gen()
+        r = _sc_gen()
+        s = _sc_gen()
+        d_ = _sc_gen()
+        eta = _sc_gen()
 
         muex = MultiExpSequential()
         muex_add_pair = muex.add_pair  # local_cache_attribute
 
-        muex_add_pair(sc_mul(tmp, r, _INV_EIGHT), Gprime.to(0))
-        muex_add_pair(sc_mul(tmp, s, _INV_EIGHT), Hprime.to(0))
-        muex_add_pair(sc_mul(tmp, d_, _INV_EIGHT), _XMR_G)
+        muex_add_pair(_sc_mul(tmp, r, _INV_EIGHT), Gprime.to(0))
+        muex_add_pair(_sc_mul(tmp, s, _INV_EIGHT), Hprime.to(0))
+        muex_add_pair(_sc_mul(tmp, d_, _INV_EIGHT), _XMR_G)
 
-        sc_mul(tmp, r, y)
-        sc_mul(tmp, tmp, bprime[0])
-        sc_mul(tmp2, s, y)
-        sc_mul(tmp2, tmp2, aprime[0])
+        _sc_mul(tmp, r, y)
+        _sc_mul(tmp, tmp, bprime[0])
+        _sc_mul(tmp2, s, y)
+        _sc_mul(tmp2, tmp2, aprime[0])
         _sc_add(tmp, tmp, tmp2)
-        muex_add_pair(sc_mul(tmp2, tmp, _INV_EIGHT), _XMR_H)
+        muex_add_pair(_sc_mul(tmp2, tmp, _INV_EIGHT), _XMR_H)
         A1 = _multiexp(None, muex)
 
-        sc_mul(tmp, r, y)
-        sc_mul(tmp, tmp, s)
-        sc_mul(tmp, tmp, _INV_EIGHT)
-        sc_mul(tmp2, eta, _INV_EIGHT)
+        _sc_mul(tmp, r, y)
+        _sc_mul(tmp, tmp, s)
+        _sc_mul(tmp, tmp, _INV_EIGHT)
+        _sc_mul(tmp2, eta, _INV_EIGHT)
         B = _add_keys2(None, tmp2, tmp, _XMR_H)
 
         e = _hash_cache_mash(None, hash_cache, A1, B)
         if e == _ZERO:
             raise BulletProofGenException()
 
-        e_squared = sc_mul(None, e, e)
-        r1 = sc_muladd(None, aprime[0], e, r)
-        s1 = sc_muladd(None, bprime[0], e, s)
-        d1 = sc_muladd(None, d_, e, eta)
-        sc_muladd(d1, alpha1, e_squared, d1)
+        e_squared = _sc_mul(None, e, e)
+        r1 = _sc_muladd(None, aprime[0], e, r)
+        s1 = _sc_muladd(None, bprime[0], e, s)
+        d1 = _sc_muladd(None, d_, e, eta)
+        _sc_muladd(d1, alpha1, e_squared, d1)
 
         from .serialize_messages.tx_rsig_bulletproof import BulletproofPlus
 
@@ -2818,12 +2783,7 @@ class BulletProofPlusBuilder:
         """
         BP+ batch verification
         """
-        _ensure = utils_ensure  # local_cache_global
         self_gc = self.gc  # local_cache_attribute
-        ensure_dst_key = _ensure_dst_key  # local_cache_global
-        scalarmult8 = _scalarmult8  # local_cache_global
-        sc_mul = _sc_mul  # local_cache_global
-        sc_muladd = _sc_muladd  # local_cache_global
 
         max_length = 0
         for proof in proofs:
@@ -2835,15 +2795,15 @@ class BulletProofPlusBuilder:
                 (len(proof.L) == len(proof.R), "|L| != |R|"),
                 (len(proof.L) > 0, "Empty proof"),
             ):
-                _ensure(cond, msg)
+                utils_ensure(cond, msg)
             max_length = max(max_length, len(proof.L))
 
-        _ensure(max_length < 32, "At least one proof is too large")
+        utils_ensure(max_length < 32, "At least one proof is too large")
         self_gc(1)
 
         logN = 6
         N = 1 << logN
-        tmp = ensure_dst_key()
+        tmp = _ensure_dst_key()
 
         max_length = 0  # size of each of the longest proof's inner-product vectors
         nV = 0  # number of output commitments across all proofs
@@ -2865,7 +2825,7 @@ class BulletProofPlusBuilder:
 
             pd.y = _hash_cache_mash(None, transcript, proof.A)
             pd_y = pd.y  # local_cache_attribute
-            _ensure(not (pd_y == _ZERO), "y == 0")
+            utils_ensure(not (pd_y == _ZERO), "y == 0")
             pd.z = _hash_to_scalar(None, pd_y)
             pd_z = pd.z  # local_cache_attribute
             _copy_key(transcript, pd_z)
@@ -2881,7 +2841,7 @@ class BulletProofPlusBuilder:
             pd_logM = pd.logM  # local_cache_attribute
             max_logm = max(max_logm, pd_logM)
             rounds = pd_logM + logN
-            _ensure(rounds > 0, "zero rounds")
+            utils_ensure(rounds > 0, "zero rounds")
 
             # The inner-product challenges are computed per round
             pd.challenges = _ensure_dst_keyvect(None, rounds)
@@ -2889,14 +2849,14 @@ class BulletProofPlusBuilder:
                 pd.challenges[j] = _hash_cache_mash(
                     pd.challenges[j], transcript, proof.L[j], proof.R[j]
                 )
-                _ensure(pd.challenges[j] != _ZERO, "challenges[j] == 0")
+                utils_ensure(pd.challenges[j] != _ZERO, "challenges[j] == 0")
 
             pd_challenges = pd.challenges  # local_cache_attribute
 
             # Final challenge
             pd.e = _hash_cache_mash(None, transcript, proof.A1, proof.B)
             pd_e = pd.e  # local_cache_attribute
-            _ensure(pd_e != _ZERO, "e == 0")
+            utils_ensure(pd_e != _ZERO, "e == 0")
 
             # batch scalar inversions
             pd.inv_offset = inv_offset
@@ -2913,9 +2873,9 @@ class BulletProofPlusBuilder:
         to_invert.resize(inv_offset)
         self_gc(2)
 
-        _ensure(max_length < 32, "At least one proof is too large")
+        utils_ensure(max_length < 32, "At least one proof is too large")
         maxMN = 1 << max_length
-        tmp2 = ensure_dst_key()
+        tmp2 = _ensure_dst_key()
 
         # multiexp_size = nV + (2 * (max_logm + logN) + 3) * len(proofs) + 2 * maxMN
         Gprec = self._gprec_aux(maxMN)  # Extended precomputed GiHi
@@ -2955,7 +2915,7 @@ class BulletProofPlusBuilder:
             pd = proof_data[proof_data_index]  # type: BulletProofPlusData
             proof_data_index += 1
 
-            _ensure(len(proof.L) == 6 + pd_logM, "Proof is not the expected size")
+            utils_ensure(len(proof.L) == 6 + pd_logM, "Proof is not the expected size")
             M = 1 << pd_logM
             MN = M * N
             weight = bytearray(_ZERO)
@@ -2966,44 +2926,44 @@ class BulletProofPlusBuilder:
             #
             # Compute necessary powers of the y-challenge
             y_MN = bytearray(pd_y)
-            y_MN_1 = ensure_dst_key(None)
+            y_MN_1 = _ensure_dst_key(None)
             temp_MN = MN
             while temp_MN > 1:
-                sc_mul(y_MN, y_MN, y_MN)
+                _sc_mul(y_MN, y_MN, y_MN)
                 temp_MN /= 2
 
-            sc_mul(y_MN_1, y_MN, pd_y)
+            _sc_mul(y_MN_1, y_MN, pd_y)
 
             # V_j: -e**2 * z**(2*j+1) * y**(MN+1) * weight
-            e_squared = ensure_dst_key(None)
-            sc_mul(e_squared, pd_e, pd_e)
+            e_squared = _ensure_dst_key(None)
+            _sc_mul(e_squared, pd_e, pd_e)
 
-            z_squared = ensure_dst_key(None)
-            sc_mul(z_squared, pd_z, pd_z)
+            z_squared = _ensure_dst_key(None)
+            _sc_mul(z_squared, pd_z, pd_z)
 
             _sc_sub(tmp, _ZERO, e_squared)
-            sc_mul(tmp, tmp, y_MN_1)
-            sc_mul(tmp, tmp, weight)
+            _sc_mul(tmp, tmp, y_MN_1)
+            _sc_mul(tmp, tmp, weight)
 
             for j in range(len(proof.V)):
-                sc_mul(tmp, tmp, z_squared)
+                _sc_mul(tmp, tmp, z_squared)
                 # This ensures that all such group elements are in the prime-order subgroup.
-                muex_expl_add_pair(tmp, scalarmult8(tmp2, proof.V[j]))
+                muex_expl_add_pair(tmp, _scalarmult8(tmp2, proof.V[j]))
 
             # B: -weight
-            sc_mul(tmp, _MINUS_ONE, weight)
-            muex_expl_add_pair(tmp, scalarmult8(tmp2, proof.B))
+            _sc_mul(tmp, _MINUS_ONE, weight)
+            muex_expl_add_pair(tmp, _scalarmult8(tmp2, proof.B))
 
             # A1: -weight * e
-            sc_mul(tmp, tmp, pd_e)
-            muex_expl_add_pair(tmp, scalarmult8(tmp2, proof.A1))
+            _sc_mul(tmp, tmp, pd_e)
+            muex_expl_add_pair(tmp, _scalarmult8(tmp2, proof.A1))
 
             # A: -weight * e * e
-            minus_weight_e_squared = sc_mul(None, tmp, pd_e)
-            muex_expl_add_pair(minus_weight_e_squared, scalarmult8(tmp2, proof.A))
+            minus_weight_e_squared = _sc_mul(None, tmp, pd_e)
+            muex_expl_add_pair(minus_weight_e_squared, _scalarmult8(tmp2, proof.A))
 
             # G: weight * d1
-            sc_muladd(G_scalar, weight, proof.d1, G_scalar)
+            _sc_muladd(G_scalar, weight, proof.d1, G_scalar)
             self_gc(5)
 
             # Windowed vector
@@ -3013,28 +2973,28 @@ class BulletProofPlusBuilder:
             d = VctD(N, M, z_squared)
 
             # More efficient computation of sum(d)
-            sum_d = ensure_dst_key(None)
-            sc_mul(
+            sum_d = _ensure_dst_key(None)
+            _sc_mul(
                 sum_d, _TWO_SIXTY_FOUR_MINUS_ONE, _sum_of_even_powers(None, pd_z, 2 * M)
             )
 
             # H: weight*( r1*y*s1 + e**2*( y**(MN+1)*z*sum(d) + (z**2-z)*sum(y) ) )
             sum_y = _sum_of_scalar_powers(None, pd_y, MN)
             _sc_sub(tmp, z_squared, pd_z)
-            sc_mul(tmp, tmp, sum_y)
+            _sc_mul(tmp, tmp, sum_y)
 
-            sc_mul(tmp2, y_MN_1, pd_z)
-            sc_mul(tmp2, tmp2, sum_d)
+            _sc_mul(tmp2, y_MN_1, pd_z)
+            _sc_mul(tmp2, tmp2, sum_d)
             _sc_add(tmp, tmp, tmp2)
-            sc_mul(tmp, tmp, e_squared)
-            sc_mul(tmp2, proof.r1, pd_y)
-            sc_mul(tmp2, tmp2, proof.s1)
+            _sc_mul(tmp, tmp, e_squared)
+            _sc_mul(tmp2, proof.r1, pd_y)
+            _sc_mul(tmp2, tmp2, proof.s1)
             _sc_add(tmp, tmp, tmp2)
-            sc_muladd(H_scalar, tmp, weight, H_scalar)
+            _sc_muladd(H_scalar, tmp, weight, H_scalar)
 
             # Compute the number of rounds for the inner-product argument
             rounds = pd_logM + logN
-            _ensure(rounds > 0, "zero rounds")
+            utils_ensure(rounds > 0, "zero rounds")
 
             # challenges_inv = inverses[pd_inv_offset]
             yinv = inverses[pd_inv_offset + rounds]
@@ -3066,7 +3026,7 @@ class BulletProofPlusBuilder:
                 for s in range(slots - 1, -1, -2):
                     challenges_cache.read(
                         s,
-                        sc_mul(
+                        _sc_mul(
                             _tmp_bf_0,
                             challenges_cache[s // 2],
                             pd_challenges[j],  # even s
@@ -3074,7 +3034,7 @@ class BulletProofPlusBuilder:
                     )
                     challenges_cache.read(
                         s - 1,
-                        sc_mul(
+                        _sc_mul(
                             _tmp_bf_0,
                             challenges_cache[s // 2],
                             inverses[pd_inv_offset + j],  # odd s
@@ -3091,32 +3051,32 @@ class BulletProofPlusBuilder:
 
             # Gi and Hi
             self_gc(7)
-            e_r1_w_y = ensure_dst_key()
-            sc_mul(e_r1_w_y, pd_e, proof.r1)
-            sc_mul(e_r1_w_y, e_r1_w_y, weight)
-            e_s1_w = ensure_dst_key()
-            sc_mul(e_s1_w, pd_e, proof.s1)
-            sc_mul(e_s1_w, e_s1_w, weight)
-            e_squared_z_w = ensure_dst_key()
-            sc_mul(e_squared_z_w, e_squared, pd_z)
-            sc_mul(e_squared_z_w, e_squared_z_w, weight)
-            minus_e_squared_z_w = ensure_dst_key()
+            e_r1_w_y = _ensure_dst_key()
+            _sc_mul(e_r1_w_y, pd_e, proof.r1)
+            _sc_mul(e_r1_w_y, e_r1_w_y, weight)
+            e_s1_w = _ensure_dst_key()
+            _sc_mul(e_s1_w, pd_e, proof.s1)
+            _sc_mul(e_s1_w, e_s1_w, weight)
+            e_squared_z_w = _ensure_dst_key()
+            _sc_mul(e_squared_z_w, e_squared, pd_z)
+            _sc_mul(e_squared_z_w, e_squared_z_w, weight)
+            minus_e_squared_z_w = _ensure_dst_key()
             _sc_sub(minus_e_squared_z_w, _ZERO, e_squared_z_w)
-            minus_e_squared_w_y = ensure_dst_key()
+            minus_e_squared_w_y = _ensure_dst_key()
             _sc_sub(minus_e_squared_w_y, _ZERO, e_squared)
-            sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, weight)
-            sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, y_MN)
+            _sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, weight)
+            _sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, y_MN)
 
-            g_scalar = ensure_dst_key()
-            h_scalar = ensure_dst_key()
+            g_scalar = _ensure_dst_key()
+            h_scalar = _ensure_dst_key()
             for i in range(MN):
                 if i % 8 == 0:
                     self_gc(8)
                 _copy_key(g_scalar, e_r1_w_y)
 
                 # Use the binary decomposition of the index
-                sc_muladd(g_scalar, g_scalar, challenges_cache[i], e_squared_z_w)
-                sc_muladd(
+                _sc_muladd(g_scalar, g_scalar, challenges_cache[i], e_squared_z_w)
+                _sc_muladd(
                     h_scalar,
                     e_s1_w,
                     challenges_cache[(~i) & (MN - 1)],
@@ -3124,7 +3084,7 @@ class BulletProofPlusBuilder:
                 )
 
                 # Complete the scalar derivation
-                sc_muladd(h_scalar, minus_e_squared_w_y, d[i], h_scalar)
+                _sc_muladd(h_scalar, minus_e_squared_w_y, d[i], h_scalar)
                 # Gi_scalars.read(i, _sc_add(Gi_scalars[i], Gi_scalars[i], g_scalar))  # Gi_scalars[i] accumulates across proofs; (g1+g2)G = g1G + g2G
                 # Hi_scalars.read(i, _sc_add(Hi_scalars[i], Hi_scalars[i], h_scalar))
 
@@ -3132,21 +3092,21 @@ class BulletProofPlusBuilder:
                 muex_gh.add_scalar_idx(h_scalar, 2 * i + 1)
 
                 # Update iterated values
-                sc_mul(e_r1_w_y, e_r1_w_y, yinv)
-                sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, yinv)
+                _sc_mul(e_r1_w_y, e_r1_w_y, yinv)
+                _sc_mul(minus_e_squared_w_y, minus_e_squared_w_y, yinv)
             del (challenges_cache, d)
             self_gc(9)
 
             # L_j: -weight*e*e*challenges[j]**2
             # R_j: -weight*e*e*challenges[j]**(-2)
             for j in range(rounds):
-                sc_mul(tmp, pd_challenges[j], pd_challenges[j])
-                sc_mul(tmp, tmp, minus_weight_e_squared)
-                muex_expl_add_pair(tmp, scalarmult8(tmp2, proof.L[j]))
+                _sc_mul(tmp, pd_challenges[j], pd_challenges[j])
+                _sc_mul(tmp, tmp, minus_weight_e_squared)
+                muex_expl_add_pair(tmp, _scalarmult8(tmp2, proof.L[j]))
 
-                sc_mul(tmp, inverses[pd_inv_offset + j], inverses[pd_inv_offset + j])
-                sc_mul(tmp, tmp, minus_weight_e_squared)
-                muex_expl_add_pair(tmp, scalarmult8(tmp2, proof.R[j]))
+                _sc_mul(tmp, inverses[pd_inv_offset + j], inverses[pd_inv_offset + j])
+                _sc_mul(tmp, tmp, minus_weight_e_squared)
+                muex_expl_add_pair(tmp, _scalarmult8(tmp2, proof.R[j]))
             proof_data[proof_data_index - 1] = None
             del (pd,)
         del (inverses,)

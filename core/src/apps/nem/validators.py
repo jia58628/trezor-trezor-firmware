@@ -9,14 +9,13 @@ if TYPE_CHECKING:
 def validate(msg: NEMSignTx) -> None:
     from trezor.crypto import nem
     from trezor.enums import NEMModificationType
+    from trezor.wire import ProcessError  # local_cache_global
     from .helpers import (
         NEM_MAX_ENCRYPTED_PAYLOAD_SIZE,
         NEM_MAX_PLAIN_PAYLOAD_SIZE,
         NEM_MAX_DIVISIBILITY,
         NEM_MAX_SUPPLY,
     )
-
-    _ProcessError = ProcessError  # local_cache_global
 
     nem_validate_address = nem.validate_address  # local_cache_attribute
     msg_transfer = msg.transfer  # local_cache_attribute
@@ -36,9 +35,9 @@ def validate(msg: NEMSignTx) -> None:
         + bool(msg.importance_transfer)
     )
     if tx_count == 0:
-        raise _ProcessError("No transaction provided")
+        raise ProcessError("No transaction provided")
     if tx_count > 1:
-        raise _ProcessError("More than one transaction provided")
+        raise ProcessError("More than one transaction provided")
 
     _validate_common(msg.transaction)
 
@@ -46,13 +45,13 @@ def validate(msg: NEMSignTx) -> None:
         _validate_common(msg_multisig, True)
         # _validate_multisig
         if msg_multisig.network != msg_transaction_network:
-            raise _ProcessError("Inner transaction network is different")
+            raise ProcessError("Inner transaction network is different")
         _validate_public_key(
             msg_multisig.signer, "Invalid multisig signer public key provided"
         )
         # END _validate_multisig
     if not msg_multisig and msg.cosigning:
-        raise _ProcessError("No multisig transaction to cosign")
+        raise ProcessError("No multisig transaction to cosign")
 
     if msg_transfer:
         # _validate_transfer
@@ -63,82 +62,86 @@ def validate(msg: NEMSignTx) -> None:
                 msg_transfer.public_key, "Invalid recipient public key"
             )
             if not msg_transfer_payload:
-                raise _ProcessError("Public key provided but no payload to encrypt")
+                raise ProcessError("Public key provided but no payload to encrypt")
 
         if msg_transfer_payload:
             if len(msg_transfer_payload) > NEM_MAX_PLAIN_PAYLOAD_SIZE:
-                raise _ProcessError("Payload too large")
+                raise ProcessError("Payload too large")
             if (
                 msg_transfer.public_key
                 and len(msg_transfer_payload) > NEM_MAX_ENCRYPTED_PAYLOAD_SIZE
             ):
-                raise _ProcessError("Payload too large")
+                raise ProcessError("Payload too large")
 
         if not nem_validate_address(msg_transfer.recipient, msg_transaction_network):
-            raise _ProcessError("Invalid recipient address")
+            raise ProcessError("Invalid recipient address")
         # END _validate_transfer
     if msg.provision_namespace:
         # _validate_provision_namespace
         if not nem_validate_address(
             msg.provision_namespace.sink, msg_transaction_network
         ):
-            raise _ProcessError("Invalid rental sink address")
+            raise ProcessError("Invalid rental sink address")
         # END _validate_provision_namespace
     if msg_mosaic_creation:
         # _validate_mosaic_creation
         if not nem_validate_address(msg_mosaic_creation.sink, msg_transaction_network):
-            raise _ProcessError("Invalid creation sink address")
+            raise ProcessError("Invalid creation sink address")
 
-        msg_mosaic_creation_definition = msg_mosaic_creation.definition  # local_cache_attribute
+        msg_mosaic_creation_definition = (
+            msg_mosaic_creation.definition
+        )  # local_cache_attribute
         supply = msg_mosaic_creation_definition.supply  # local_cache_attribute
-        divisibility = msg_mosaic_creation_definition.divisibility  # local_cache_attribute
+        divisibility = (
+            msg_mosaic_creation_definition.divisibility
+        )  # local_cache_attribute
 
         if msg_mosaic_creation_definition.name is not None:
-            raise _ProcessError("Name not allowed in mosaic creation transactions")
+            raise ProcessError("Name not allowed in mosaic creation transactions")
         if msg_mosaic_creation_definition.ticker is not None:
-            raise _ProcessError("Ticker not allowed in mosaic creation transactions")
+            raise ProcessError("Ticker not allowed in mosaic creation transactions")
         if msg_mosaic_creation_definition.networks:
-            raise _ProcessError("Networks not allowed in mosaic creation transactions")
+            raise ProcessError("Networks not allowed in mosaic creation transactions")
 
         if supply is not None and divisibility is None:
-            raise _ProcessError(
+            raise ProcessError(
                 "Definition divisibility needs to be provided when supply is"
             )
         if supply is None and divisibility is not None:
-            raise _ProcessError(
+            raise ProcessError(
                 "Definition supply needs to be provided when divisibility is"
             )
 
         if msg_mosaic_creation_definition.levy is not None:
             if msg_mosaic_creation_definition.fee is None:
-                raise _ProcessError("No levy fee provided")
+                raise ProcessError("No levy fee provided")
             if msg_mosaic_creation_definition.levy_address is None:
-                raise _ProcessError("No levy address provided")
+                raise ProcessError("No levy address provided")
             if msg_mosaic_creation_definition.levy_namespace is None:
-                raise _ProcessError("No levy namespace provided")
+                raise ProcessError("No levy namespace provided")
             if msg_mosaic_creation_definition.levy_mosaic is None:
-                raise _ProcessError("No levy mosaic name provided")
+                raise ProcessError("No levy mosaic name provided")
 
             if divisibility is None:
-                raise _ProcessError("No divisibility provided")
+                raise ProcessError("No divisibility provided")
             if supply is None:
-                raise _ProcessError("No supply provided")
+                raise ProcessError("No supply provided")
             if msg_mosaic_creation_definition.mutable_supply is None:
-                raise _ProcessError("No supply mutability provided")
+                raise ProcessError("No supply mutability provided")
             if msg_mosaic_creation_definition.transferable is None:
-                raise _ProcessError("No mosaic transferability provided")
+                raise ProcessError("No mosaic transferability provided")
             if msg_mosaic_creation_definition.description is None:
-                raise _ProcessError("No description provided")
+                raise ProcessError("No description provided")
 
             if divisibility > NEM_MAX_DIVISIBILITY:
-                raise _ProcessError("Invalid divisibility provided")
+                raise ProcessError("Invalid divisibility provided")
             if supply > NEM_MAX_SUPPLY:
-                raise _ProcessError("Invalid supply provided")
+                raise ProcessError("Invalid supply provided")
 
             if not nem_validate_address(
                 msg_mosaic_creation_definition.levy_address, msg_transaction_network
             ):
-                raise _ProcessError("Invalid levy address")
+                raise ProcessError("Invalid levy address")
         # END _validate_mosaic_creation
     if msg.supply_change:
         # _validate_supply_change
@@ -148,14 +151,14 @@ def validate(msg: NEMSignTx) -> None:
         # _validate_aggregate_modification
         creation = msg_multisig is None
         if creation and not msg_aggregate_modification.modifications:
-            raise _ProcessError("No modifications provided")
+            raise ProcessError("No modifications provided")
 
         for m in msg_aggregate_modification.modifications:
             if (
                 creation
                 and m.type == NEMModificationType.CosignatoryModification_Delete
             ):
-                raise _ProcessError("Cannot remove cosignatory when converting account")
+                raise ProcessError("Cannot remove cosignatory when converting account")
             _validate_public_key(
                 m.public_key, "Invalid cosignatory public key provided"
             )

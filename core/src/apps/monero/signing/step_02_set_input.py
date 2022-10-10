@@ -28,13 +28,10 @@ async def set_input(
     state: State, src_entr: MoneroTransactionSourceEntry
 ) -> MoneroTransactionSetInputAck:
     from trezor.messages import MoneroTransactionSetInputAck
-    from apps.monero.xmr import chacha_poly
     from apps.monero.xmr.serialize_messages.tx_prefix import TxinToKey
+    from apps.monero.xmr import chacha_poly, monero, serialize
     from apps.monero.signing import offloading_keys
     from apps.monero import layout
-    from apps.monero.xmr import monero, serialize
-
-    c_h = crypto_helpers  # local_cache_global
 
     state.current_input_index += 1
     current_input_index = state.current_input_index  # local_cache_attribute
@@ -56,9 +53,11 @@ async def set_input(
 
     # Secrets derivation
     # the UTXO's one-time address P
-    out_key = c_h.decodepoint(src_entr_outputs[src_entr.real_output].key.dest)
+    out_key = crypto_helpers.decodepoint(
+        src_entr_outputs[src_entr.real_output].key.dest
+    )
     # the tx_pub of our UTXO stored inside its transaction
-    tx_key = c_h.decodepoint(src_entr.real_out_tx_key)
+    tx_key = crypto_helpers.decodepoint(src_entr.real_out_tx_key)
     additional_tx_pub_key = _get_additional_public_key(src_entr)
 
     # Calculates `derivation = Ra`, private spend key `x = H(Ra||i) + b` to be able
@@ -77,7 +76,7 @@ async def set_input(
 
     # Construct tx.vin
     # If multisig is used then ki in vini should be src_entr.multisig_kLRki.ki
-    vini = TxinToKey(amount=src_entr_amount, k_image=c_h.encodepoint(ki))
+    vini = TxinToKey(amount=src_entr_amount, k_image=crypto_helpers.encodepoint(ki))
     vini.key_offsets = _absolute_output_offsets_to_relative(
         [x.idx for x in src_entr_outputs]
     )
@@ -99,22 +98,22 @@ async def set_input(
 
     # PseudoOuts commitment, alphas stored to state
     alpha, pseudo_out = _gen_commitment(state, src_entr_amount)
-    pseudo_out = c_h.encodepoint(pseudo_out)
+    pseudo_out = crypto_helpers.encodepoint(pseudo_out)
 
     # The alpha is encrypted and passed back for storage
-    pseudo_out_hmac = c_h.compute_hmac(
+    pseudo_out_hmac = crypto_helpers.compute_hmac(
         offloading_keys.hmac_key_txin_comm(state.key_hmac, current_input_index),
         pseudo_out,
     )
 
     alpha_enc = chacha_poly.encrypt_pack(
         offloading_keys.enc_key_txin_alpha(state.key_enc, current_input_index),
-        c_h.encodeint(alpha),
+        crypto_helpers.encodeint(alpha),
     )
 
     spend_enc = chacha_poly.encrypt_pack(
         offloading_keys.enc_key_spend(state.key_enc, current_input_index),
-        c_h.encodeint(xi),
+        crypto_helpers.encodeint(xi),
     )
 
     state.last_step = state.STEP_INP

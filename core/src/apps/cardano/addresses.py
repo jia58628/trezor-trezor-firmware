@@ -66,52 +66,50 @@ def validate_address_parameters(
     script_payment_hash = parameters.script_payment_hash  # local_cache_attribute
     is_shelley_path = seed.is_shelley_path  # local_cache_attribute
     CAT = CardanoAddressType  # local_cache_global
-    assert_params = assert_params_cond  # local_cache_global
-    validate_script = _validate_script_hash  # local_cache_global
 
     if address_type == CAT.BYRON:
-        assert_params(seed.is_byron_path(address_n))
+        assert_params_cond(seed.is_byron_path(address_n))
 
     elif address_type == CAT.BASE:
-        assert_params(is_shelley_path(address_n))
+        assert_params_cond(is_shelley_path(address_n))
         _validate_base_address_staking_info(
             address_n_staking, parameters.staking_key_hash
         )
 
     elif address_type == CAT.BASE_SCRIPT_KEY:
-        validate_script(script_payment_hash)
+        _validate_script_hash(script_payment_hash)
         _validate_base_address_staking_info(
             address_n_staking, parameters.staking_key_hash
         )
 
     elif address_type == CAT.BASE_KEY_SCRIPT:
-        assert_params(is_shelley_path(address_n))
-        validate_script(parameters.script_staking_hash)
+        assert_params_cond(is_shelley_path(address_n))
+        _validate_script_hash(parameters.script_staking_hash)
 
     elif address_type == CAT.BASE_SCRIPT_SCRIPT:
-        validate_script(script_payment_hash)
-        validate_script(parameters.script_staking_hash)
+        _validate_script_hash(script_payment_hash)
+        _validate_script_hash(parameters.script_staking_hash)
 
     elif address_type == CAT.POINTER:
-        assert_params(is_shelley_path(address_n))
-        assert_params(parameters.certificate_pointer is not None)
+        assert_params_cond(is_shelley_path(address_n))
+        assert_params_cond(parameters.certificate_pointer is not None)
 
     elif address_type == CAT.POINTER_SCRIPT:
-        validate_script(script_payment_hash)
-        assert_params(parameters.certificate_pointer is not None)
+        _validate_script_hash(script_payment_hash)
+        assert_params_cond(parameters.certificate_pointer is not None)
 
     elif address_type == CAT.ENTERPRISE:
-        assert_params(is_shelley_path(address_n))
+        assert_params_cond(is_shelley_path(address_n))
 
     elif address_type == CAT.ENTERPRISE_SCRIPT:
-        validate_script(script_payment_hash)
+        _validate_script_hash(script_payment_hash)
 
     elif address_type == CAT.REWARD:
-        assert_params(is_shelley_path(address_n_staking))
-        assert_params(SCHEMA_STAKING_ANY_ACCOUNT.match(address_n_staking))
+        assert_params_cond(is_shelley_path(address_n_staking))
+        assert_params_cond(SCHEMA_STAKING_ANY_ACCOUNT.match(address_n_staking))
 
     elif address_type == CAT.REWARD_SCRIPT:
-        validate_script(parameters.script_staking_hash)
+        _validate_script_hash(parameters.script_staking_hash)
 
     else:
         raise RuntimeError  # should be unreachable

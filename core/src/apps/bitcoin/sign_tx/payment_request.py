@@ -29,6 +29,7 @@ class PaymentRequestVerifier:
         from trezor.crypto.hashlib import sha256
         from trezor.utils import HashWriter
         from apps.common.address_mac import check_address_mac
+        from .. import writers  # pylint: disable=import-outside-toplevel
 
         self.h_outputs = HashWriter(sha256())
         self.amount = 0
@@ -46,32 +47,30 @@ class PaymentRequestVerifier:
             if msg.memos:
                 DataError("Missing nonce in payment request.")
 
-        _writers = writers  # local_cache_global
-
-        _writers.write_bytes_fixed(self.h_pr, b"SL\x00\x24", 4)
-        _writers.write_bytes_prefixed(self.h_pr, nonce)
-        _writers.write_bytes_prefixed(self.h_pr, msg.recipient_name.encode())
-        _writers.write_compact_size(self.h_pr, len(msg.memos))
+        writers.write_bytes_fixed(self.h_pr, b"SL\x00\x24", 4)
+        writers.write_bytes_prefixed(self.h_pr, nonce)
+        writers.write_bytes_prefixed(self.h_pr, msg.recipient_name.encode())
+        writers.write_compact_size(self.h_pr, len(msg.memos))
         for m in msg.memos:
             if m.text_memo is not None:
                 memo = m.text_memo
-                _writers.write_uint32(self.h_pr, _MEMO_TYPE_TEXT)
-                _writers.write_bytes_prefixed(self.h_pr, memo.text.encode())
+                writers.write_uint32(self.h_pr, _MEMO_TYPE_TEXT)
+                writers.write_bytes_prefixed(self.h_pr, memo.text.encode())
             elif m.refund_memo is not None:
                 memo = m.refund_memo
                 # Unlike in a coin purchase memo, the coin type is implied by the payment request.
                 check_address_mac(memo.address, memo.mac, coin.slip44, keychain)
-                _writers.write_uint32(self.h_pr, _MEMO_TYPE_REFUND)
-                _writers.write_bytes_prefixed(self.h_pr, memo.address.encode())
+                writers.write_uint32(self.h_pr, _MEMO_TYPE_REFUND)
+                writers.write_bytes_prefixed(self.h_pr, memo.address.encode())
             elif m.coin_purchase_memo is not None:
                 memo = m.coin_purchase_memo
                 check_address_mac(memo.address, memo.mac, memo.coin_type, keychain)
-                _writers.write_uint32(self.h_pr, _MEMO_TYPE_COIN_PURCHASE)
-                _writers.write_uint32(self.h_pr, memo.coin_type)
-                _writers.write_bytes_prefixed(self.h_pr, memo.amount.encode())
-                _writers.write_bytes_prefixed(self.h_pr, memo.address.encode())
+                writers.write_uint32(self.h_pr, _MEMO_TYPE_COIN_PURCHASE)
+                writers.write_uint32(self.h_pr, memo.coin_type)
+                writers.write_bytes_prefixed(self.h_pr, memo.amount.encode())
+                writers.write_bytes_prefixed(self.h_pr, memo.address.encode())
 
-        _writers.write_uint32(self.h_pr, coin.slip44)
+        writers.write_uint32(self.h_pr, coin.slip44)
 
     def verify(self) -> None:
         from trezor.crypto.curve import secp256k1

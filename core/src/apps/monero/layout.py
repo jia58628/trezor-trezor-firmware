@@ -193,22 +193,16 @@ class TransactionStep(ui.Component):
         self.info = info
 
     def on_render(self) -> None:
-        _ui = ui  # local_cache_global
+        from trezor import ui  # local_cache_global
 
         state = self.state
         info = self.info
-        _ui.header(
-            "Signing transaction", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE
-        )
+        ui.header("Signing transaction", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
         p = 1000 * state.progress_cur // state.progress_total
-        _ui.display.loader(p, False, -4, _ui.WHITE, _ui.BG)
-        _ui.display.text_center(
-            _ui.WIDTH // 2, 210, info[0], _ui.NORMAL, _ui.FG, _ui.BG
-        )
+        ui.display.loader(p, False, -4, ui.WHITE, ui.BG)
+        ui.display.text_center(ui.WIDTH // 2, 210, info[0], ui.NORMAL, ui.FG, ui.BG)
         if len(info) > 1:
-            _ui.display.text_center(
-                _ui.WIDTH // 2, 235, info[1], _ui.NORMAL, _ui.FG, _ui.BG
-            )
+            ui.display.text_center(ui.WIDTH // 2, 235, info[1], ui.NORMAL, ui.FG, ui.BG)
 
 
 class KeyImageSyncStep(ui.Component):
@@ -218,13 +212,11 @@ class KeyImageSyncStep(ui.Component):
         self.total_num = total_num
 
     def on_render(self) -> None:
-        _ui = ui  # local_cache_global
-
         current = self.current
         total_num = self.total_num
-        _ui.header("Syncing", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE)
+        ui.header("Syncing", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
         p = (1000 * (current + 1) // total_num) if total_num > 0 else 0
-        _ui.display.loader(p, False, 18, _ui.WHITE, _ui.BG)
+        ui.display.loader(p, False, 18, ui.WHITE, ui.BG)
 
 
 class LiveRefreshStep(ui.Component):
@@ -233,14 +225,14 @@ class LiveRefreshStep(ui.Component):
         self.current = current
 
     def on_render(self) -> None:
-        _ui = ui  # local_cache_global
+        from trezor import ui  # local_cache_global
 
         current = self.current
-        _ui.header("Refreshing", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE)
+        ui.header("Refreshing", ui.ICON_SEND, ui.TITLE_GREY, ui.BG, ui.BLUE)
         p = (1000 * current // 8) % 1000
-        _ui.display.loader(p, True, 18, _ui.WHITE, _ui.BG)
-        _ui.display.text_center(
-            _ui.WIDTH // 2, 145, str(current), _ui.NORMAL, _ui.FG, _ui.BG
+        ui.display.loader(p, True, 18, ui.WHITE, ui.BG)
+        ui.display.text_center(
+            ui.WIDTH // 2, 145, str(current), ui.NORMAL, ui.FG, ui.BG
         )
 
 

@@ -62,8 +62,6 @@ def get_features() -> Features:
 
     from apps.common import mnemonic, safety_checks
 
-    device = storage_device  # local_cache_global
-
     f = Features(
         vendor="trezor.io",
         fw_vendor=utils.firmware_vendor(),
@@ -73,8 +71,8 @@ def get_features() -> Features:
         patch_version=utils.VERSION_PATCH,
         revision=utils.SCM_REVISION,
         model=utils.MODEL,
-        device_id=device.get_device_id(),
-        label=device.get_label(),
+        device_id=storage_device.get_device_id(),
+        label=storage_device.get_label(),
         pin_protection=config.has_pin(),
         unlocked=config.is_unlocked(),
         busy=busy_expiry_ms() > 0,
@@ -111,37 +109,35 @@ def get_features() -> Features:
         f.capabilities.append(Capability.PassphraseEntry)
 
     f.sd_card_present = sdcard.is_present()
-    f.initialized = device.is_initialized()
+    f.initialized = storage_device.is_initialized()
 
     # private fields:
     if config.is_unlocked():
         # passphrase_protection is private, see #1807
-        f.passphrase_protection = device.is_passphrase_enabled()
-        f.needs_backup = device.needs_backup()
-        f.unfinished_backup = device.unfinished_backup()
-        f.no_backup = device.no_backup()
-        f.flags = device.get_flags()
+        f.passphrase_protection = storage_device.is_passphrase_enabled()
+        f.needs_backup = storage_device.needs_backup()
+        f.unfinished_backup = storage_device.unfinished_backup()
+        f.no_backup = storage_device.no_backup()
+        f.flags = storage_device.get_flags()
         f.recovery_mode = storage_recovery.is_in_progress()
         f.backup_type = mnemonic.get_type()
         f.sd_protection = storage_sd_salt.is_enabled()
         f.wipe_code_protection = config.has_wipe_code()
-        f.passphrase_always_on_device = device.get_passphrase_always_on_device()
+        f.passphrase_always_on_device = storage_device.get_passphrase_always_on_device()
         f.safety_checks = safety_checks.read_setting()
-        f.auto_lock_delay_ms = device.get_autolock_delay_ms()
-        f.display_rotation = device.get_rotation()
-        f.experimental_features = device.get_experimental_features()
+        f.auto_lock_delay_ms = storage_device.get_autolock_delay_ms()
+        f.display_rotation = storage_device.get_rotation()
+        f.experimental_features = storage_device.get_experimental_features()
 
     return f
 
 
 async def handle_Initialize(ctx: wire.Context, msg: Initialize) -> Features:
-    cache = storage_cache  # local_cache_global
-
-    session_id = cache.start_session(msg.session_id)
+    session_id = storage_cache.start_session(msg.session_id)
 
     if not utils.BITCOIN_ONLY:
-        derive_cardano = cache.get(cache.APP_COMMON_DERIVE_CARDANO)
-        have_seed = cache.is_set(cache.APP_COMMON_SEED)
+        derive_cardano = storage_cache.get(storage_cache.APP_COMMON_DERIVE_CARDANO)
+        have_seed = storage_cache.is_set(storage_cache.APP_COMMON_SEED)
 
         if (
             have_seed
@@ -150,13 +146,13 @@ async def handle_Initialize(ctx: wire.Context, msg: Initialize) -> Features:
         ):
             # seed is already derived, and host wants to change derive_cardano setting
             # => create a new session
-            cache.end_current_session()
-            session_id = cache.start_session()
+            storage_cache.end_current_session()
+            session_id = storage_cache.start_session()
             have_seed = False
 
         if not have_seed:
-            cache.set(
-                cache.APP_COMMON_DERIVE_CARDANO,
+            storage_cache.set(
+                storage_cache.APP_COMMON_DERIVE_CARDANO,
                 b"\x01" if msg.derive_cardano else b"",
             )
 

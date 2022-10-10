@@ -293,17 +293,15 @@ def _compute_sec_keys(state: State, tsx_data: MoneroTransactionData) -> None:
     from trezor import protobuf
     from apps.monero.xmr.keccak_hasher import get_keccak_writer
 
-    c_h = crypto_helpers  # local_cache_global
-
     writer = get_keccak_writer()
     writer.write(protobuf.dump_message_buffer(tsx_data))
-    writer.write(c_h.encodeint(state.tx_priv))
+    writer.write(crypto_helpers.encodeint(state.tx_priv))
 
-    master_key = c_h.keccak_2hash(
-        writer.get_digest() + c_h.encodeint(crypto.random_scalar())
+    master_key = crypto_helpers.keccak_2hash(
+        writer.get_digest() + crypto_helpers.encodeint(crypto.random_scalar())
     )
-    state.key_hmac = c_h.keccak_2hash(b"hmac" + master_key)
-    state.key_enc = c_h.keccak_2hash(b"enc" + master_key)
+    state.key_hmac = crypto_helpers.keccak_2hash(b"hmac" + master_key)
+    state.key_enc = crypto_helpers.keccak_2hash(b"enc" + master_key)
 
 
 def _process_payment_id(state: State, tsx_data: MoneroTransactionData) -> None:

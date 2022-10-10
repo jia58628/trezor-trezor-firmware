@@ -441,7 +441,7 @@ def _sanitize_tx_meta(tx: PrevTx, coin: CoinInfo) -> PrevTx:
 
 def _sanitize_tx_input(txi: TxInput, coin: CoinInfo) -> TxInput:
     from trezor.enums import InputScriptType
-    from trezor.wire import DataError  # pylint: disable=reimported  # local_cache_attribute
+    from trezor.wire import DataError  # local_cache_global
 
     txi_script_type = txi.script_type  # local_cache_attribute
 
@@ -498,7 +498,7 @@ def _sanitize_tx_prev_input(txi: PrevInput, coin: CoinInfo) -> PrevInput:
 
 def _sanitize_tx_output(txo: TxOutput, coin: CoinInfo) -> TxOutput:
     from trezor.enums import OutputScriptType
-    from trezor.wire import DataError  # pylint: disable=reimported  # local_cache_attribute
+    from trezor.wire import DataError  # local_cache_global
 
     txo_script_type = txo.script_type  # local_cache_attribute
     txo_address_n = txo.address_n  # local_cache_attribute
