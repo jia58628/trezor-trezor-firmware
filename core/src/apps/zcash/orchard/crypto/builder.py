@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from trezor.crypto.pallas import Point, Scalar, scalar_from_i64
 
-from ...debug import log_gc
+from ..debug import log_gc
 from .generators import (
     SPENDING_KEY_BASE,
     VALUE_COMMITMENT_RANDOMNESS_BASE,

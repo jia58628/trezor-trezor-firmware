@@ -12,13 +12,13 @@ from apps.bitcoin.sign_tx import helpers
 from apps.common.paths import HARDENED
 
 from .. import unified_addresses
-from ..debug import watch_gc, watch_gc_async
 from ..hasher import ZcashHasher
 from ..layout import ConfirmOrchardInputsCountOverThreshold
 from .accumulator import MessageAccumulator
 from .crypto import builder, redpallas
 from .crypto.address import Address
 from .crypto.note import Note
+from .debug import watch_gc, watch_gc_async
 from .random import BundleShieldingRng
 
 if TYPE_CHECKING:

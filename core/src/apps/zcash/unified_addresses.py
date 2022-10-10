@@ -4,6 +4,7 @@ unified addresses according to the ZIP-316.
 see: https://zips.z.cash/zip-0316
 """
 
+import gc
 from typing import TYPE_CHECKING
 
 from trezor.crypto.bech32 import Encoding, bech32_decode, bech32_encode, convertbits
@@ -14,7 +15,6 @@ from apps.common.coininfo import CoinInfo
 from apps.common.readers import read_compact_size
 from apps.common.writers import write_bytes_fixed, write_compact_size
 
-from .debug import watch_gc
 from .f4jumble import f4jumble, f4unjumble
 
 if TYPE_CHECKING:
@@ -83,7 +83,6 @@ def encode(receivers: dict[Typecode, bytes], coin: CoinInfo) -> str:
     return bech32_encode(hrp, converted, Encoding.BECH32M)
 
 
-@watch_gc
 def decode(addr_str: str, coin: CoinInfo) -> dict[int, bytes]:
     (hrp, data, encoding) = bech32_decode(addr_str, max_bech_len=1000)
     if (hrp, data, encoding) == (None, None, None):
@@ -96,7 +95,9 @@ def decode(addr_str: str, coin: CoinInfo) -> dict[int, bytes]:
     if encoding != Encoding.BECH32M:
         raise DataError("Bech32m encoding required.")
 
+    gc.collect()
     decoded = bytearray(convertbits(data, 5, 8, False))
+    gc.collect()
     f4unjumble(memoryview(decoded))
 
     # check trailing padding bytes

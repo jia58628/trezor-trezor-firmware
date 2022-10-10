@@ -8,7 +8,7 @@ specification: https://zips.z.cash/zip-0244
 from typing import TYPE_CHECKING
 
 from trezor.crypto.hashlib import blake2b
-from trezor.utils import HashWriter, empty_bytearray
+from trezor.utils import HashWriter, empty_bytearray, ZCASH_SHIELDED
 
 from apps.bitcoin.common import SigHashType
 from apps.bitcoin.writers import write_uint32  # TODO: import from apps.common.writers
@@ -23,10 +23,14 @@ from apps.bitcoin.writers import (
 )
 
 if TYPE_CHECKING:
-    from trezor.messages import TxInput, TxOutput, SignTx, PrevTx, ZcashOrchardAction
+    from trezor.messages import TxInput, TxOutput, SignTx, PrevTx
     from trezor.utils import Writer
     from apps.common.coininfo import CoinInfo
-    from typing import Sequence
+    from typing import Sequence, IntEnum
+    if ZCASH_SHIELDED:
+        from .orchard.crypto.builder import Action
+else:
+    IntEnum = object
 
 
 def write_hash(w: Writer, hash: bytes) -> None:
@@ -262,9 +266,10 @@ class SaplingHasher:
         return blake2b(outlen=32, personal=b"ZTxIdSaplingHash").digest()
 
 
-EMPTY = object()
-ADDING_ACTIONS = object()
-FINISHED = object()
+class OrchardHasherState(IntEnum):
+    EMPTY = 0
+    ADDING_ACTIONS = 1
+    FINALIZED = 2
 
 
 class OrchardHasher:
@@ -273,26 +278,27 @@ class OrchardHasher:
         self.ch = HashWriter(blake2b(outlen=32, personal=b"ZTxIdOrcActCHash"))
         self.mh = HashWriter(blake2b(outlen=32, personal=b"ZTxIdOrcActMHash"))
         self.nh = HashWriter(blake2b(outlen=32, personal=b"ZTxIdOrcActNHash"))
-        self.state = EMPTY
+        self.state = OrchardHasherState.EMPTY
 
-    def add_action(self, action: ZcashOrchardAction) -> None:
-        assert self.state in (EMPTY, ADDING_ACTIONS)
-        self.state = ADDING_ACTIONS
-        encrypted = action.encrypted_note
-        write_bytes_fixed(self.ch, action.nf, 32)  # T.4a.i
-        write_bytes_fixed(self.ch, action.cmx, 32)  # T.4a.ii
-        write_bytes_fixed(self.ch, encrypted.epk_bytes, 32)  # T.4a.iii
-        write_bytes_fixed(self.ch, encrypted.enc_ciphertext[:52], 52)  # T.4a.iv
+    if ZCASH_SHIELDED:
+        def add_action(self, action: Action) -> None:
+            assert self.state in (OrchardHasherState.EMPTY, OrchardHasherState.ADDING_ACTIONS)
+            self.state = OrchardHasherState.ADDING_ACTIONS
+            encrypted = action.encrypted_note
+            write_bytes_fixed(self.ch, action.nf, 32)  # T.4a.i
+            write_bytes_fixed(self.ch, action.cmx, 32)  # T.4a.ii
+            write_bytes_fixed(self.ch, encrypted.epk_bytes, 32)  # T.4a.iii
+            write_bytes_fixed(self.ch, encrypted.enc_ciphertext[:52], 52)  # T.4a.iv
 
-        write_bytes_fixed(self.mh, encrypted.enc_ciphertext[52:564], 512)  # T.4b.i
+            write_bytes_fixed(self.mh, encrypted.enc_ciphertext[52:564], 512)  # T.4b.i
 
-        write_bytes_fixed(self.nh, action.cv, 32)  # T.4c.i
-        write_bytes_fixed(self.nh, action.rk, 32)  # T.4c.ii
-        write_bytes_fixed(self.nh, encrypted.enc_ciphertext[564:], 16)  # T.4c.iii
-        write_bytes_fixed(self.nh, encrypted.out_ciphertext, 80)  # T.4c.iv
+            write_bytes_fixed(self.nh, action.cv, 32)  # T.4c.i
+            write_bytes_fixed(self.nh, action.rk, 32)  # T.4c.ii
+            write_bytes_fixed(self.nh, encrypted.enc_ciphertext[564:], 16)  # T.4c.iii
+            write_bytes_fixed(self.nh, encrypted.out_ciphertext, 80)  # T.4c.iv
 
     def finalize(self, flags: int, value_balance: int, anchor: bytes) -> None:
-        assert self.state == ADDING_ACTIONS
+        assert self.state == OrchardHasherState.ADDING_ACTIONS
 
         write_bytes_fixed(self.h, self.ch.get_digest(), 32)  # T.4a
         write_bytes_fixed(self.h, self.mh.get_digest(), 32)  # T.4b
@@ -301,12 +307,12 @@ class OrchardHasher:
         write_sint64_le(self.h, value_balance)  # T.4e
         write_bytes_fixed(self.h, anchor, 32)  # T.4f
 
-        self.state = FINISHED
+        self.state = OrchardHasherState.FINALIZED
 
     def digest(self) -> bytes:
         """
         Returns `T.4: orchard_digest` field.
         see: https://zips.z.cash/zip-0244#t-4-orchard-digest
         """
-        assert self.state in (EMPTY, FINISHED)
+        assert self.state in (OrchardHasherState.EMPTY, OrchardHasherState.FINALIZED)
         return self.h.get_digest()

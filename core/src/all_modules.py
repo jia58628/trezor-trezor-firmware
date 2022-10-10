@@ -783,8 +783,6 @@ if not utils.BITCOIN_ONLY:
     import apps.zcash
     apps.zcash.approver
     import apps.zcash.approver
-    apps.zcash.debug
-    import apps.zcash.debug
     apps.zcash.f4jumble
     import apps.zcash.f4jumble
     apps.zcash.get_address
@@ -819,6 +817,8 @@ if not utils.BITCOIN_ONLY:
     import apps.zcash.orchard.crypto.sinsemilla
     apps.zcash.orchard.crypto.utils
     import apps.zcash.orchard.crypto.utils
+    apps.zcash.orchard.debug
+    import apps.zcash.orchard.debug
     apps.zcash.orchard.get_fvk
     import apps.zcash.orchard.get_fvk
     apps.zcash.orchard.get_ivk
