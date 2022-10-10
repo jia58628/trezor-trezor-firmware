@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from trezor.enums import ButtonRequestType
 from trezor.ui.layouts import confirm_action
+from trezor.wire import DataError
 
 if TYPE_CHECKING:
     from trezor.messages import ApplySettings, Success
@@ -15,7 +16,6 @@ BRT_PROTECT_CALL = ButtonRequestType.ProtectCall  # CACHE
 def _validate_homescreen(homescreen: bytes) -> None:
     from trezor import ui
     import storage.device as storage_device
-    from trezor.wire import DataError
 
     if homescreen == b"":
         return
@@ -39,7 +39,7 @@ async def apply_settings(ctx: Context, msg: ApplySettings) -> Success:
     import storage.device as storage_device
     from apps.common import safety_checks
     from trezor.messages import Success
-    from trezor.wire import DataError, ProcessError, NotInitialized
+    from trezor.wire import ProcessError, NotInitialized
     from apps.base import reload_settings_from_storage
 
     if not storage_device.is_initialized():
@@ -172,16 +172,17 @@ async def _require_confirm_change_passphrase_source(
 async def _require_confirm_change_display_rotation(
     ctx: GenericContext, rotation: int
 ) -> None:
-    from trezor.wire import DataError
-
-    label = {
-        0: "north",
-        90: "east",
-        180: "south",
-        270: "west",
-    }.get(rotation)
-    if label is None:
+    if rotation == 0:
+        label = "north"
+    elif rotation == 90:
+        label = "east"
+    elif rotation == 180:
+        label = "south"
+    elif rotation == 270:
+        label = "west"
+    else:
         raise DataError("Unsupported display rotation")
+
     await confirm_action(
         ctx,
         "set_rotation",

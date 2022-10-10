@@ -30,10 +30,12 @@ async def require_confirm_init(
     )
 
     # get_network_warning
-    network = {
-        consts.NETWORK_PASSPHRASE_PUBLIC: None,
-        consts.NETWORK_PASSPHRASE_TESTNET: "testnet network",
-    }.get(network_passphrase, "private network")
+    if network_passphrase == consts.NETWORK_PASSPHRASE_PUBLIC:
+        network = None
+    elif network_passphrase == consts.NETWORK_PASSPHRASE_TESTNET:
+        network = "testnet network"
+    else:
+        network = "private network"
 
     if network:
         await layouts.confirm_metadata(

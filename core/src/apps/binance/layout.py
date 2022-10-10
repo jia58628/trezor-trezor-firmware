@@ -58,10 +58,12 @@ async def require_confirm_cancel(ctx: Context, msg: BinanceCancelMsg) -> None:
 async def require_confirm_order(ctx: Context, msg: BinanceOrderMsg) -> None:
     from trezor.enums import BinanceOrderSide
 
-    # NOTE: saves 13 bytes versus the if-elif-else
-    side = {BinanceOrderSide.BUY: "Buy", BinanceOrderSide.SELL: "Sell"}.get(
-        msg.side, "Unknown"
-    )
+    if msg.side == BinanceOrderSide.BUY:
+        side = "Buy"
+    elif msg.side == BinanceOrderSide.SELL:
+        side = "Sell"
+    else:
+        side = "Unknown"
 
     await confirm_properties(
         ctx,
