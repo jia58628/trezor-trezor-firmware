@@ -1,4 +1,3 @@
-from micropython import const
 from typing import TYPE_CHECKING
 
 from trezor.wire import DataError, ProcessError
@@ -131,7 +130,7 @@ class Approver:
 
 class BasicApprover(Approver):
     # the maximum number of change-outputs allowed without user confirmation
-    MAX_SILENT_CHANGE_COUNT = const(2)
+    MAX_SILENT_CHANGE_COUNT = 2
 
     def __init__(self, tx: SignTx, coin: CoinInfo) -> None:
         super().__init__(tx, coin)
@@ -337,10 +336,10 @@ class BasicApprover(Approver):
 
 class CoinJoinApprover(Approver):
     # Minimum registrable output amount in a CoinJoin.
-    MIN_REGISTRABLE_OUTPUT_AMOUNT = const(5000)
+    MIN_REGISTRABLE_OUTPUT_AMOUNT = 5000
 
     # Largest possible weight of an output supported by Trezor (P2TR or P2WSH).
-    MAX_OUTPUT_WEIGHT = const(4 * (8 + 1 + 1 + 1 + 32))
+    MAX_OUTPUT_WEIGHT = 4 * (8 + 1 + 1 + 1 + 32)
 
     def __init__(
         self, tx: SignTx, coin: CoinInfo, authorization: CoinJoinAuthorization

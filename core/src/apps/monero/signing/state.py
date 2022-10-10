@@ -1,4 +1,3 @@
-from micropython import const
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,13 +11,13 @@ if TYPE_CHECKING:
 
 class State:
 
-    STEP_INIT = const(0)
-    STEP_INP = const(100)
-    STEP_VINI = const(300)
-    STEP_ALL_IN = const(350)
-    STEP_OUT = const(400)
-    STEP_ALL_OUT = const(500)
-    STEP_SIGN = const(600)
+    STEP_INIT = 0
+    STEP_INP = 100
+    STEP_VINI = 300
+    STEP_ALL_IN = 350
+    STEP_OUT = 400
+    STEP_ALL_OUT = 500
+    STEP_SIGN = 600
 
     def __init__(self, ctx: Context) -> None:
         from apps.monero.xmr.keccak_hasher import KeccakXmrArchive

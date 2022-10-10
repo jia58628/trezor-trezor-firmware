@@ -3014,7 +3014,7 @@ class BulletProofPlusBuilder:
             # Originally, it is constructed iteratively, starting with 1 bit, 2 bits.
             # We cannot afford having it all precomputed, thus we precompute it up to
             # a threshold challenges_cache_depth_lim bits, the rest is evaluated on the fly
-            challenges_cache_depth_lim = const(8)
+            challenges_cache_depth_lim = 8
             challenges_cache_depth = min(rounds, challenges_cache_depth_lim)
             challenges_cache = _ensure_dst_keyvect(None, 1 << challenges_cache_depth)
 
