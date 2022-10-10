@@ -19,7 +19,7 @@ class Signatures:
     def load_fw(self, filename):
         """ Load FW and zero out signature fiels"""
         with open(filename, "rb") as f:
-            data = open(in_fw_fname, "rb").read()
+            data = open(filename, "rb").read()
             self.fw_image = bytearray(data)
         self.zero_sig_fields()
 
@@ -47,9 +47,9 @@ class Signatures:
         assert len(self.signature_pairs) == 3
 
         for i in range(3):
-            sigindex_ofs = signatures.sigindex_offsets[i]
-            sig_ofs = signatures.sig_offsets[i]
-            (sigindex, sig) = signatures.signature_pairs[i]
+            sigindex_ofs = self.sigindex_offsets[i]
+            sig_ofs = self.sig_offsets[i]
+            (sigindex, sig) = self.signature_pairs[i]
 
             print(f"Patching sigindex {sigindex} at offset {sigindex_ofs}")
             assert 1 <= sigindex <= 5
