@@ -21,14 +21,14 @@ def serialize_mosaic_creation(
 ) -> bytes:
     from ..helpers import NEM_TRANSACTION_TYPE_MOSAIC_CREATION
 
-    write_bytes_with_len_local = write_bytes_with_len  # cache
+    write_bytes_with_len_local = write_bytes_with_len  # local_cache_global
 
     w = serialize_tx_common(common, public_key, NEM_TRANSACTION_TYPE_MOSAIC_CREATION)
 
     mosaics_w = bytearray()
     write_bytes_with_len_local(mosaics_w, public_key)
 
-    creation_definition = creation.definition  # cache
+    creation_definition = creation.definition  # local_cache_attribute
 
     identifier_w = bytearray()
     write_bytes_with_len_local(identifier_w, creation_definition.namespace.encode())

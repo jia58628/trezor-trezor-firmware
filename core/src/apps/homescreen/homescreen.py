@@ -59,11 +59,11 @@ class Homescreen(HomescreenBase):
         from trezor import utils
         import storage.device as storage_device
 
-        local_ui = ui  # cache
-        header_error = local_ui.header_error  # cache
-        header_warning = local_ui.header_warning  # cache
-        display = local_ui.display  # cache
-        model = utils.MODEL  # cache
+        local_ui = ui  # local_cache_global
+        header_error = local_ui.header_error  # local_cache_attribute
+        header_warning = local_ui.header_warning  # local_cache_attribute
+        display = local_ui.display  # local_cache_attribute
+        model = utils.MODEL  # local_cache_attribute
 
         # warning bar on top
         if storage_device.is_initialized() and storage_device.no_backup():

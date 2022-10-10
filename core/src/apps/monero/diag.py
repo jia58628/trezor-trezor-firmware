@@ -45,9 +45,9 @@ if __debug__:
         return Failure(**kwargs)
 
     async def diag(ctx, msg, **kwargs) -> Failure:
-        msg_ins = msg.ins  # cache
-        mem_check = check_mem  # cache
-        log_debug = log.debug  # cache
+        msg_ins = msg.ins  # local_cache_attribute
+        mem_check = check_mem  # local_cache_global
+        log_debug = log.debug  # local_cache_attribute
 
         log_debug(__name__, "----diagnostics")
         gc.collect()

@@ -285,7 +285,7 @@ def request_tx_extra_data(
 ) -> Awaitable[bytearray]:  # type: ignore [awaitable-is-generator]
     from trezor.messages import TxAckPrevExtraData
 
-    tx_req_details = tx_req.details  # cache
+    tx_req_details = tx_req.details  # local_cache_attribute
 
     assert tx_req_details is not None
     tx_req.request_type = RequestType.TXEXTRADATA
@@ -370,8 +370,8 @@ def request_tx_finish(tx_req: TxRequest) -> Awaitable[None]:  # type: ignore [aw
 
 
 def _clear_tx_request(tx_req: TxRequest) -> None:
-    tx_req_details = tx_req.details  # cache
-    tx_req_serialized = tx_req.serialized  # cache
+    tx_req_details = tx_req.details  # local_cache_attribute
+    tx_req_serialized = tx_req.serialized  # local_cache_attribute
 
     assert tx_req_details is not None
     assert tx_req_serialized is not None
@@ -441,9 +441,9 @@ def _sanitize_tx_meta(tx: PrevTx, coin: CoinInfo) -> PrevTx:
 
 def _sanitize_tx_input(txi: TxInput, coin: CoinInfo) -> TxInput:
     from trezor.enums import InputScriptType
-    from trezor.wire import DataError  # pylint: disable=reimported  # cache
+    from trezor.wire import DataError  # pylint: disable=reimported  # local_cache_attribute
 
-    txi_script_type = txi.script_type  # cache
+    txi_script_type = txi.script_type  # local_cache_attribute
 
     if len(txi.prev_hash) != TX_HASH_SIZE:
         raise DataError("Provided prev_hash is invalid.")
@@ -498,10 +498,10 @@ def _sanitize_tx_prev_input(txi: PrevInput, coin: CoinInfo) -> PrevInput:
 
 def _sanitize_tx_output(txo: TxOutput, coin: CoinInfo) -> TxOutput:
     from trezor.enums import OutputScriptType
-    from trezor.wire import DataError  # pylint: disable=reimported  # cache
+    from trezor.wire import DataError  # pylint: disable=reimported  # local_cache_attribute
 
-    txo_script_type = txo.script_type  # cache
-    txo_address_n = txo.address_n  # cache
+    txo_script_type = txo.script_type  # local_cache_attribute
+    txo_address_n = txo.address_n  # local_cache_attribute
 
     if txo.multisig and txo_script_type not in common.MULTISIG_OUTPUT_SCRIPT_TYPES:
         raise DataError("Multisig field provided but not expected.")

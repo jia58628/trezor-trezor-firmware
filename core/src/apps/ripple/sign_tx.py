@@ -22,7 +22,7 @@ async def sign_tx(
     from . import helpers, layout
     from .serialize import serialize
 
-    msg_payment = msg.payment  # cache
+    msg_payment = msg.payment  # local_cache_attribute
 
     if msg_payment.amount > helpers.MAX_ALLOWED_AMOUNT:
         raise ProcessError("Amount exceeds maximum allowed amount.")

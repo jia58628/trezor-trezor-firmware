@@ -15,7 +15,7 @@ def serialize_tx_common(
 ) -> bytearray:
     w = bytearray()
 
-    write_uint32_le_local = write_uint32_le  # cache
+    write_uint32_le_local = write_uint32_le  # local_cache_global
 
     write_uint32_le_local(w, transaction_type)
     if version is None:

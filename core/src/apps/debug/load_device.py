@@ -15,7 +15,7 @@ async def load_device(ctx: Context, msg: LoadDevice) -> Success:
     from trezor.wire import UnexpectedMessage, ProcessError
     from trezor.ui.layouts import confirm_action
 
-    msg_mnemonics = msg.mnemonics  # cache
+    msg_mnemonics = msg.mnemonics  # local_cache_attribute
 
     # _validate
     if storage_device.is_initialized():

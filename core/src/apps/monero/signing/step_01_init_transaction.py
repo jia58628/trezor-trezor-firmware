@@ -32,8 +32,8 @@ async def init_transaction(
     from apps.common import paths
     from apps.monero import layout, misc
 
-    state_mem_trace = state.mem_trace  # cache
-    tsx_data_outputs = tsx_data.outputs  # cache
+    state_mem_trace = state.mem_trace  # local_cache_attribute
+    tsx_data_outputs = tsx_data.outputs  # local_cache_attribute
 
     await paths.validate_path(state.ctx, keychain, address_n)
 
@@ -293,7 +293,7 @@ def _compute_sec_keys(state: State, tsx_data: MoneroTransactionData) -> None:
     from trezor import protobuf
     from apps.monero.xmr.keccak_hasher import get_keccak_writer
 
-    c_h = crypto_helpers  # cache
+    c_h = crypto_helpers  # local_cache_global
 
     writer = get_keccak_writer()
     writer.write(protobuf.dump_message_buffer(tsx_data))
@@ -321,7 +321,7 @@ def _process_payment_id(state: State, tsx_data: MoneroTransactionData) -> None:
     See:
     - https://github.com/monero-project/monero/blob/ff7dc087ae5f7de162131cea9dbcf8eac7c126a1/src/cryptonote_basic/tx_extra.h
     """
-    tsx_data_payment_id = tsx_data.payment_id  # cache
+    tsx_data_payment_id = tsx_data.payment_id  # local_cache_attribute
 
     # encrypted payment id / dummy payment ID
     view_key_pub_enc = None

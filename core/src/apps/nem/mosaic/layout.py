@@ -39,14 +39,13 @@ async def ask_supply_change(
         ("under namespace", change.namespace),
     ]
     await require_confirm_content(ctx, "Supply change", supply_message)
-    common_msg = " supply by " + str(change.delta) + " whole units?"
     if change.type == NEMSupplyChangeType.SupplyChange_Decrease:
-        msg = "Decrease" + common_msg
+        action = "Decrease"
     elif change.type == NEMSupplyChangeType.SupplyChange_Increase:
-        msg = "Increase" + common_msg
+        action = "Increase"
     else:
         raise ValueError("Invalid supply change type")
-    await require_confirm_text(ctx, msg)
+    await require_confirm_text(ctx, f"{action} supply by {change.delta} whole units?")
 
     await require_confirm_final(ctx, common.fee)
 
@@ -59,7 +58,7 @@ async def _require_confirm_properties(
     from trezor.ui.layouts import confirm_properties
 
     properties = []
-    properties_append = properties.append  # cache
+    properties_append = properties.append  # local_cache_attribute
 
     # description
     if definition.description:

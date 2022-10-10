@@ -45,7 +45,7 @@ async def _request_on_host(ctx: Context) -> str:
     request = PassphraseRequest()
     ack = await ctx.call(request, PassphraseAck)
 
-    ack_passphrase = ack.passphrase  # cache
+    ack_passphrase = ack.passphrase  # local_cache_attribute
 
     if ack.on_device:
         from trezor.ui.layouts import request_passphrase_on_device

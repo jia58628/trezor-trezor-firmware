@@ -50,10 +50,10 @@ class TxWeightCalculator:
 
     @classmethod
     def input_script_size(cls, i: TxInput) -> int:
-        script_type = i.script_type  # cache
-        script_pubkey = i.script_pubkey  # cache
-        multisig = i.multisig  # cache
-        IST = InputScriptType  # cache
+        script_type = i.script_type  # local_cache_attribute
+        script_pubkey = i.script_pubkey  # local_cache_attribute
+        multisig = i.multisig  # local_cache_attribute
+        IST = InputScriptType  # local_cache_global
 
         if common.input_is_external_unverified(i):
             assert script_pubkey is not None  # checked in _sanitize_tx_input
@@ -95,7 +95,7 @@ class TxWeightCalculator:
     def add_input(self, i: TxInput) -> None:
         from .. import ownership
 
-        script_type = i.script_type  # cache
+        script_type = i.script_type  # local_cache_attribute
 
         self.inputs_count += 1
         self.counter += 4 * _TXSIZE_INPUT

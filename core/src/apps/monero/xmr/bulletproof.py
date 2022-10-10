@@ -19,18 +19,18 @@ else:
     Generic = (object,)
     T = 0  # type: ignore
 
-crypto_decodeint_into_noreduce = crypto.decodeint_into_noreduce  # cache
-crypto_decodeint_into = crypto.decodeint_into  # cache
-crypto_encodeint_into = crypto.encodeint_into  # cache
-crypto_decodepoint_into = crypto.decodepoint_into  # cache
-crypto_encodepoint_into = crypto.encodepoint_into  # cache
-crypto_Scalar = crypto.Scalar  # cache
-crypto_Point = crypto.Point  # cache
-crypto_sc_copy = crypto.sc_copy  # cache
-crypto_sc_mul_into = crypto.sc_mul_into  # cache
-crypto_helpers_encodeint = crypto_helpers.encodeint  # cache
-utils_ensure = utils.ensure  # cache
-gc_collect = gc.collect  # cache
+crypto_decodeint_into_noreduce = crypto.decodeint_into_noreduce  # global_import_cache
+crypto_decodeint_into = crypto.decodeint_into  # global_import_cache
+crypto_encodeint_into = crypto.encodeint_into  # global_import_cache
+crypto_decodepoint_into = crypto.decodepoint_into  # global_import_cache
+crypto_encodepoint_into = crypto.encodepoint_into  # global_import_cache
+crypto_Scalar = crypto.Scalar  # global_import_cache
+crypto_Point = crypto.Point  # global_import_cache
+crypto_sc_copy = crypto.sc_copy  # global_import_cache
+crypto_sc_mul_into = crypto.sc_mul_into  # global_import_cache
+crypto_helpers_encodeint = crypto_helpers.encodeint  # global_import_cache
+utils_ensure = utils.ensure  # global_import_cache
+gc_collect = gc.collect  # global_import_cache
 
 # Constants
 TBYTES = (bytes, bytearray, memoryview)
@@ -134,7 +134,7 @@ def _scalarmult_key(
     s_raw: int | None = None,
     tmp_pt: crypto.Point = _tmp_pt_1,
 ):
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     # TODO: two functions based on s/s_raw ?
     dst = _ensure_dst_key(dst)
@@ -194,7 +194,7 @@ def _sc_sub(
     a: bytes | crypto.Scalar,
     b: bytes | crypto.Scalar,
 ) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     if not isinstance(a, _crypto.Scalar):
@@ -209,7 +209,7 @@ def _sc_sub(
 
 
 def _sc_mul(dst: bytearray | None, a: bytes, b: bytes | crypto.Scalar) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -248,7 +248,7 @@ def _sc_muladd(
 
 
 def _sc_mulsub(dst: bytearray | None, a: bytes, b: bytes, c: bytes) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -260,7 +260,7 @@ def _sc_mulsub(dst: bytearray | None, a: bytes, b: bytes, c: bytes) -> bytearray
 
 
 def _add_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     _crypto.decodepoint_into(_tmp_pt_1, A)
@@ -271,7 +271,7 @@ def _add_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
 
 
 def _sub_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     _crypto.decodepoint_into(_tmp_pt_1, A)
@@ -282,7 +282,7 @@ def _sub_keys(dst: bytearray | None, A: bytes, B: bytes) -> bytearray:
 
 
 def _add_keys2(dst: bytearray | None, a: bytes, b: bytes, B: bytes) -> bytearray:
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -567,7 +567,7 @@ class KeyV(KeyVBaseType[T]):
             ck[i] = value[i]
 
     def to(self, idx, buff: bytearray | None = None, offset: int = 0):
-        self_d = self.d  # cache
+        self_d = self.d  # local_cache_attribute
 
         idx = self.idxize(idx)
         if self.chunked:
@@ -585,7 +585,7 @@ class KeyV(KeyVBaseType[T]):
         return buff if buff else self.cur
 
     def read(self, idx: int, buff: bytes, offset: int = 0) -> bytes:
-        self_d = self.d  # cache
+        self_d = self.d  # local_cache_attribute
 
         idx = self.idxize(idx)
         if self.chunked:
@@ -677,7 +677,7 @@ class KeyVEval(KeyVBase):
         return self.fnc(self.idxize(item), self.buff)
 
     def to(self, idx, buff: bytearray | None = None, offset: int = 0):
-        self_buff = self.buff  # cache
+        self_buff = self.buff  # local_cache_attribute
 
         self.fnc(self.idxize(idx), self_buff)
         if self.raw:
@@ -716,7 +716,7 @@ class KeyVPrecomp(KeyVBase):
         return self.aux_comp_fnc(item, self.buff)
 
     def to(self, idx: int, buff: bytearray | None = None, offset: int = 0) -> bytearray:
-        self_buff = self.buff  # cache
+        self_buff = self.buff  # local_cache_attribute
 
         item = self.idxize(idx)
         if item < len(self.precomp_prefix):
@@ -769,8 +769,8 @@ class KeyVPowers(KeyVBase):
         self.last_idx = 0
 
     def __getitem__(self, item):
-        self_cur = self.cur  # cache
-        self_x = self.x  # cache
+        self_cur = self.cur  # local_cache_attribute
+        self_x = self.x  # local_cache_attribute
 
         prev = self.last_idx
         item = self.idxize(item)
@@ -875,7 +875,7 @@ class KeyVPowersBackwards(KeyVBase):
         item = self.idxize(item)
         self.last_idx = item
 
-        self_cur_sc = self.cur_sc  # cache
+        self_cur_sc = self.cur_sc  # local_cache_attribute
 
         if item == 0:
             return self_cur_sc if self.raw else _copy_key(self.cur, _ONE)
@@ -946,7 +946,7 @@ class VctD(KeyVBase):
 
     def move_one(self, item: int):
         """Fast linear jump step"""
-        self_cur_sc = self.cur_sc  # cache
+        self_cur_sc = self.cur_sc  # local_cache_attribute
 
         self.current_n += 1
         if item != 0 and self.current_n >= self.N:  # reset 2**i part,
@@ -964,9 +964,9 @@ class VctD(KeyVBase):
         if sdiff < 0:
             raise ValueError("Not supported")
 
-        self_cur_sc = self.cur_sc  # cache
-        self_tmp_sc = self.tmp_sc  # cache
-        self_N = self.N  # cache
+        self_cur_sc = self.cur_sc  # local_cache_attribute
+        self_tmp_sc = self.tmp_sc  # local_cache_attribute
+        self_N = self.N  # local_cache_attribute
 
         self.current_n = item % self_N  # reset for move_one incremental move
         same_2 = sdiff % self_N == 0  # same 2**i component? simpler move
@@ -1038,7 +1038,7 @@ class KeyHadamardFoldedVct(KeyVBase):
         self.cur = _ensure_dst_key() if not self.raw else None
 
     def __getitem__(self, item):
-        self_cur_pt = self.cur_pt  # cache
+        self_cur_pt = self.cur_pt  # local_cache_attribute
 
         i = self.idxize(item)
         crypto_decodepoint_into(self_cur_pt, self.src.to(i))
@@ -1084,8 +1084,8 @@ class KeyScalarFoldedVct(KeyVBase):
         self.cur = _ensure_dst_key() if not self.raw else None
 
     def __getitem__(self, item):
-        self_cur_sc = self.cur_sc  # cache
-        self_tmp_sc = self.tmp_sc  # cache
+        self_cur_sc = self.cur_sc  # local_cache_attribute
+        self_tmp_sc = self.tmp_sc  # local_cache_attribute
 
         i = self.idxize(item)
 
@@ -1121,8 +1121,8 @@ class KeyPow2Vct(KeyVBase):
         self.cur_sc = crypto_Scalar()
 
     def __getitem__(self, item):
-        self_cur_sc = self.cur_sc  # cache
-        self_cur = self.cur  # cache
+        self_cur_sc = self.cur_sc  # local_cache_attribute
+        self_cur = self.cur  # local_cache_attribute
 
         i = self.idxize(item)
         if i == 0:
@@ -1176,7 +1176,7 @@ class KeyChallengeCacheVct(KeyVBase):
             self.precomp_depth += 1
 
     def __getitem__(self, item):
-        self_cur = self.cur  # cache
+        self_cur = self.cur  # local_cache_attribute
 
         i = self.idxize(item)
         bits_done = 0
@@ -1246,10 +1246,10 @@ class KeyR0(KeyVBase):
         item = self.idxize(item)
         self.last_idx = item
 
-        _crypto = crypto  # cache
-        self_res = self.res  # cache
-        self_p2 = self.p2  # cache
-        _crypto_sc_mul_into = _crypto.sc_mul_into  # cache
+        _crypto = crypto  # local_cache_global
+        self_res = self.res  # local_cache_attribute
+        self_p2 = self.p2  # local_cache_attribute
+        _crypto_sc_mul_into = _crypto.sc_mul_into  # local_cache_attribute
 
         # Const init for eval
         if item == 0:  # Reset on first item access
@@ -1301,7 +1301,7 @@ def _vector_exponent_custom(A, B, a, b, dst=None, a_raw=None, b_raw=None):
     """
     \\sum_{i=0}^{|A|}  a_i A_i + b_i B_i
     """
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     _crypto.identity_into(_tmp_pt_2)
@@ -1354,7 +1354,7 @@ def _vector_power_sum(x, n, dst=None):
     """
     \\sum_{i=0}^{n-1} x^i
     """
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     dst = _ensure_dst_key(dst)
     if n == 0:
@@ -1379,7 +1379,7 @@ def _inner_product(a, b, dst=None):
     """
     \\sum_{i=0}^{|a|} a_i b_i
     """
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     if len(a) != len(b):
         raise ValueError("Incompatible sizes of a and b")
@@ -1402,8 +1402,8 @@ def _weighted_inner_product(
     """
     Output a_0*b_0*y**1 + a_1*b_1*y**2 + ... + a_{n-1}*b_{n-1}*y**n
     """
-    _crypto = crypto  # cache
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # cache
+    _crypto = crypto  # local_cache_global
+    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
 
     if len(a) != len(b):
         raise ValueError("Incompatible sizes of a and b")
@@ -1431,7 +1431,7 @@ def _hadamard_fold(v, a, b, into=None, into_offset: int = 0, vR=None, vRoff=0):
     ln = len(v); h = ln // 2
     v_i = a v_i + b v_{h + i}
     """
-    _crypto = crypto  # cache
+    _crypto = crypto  # local_cache_global
 
     h = len(v) // 2
     crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -1454,7 +1454,7 @@ def _scalar_fold(v, a, b, into=None, into_offset: int = 0):
     ln = len(v); h = ln // 2
     v_i = a v_i + b v_{h + i}
     """
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # cache
+    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
 
     h = len(v) // 2
     _crypto_decodeint_into_noreduce(_tmp_sc_1, a)
@@ -1478,9 +1478,9 @@ def _cross_inner_product(l0, r0, l1, r1):
     t1   = l0 . r1 + l1 . r0
     t2   = l1 . r1
     """
-    _crypto = crypto  # cache
-    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # cache
-    Scalar = _crypto.Scalar  # cache
+    _crypto = crypto  # local_cache_global
+    _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
+    Scalar = _crypto.Scalar  # local_cache_attribute
 
     sc_t1 = Scalar()
     sc_t2 = Scalar()
@@ -1780,9 +1780,9 @@ class BulletProofBuilder:
         )
 
     def _prove_phase1(self, N, M, V, gamma, hash_cache) -> tuple:
-        ensure_dst_key = _ensure_dst_key  # cache
-        self_gc = self.gc  # cache
-        sc_muladd = _sc_muladd  # cache
+        ensure_dst_key = _ensure_dst_key  # local_cache_global
+        self_gc = self.gc  # local_cache_attribute
+        sc_muladd = _sc_muladd  # local_cache_global
 
         MN = M * N
         aL = self.aL
@@ -1918,10 +1918,10 @@ class BulletProofBuilder:
         aprime = l
         bprime = r
 
-        self_gc = self.gc  # cache
-        aprime_slice_view = aprime.slice_view  # cache
-        bprime_slice_view = bprime.slice_view  # cache
-        ensure_dst_key = _ensure_dst_key  # cache
+        self_gc = self.gc  # local_cache_attribute
+        aprime_slice_view = aprime.slice_view  # local_cache_attribute
+        bprime_slice_view = bprime.slice_view  # local_cache_attribute
+        ensure_dst_key = _ensure_dst_key  # local_cache_global
 
         Hprec = self._hprec_aux(MN)
 
@@ -2062,11 +2062,11 @@ class BulletProofBuilder:
         :param single_optim: single proof memory optimization
         :return:
         """
-        _ensure = utils_ensure  # cache
-        sc_mul = _sc_mul  # cache
-        sc_mulsub = _sc_mulsub  # cache
-        sc_muladd = _sc_muladd  # cache
-        init_key = _init_key  # cache
+        _ensure = utils_ensure  # local_cache_global
+        sc_mul = _sc_mul  # local_cache_global
+        sc_mulsub = _sc_mulsub  # local_cache_global
+        sc_muladd = _sc_muladd  # local_cache_global
+        init_key = _init_key  # local_cache_global
 
         max_length = 0
         for proof in proofs:
@@ -2322,8 +2322,8 @@ def _compute_LR(
               b_{b0 + i} * 8^{-1} *     H_{H0+i}
     """
     muex = MultiExpSequential()
-    muex_add_pair = muex.add_pair  # cache
-    sc_mul = _sc_mul  # cache
+    muex_add_pair = muex.add_pair  # local_cache_attribute
+    sc_mul = _sc_mul  # local_cache_global
 
     for i in range(size):
         sc_mul(tmp, a.to(a0 + i), y)
@@ -2465,17 +2465,17 @@ class BulletProofPlusBuilder:
         M: int,
         N: int,
     ) -> BulletproofPlus:
-        _crypto = crypto  # cache
-        _crypto_sc_mul_into = _crypto.sc_mul_into  # cache
-        _crypto_encodeint_into = _crypto.encodeint_into  # cache
-        _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # cache
-        self_save_mem = self.save_mem  # cache
-        self_gc = self.gc  # cache
-        ensure_dst_key = _ensure_dst_key  # cache
-        sc_gen = _sc_gen  # cache
-        sc_mul = _sc_mul  # cache
-        sc_muladd = _sc_muladd  # cache
-        sc_square_mult = _sc_square_mult  # cache
+        _crypto = crypto  # local_cache_global
+        _crypto_sc_mul_into = _crypto.sc_mul_into  # local_cache_attribute
+        _crypto_encodeint_into = _crypto.encodeint_into  # local_cache_attribute
+        _crypto_decodeint_into_noreduce = crypto_decodeint_into_noreduce  # local_cache_global
+        self_save_mem = self.save_mem  # local_cache_attribute
+        self_gc = self.gc  # local_cache_attribute
+        ensure_dst_key = _ensure_dst_key  # local_cache_global
+        sc_gen = _sc_gen  # local_cache_global
+        sc_mul = _sc_mul  # local_cache_global
+        sc_muladd = _sc_muladd  # local_cache_global
+        sc_square_mult = _sc_square_mult  # local_cache_global
 
         _hash_vct_to_scalar(hash_cache, V)
 
@@ -2777,7 +2777,7 @@ class BulletProofPlusBuilder:
         eta = sc_gen()
 
         muex = MultiExpSequential()
-        muex_add_pair = muex.add_pair  # cache
+        muex_add_pair = muex.add_pair  # local_cache_attribute
 
         muex_add_pair(sc_mul(tmp, r, _INV_EIGHT), Gprime.to(0))
         muex_add_pair(sc_mul(tmp, s, _INV_EIGHT), Hprime.to(0))
@@ -2818,12 +2818,12 @@ class BulletProofPlusBuilder:
         """
         BP+ batch verification
         """
-        _ensure = utils_ensure  # cache
-        self_gc = self.gc  # cache
-        ensure_dst_key = _ensure_dst_key  # cache
-        scalarmult8 = _scalarmult8  # cache
-        sc_mul = _sc_mul  # cache
-        sc_muladd = _sc_muladd  # cache
+        _ensure = utils_ensure  # local_cache_global
+        self_gc = self.gc  # local_cache_attribute
+        ensure_dst_key = _ensure_dst_key  # local_cache_global
+        scalarmult8 = _scalarmult8  # local_cache_global
+        sc_mul = _sc_mul  # local_cache_global
+        sc_muladd = _sc_muladd  # local_cache_global
 
         max_length = 0
         for proof in proofs:
@@ -2864,10 +2864,10 @@ class BulletProofPlusBuilder:
             _hash_cache_mash(transcript, transcript, _hash_vct_to_scalar(tmp, proof.V))
 
             pd.y = _hash_cache_mash(None, transcript, proof.A)
-            pd_y = pd.y  # cache
+            pd_y = pd.y  # local_cache_attribute
             _ensure(not (pd_y == _ZERO), "y == 0")
             pd.z = _hash_to_scalar(None, pd_y)
-            pd_z = pd.z  # cache
+            pd_z = pd.z  # local_cache_attribute
             _copy_key(transcript, pd_z)
 
             # Determine the number of inner-product rounds based on proof size
@@ -2878,7 +2878,7 @@ class BulletProofPlusBuilder:
                     break
                 pd.logM += 1
 
-            pd_logM = pd.logM  # cache
+            pd_logM = pd.logM  # local_cache_attribute
             max_logm = max(max_logm, pd_logM)
             rounds = pd_logM + logN
             _ensure(rounds > 0, "zero rounds")
@@ -2891,16 +2891,16 @@ class BulletProofPlusBuilder:
                 )
                 _ensure(pd.challenges[j] != _ZERO, "challenges[j] == 0")
 
-            pd_challenges = pd.challenges  # cache
+            pd_challenges = pd.challenges  # local_cache_attribute
 
             # Final challenge
             pd.e = _hash_cache_mash(None, transcript, proof.A1, proof.B)
-            pd_e = pd.e  # cache
+            pd_e = pd.e  # local_cache_attribute
             _ensure(pd_e != _ZERO, "e == 0")
 
             # batch scalar inversions
             pd.inv_offset = inv_offset
-            pd_inv_offset = pd.inv_offset  # cache
+            pd_inv_offset = pd.inv_offset  # local_cache_attribute
             for j in range(rounds):  # max rounds is 10 = lg(16*64) = lg(1024)
                 to_invert.read(to_invert_offset, pd_challenges[j])
                 to_invert_offset += 1
@@ -2921,7 +2921,7 @@ class BulletProofPlusBuilder:
         Gprec = self._gprec_aux(maxMN)  # Extended precomputed GiHi
         Hprec = self._hprec_aux(maxMN)
         muex_expl = MultiExpSequential()
-        muex_expl_add_pair = muex_expl.add_pair  # cache
+        muex_expl_add_pair = muex_expl.add_pair  # local_cache_attribute
         muex_gh = MultiExpSequential(
             point_fnc=lambda i, d: Gprec[i >> 1] if i & 1 == 0 else Hprec[i >> 1]
         )

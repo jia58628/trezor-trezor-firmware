@@ -36,7 +36,7 @@ def validate(
 
     _validate_structure(certificate)
 
-    CCT = CardanoCertificateType  # cache
+    CCT = CardanoCertificateType  # local_cache_attribute
 
     if certificate.type in (
         CCT.STAKE_DELEGATION,
@@ -65,9 +65,9 @@ def validate(
 
 
 def _validate_structure(certificate: messages.CardanoTxCertificate) -> None:
-    pool = certificate.pool  # cache
-    pool_parameters = certificate.pool_parameters  # cache
-    CCT = CardanoCertificateType  # cache
+    pool = certificate.pool  # local_cache_attribute
+    pool_parameters = certificate.pool_parameters  # local_cache_attribute
+    CCT = CardanoCertificateType  # local_cache_global
 
     fields_to_be_empty: dict[CCT, tuple[Any, ...]] = {
         CCT.STAKE_REGISTRATION: (pool, pool_parameters),
@@ -90,7 +90,7 @@ def _validate_structure(certificate: messages.CardanoTxCertificate) -> None:
 def cborize(
     keychain: seed.Keychain, certificate: messages.CardanoTxCertificate
 ) -> CborSequence:
-    certificate_type = certificate.type  # cache
+    certificate_type = certificate.type  # local_cache_attribute
 
     if certificate_type in (
         CardanoCertificateType.STAKE_REGISTRATION,
@@ -177,7 +177,7 @@ def _validate_pool_parameters(
 ) -> None:
     from .helpers import LOVELACE_MAX_SUPPLY
 
-    _assert = assert_cond  # cache
+    _assert = assert_cond  # local_cache_global
 
     _assert(len(pool_parameters.pool_id) == _POOL_HASH_SIZE)
     _assert(len(pool_parameters.vrf_key_hash) == _VRF_KEY_HASH_SIZE)
@@ -192,7 +192,7 @@ def _validate_pool_parameters(
         pool_parameters.reward_account, protocol_magic, network_id
     )
 
-    pool_metadata = pool_parameters.metadata  # cache
+    pool_metadata = pool_parameters.metadata  # local_cache_attribute
     if pool_metadata:
         # _validate_pool_metadata
         _assert(len(pool_metadata.url) <= _MAX_URL_LENGTH)
@@ -218,9 +218,9 @@ def validate_pool_owner(
 
 
 def validate_pool_relay(pool_relay: messages.CardanoPoolRelayParameters) -> None:
-    relay_port = pool_relay.port  # cache
-    relay_host_name = pool_relay.host_name  # cache
-    _assert = assert_cond  # cache
+    relay_port = pool_relay.port  # local_cache_attribute
+    relay_host_name = pool_relay.host_name  # local_cache_attribute
+    _assert = assert_cond  # local_cache_global
 
     if pool_relay.type == CardanoPoolRelayType.SINGLE_HOST_IP:
         _assert(
@@ -268,7 +268,7 @@ def _cborize_ipv6_address(ipv6_address: bytes | None) -> bytes | None:
 def cborize_pool_relay(
     pool_relay: messages.CardanoPoolRelayParameters,
 ) -> CborSequence:
-    pool_relay_type = pool_relay.type  # cache
+    pool_relay_type = pool_relay.type  # local_cache_attribute
 
     if pool_relay_type == CardanoPoolRelayType.SINGLE_HOST_IP:
         return (

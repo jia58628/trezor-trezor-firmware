@@ -30,7 +30,7 @@ class PlutusSigner(Signer):
             await layout.warn_unknown_total_collateral(self.ctx)
 
     async def _confirm_tx(self, tx_hash: bytes) -> None:
-        self_msg = self.msg  # cache
+        self_msg = self.msg  # local_cache_attribute
 
         # super() omitted intentionally
         # We display tx hash so that experienced users can compare it to the tx hash

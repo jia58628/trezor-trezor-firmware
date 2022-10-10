@@ -18,7 +18,7 @@ async def get_address(
     from .layout import show_cardano_address, show_credentials
     from . import addresses
 
-    msg_address_parameters = msg.address_parameters  # cache
+    msg_address_parameters = msg.address_parameters  # local_cache_attribute
 
     validate_network_info(msg.network_id, msg.protocol_magic)
     addresses.validate_address_parameters(msg_address_parameters)

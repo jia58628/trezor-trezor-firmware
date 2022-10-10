@@ -71,7 +71,7 @@ def write_tx_output(w: Writer, o: TxOutput | PrevOutput, script_pubkey: bytes) -
 
 
 def write_op_push(w: Writer, n: int) -> None:
-    w_append = w.append  # cache
+    w_append = w.append  # local_cache_attribute
 
     ensure(0 <= n <= 0xFFFF_FFFF)
     if n < 0x4C:

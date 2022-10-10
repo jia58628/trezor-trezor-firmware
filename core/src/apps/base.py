@@ -62,7 +62,7 @@ def get_features() -> Features:
 
     from apps.common import mnemonic, safety_checks
 
-    device = storage_device  # cache
+    device = storage_device  # local_cache_global
 
     f = Features(
         vendor="trezor.io",
@@ -135,7 +135,7 @@ def get_features() -> Features:
 
 
 async def handle_Initialize(ctx: wire.Context, msg: Initialize) -> Features:
-    cache = storage_cache  # cache
+    cache = storage_cache  # local_cache_global
 
     session_id = cache.start_session(msg.session_id)
 
@@ -295,7 +295,7 @@ async def handle_CancelAuthorization(
 def set_homescreen() -> None:
     import storage.recovery as storage_recovery
 
-    workflow_set_default = workflow.set_default  # cache
+    workflow_set_default = workflow.set_default  # local_cache_attribute
 
     if storage_cache.is_set(storage_cache.APP_COMMON_BUSY_DEADLINE_MS):
         from apps.homescreen.busyscreen import busyscreen
@@ -382,7 +382,7 @@ def reload_settings_from_storage() -> None:
 
 
 def boot() -> None:
-    MT = MessageType  # cache
+    MT = MessageType  # local_cache_global
 
     # Register workflow handlers
     for msg_type, handler in (

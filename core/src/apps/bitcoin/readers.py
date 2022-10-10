@@ -12,7 +12,7 @@ def read_memoryview_prefixed(r: BufferReader) -> memoryview:
 
 
 def read_op_push(r: BufferReader) -> int:
-    r_get = r.get  # cache
+    r_get = r.get  # local_cache_attribute
 
     prefix = r_get()
     if prefix < 0x4C:

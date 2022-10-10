@@ -26,7 +26,7 @@ async def input_vini(
 
     from trezor.messages import MoneroTransactionInputViniAck
 
-    STEP_VINI = state.STEP_VINI  # cache
+    STEP_VINI = state.STEP_VINI  # local_cache_attribute
 
     await layout.transaction_step(state, STEP_VINI, state.current_input_index + 1)
     if state.last_step not in (state.STEP_INP, STEP_VINI):

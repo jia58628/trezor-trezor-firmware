@@ -43,8 +43,8 @@ async def sign_tx_eip1559(
     )
     from .sign_tx import handle_erc20, send_request_chunk, check_common_fields
 
-    _rlp = rlp  # cache
-    msg_gas_limit = msg.gas_limit  # cache
+    _rlp = rlp  # local_cache_global
+    msg_gas_limit = msg.gas_limit  # local_cache_attribute
 
     # check
     if len(msg.max_gas_fee) + len(msg_gas_limit) > 30:

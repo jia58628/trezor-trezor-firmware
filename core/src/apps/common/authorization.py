@@ -8,8 +8,8 @@ WIRE_TYPES: dict[int, tuple[int, ...]] = {
     MessageType.AuthorizeCoinJoin: (MessageType.SignTx, MessageType.GetOwnershipProof),
 }
 
-APP_COMMON_AUTHORIZATION_DATA = storage_cache.APP_COMMON_AUTHORIZATION_DATA  # cache
-APP_COMMON_AUTHORIZATION_TYPE = storage_cache.APP_COMMON_AUTHORIZATION_TYPE  # cache
+APP_COMMON_AUTHORIZATION_DATA = storage_cache.APP_COMMON_AUTHORIZATION_DATA  # global_import_cache
+APP_COMMON_AUTHORIZATION_TYPE = storage_cache.APP_COMMON_AUTHORIZATION_TYPE  # global_import_cache
 
 
 def is_set() -> bool:

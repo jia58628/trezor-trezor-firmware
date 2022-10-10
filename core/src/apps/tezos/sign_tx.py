@@ -43,17 +43,17 @@ async def sign_tx(ctx: Context, msg: TezosSignTx, keychain: Keychain) -> TezosSi
 
     node = keychain.derive(msg.address_n)
 
-    msg_transaction = msg.transaction  # cache
-    msg_origination = msg.origination  # cache
-    msg_delegation = msg.delegation  # cache
+    msg_transaction = msg.transaction  # local_cache_attribute
+    msg_origination = msg.origination  # local_cache_attribute
+    msg_delegation = msg.delegation  # local_cache_attribute
 
     if msg_transaction is not None:
-        msg_transaction_fee = msg_transaction.fee  # cache
+        msg_transaction_fee = msg_transaction.fee  # local_cache_attribute
 
         # if the transaction operation is used to execute code on a smart contract
         if msg_transaction.parameters_manager is not None:
             parameters_manager = msg_transaction.parameters_manager
-            parameters_manager_transfer = parameters_manager.transfer  # cache
+            parameters_manager_transfer = parameters_manager.transfer  # local_cache_attribute
 
             # operation to delegate from a smart contract with manager.tz
             if parameters_manager.set_delegate is not None:
@@ -190,11 +190,11 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
     from apps.common.writers import write_bytes_unchecked
     from .helpers import PROPOSAL_HASH_SIZE
 
-    write_bytes_fixed_local = write_bytes_fixed  # cache
+    write_bytes_fixed_local = write_bytes_fixed  # local_cache_global
 
     write_bytes_fixed_local(w, msg.branch, helpers.BRANCH_HASH_SIZE)
 
-    msg_reveal = msg.reveal  # cache
+    msg_reveal = msg.reveal  # local_cache_attribute
 
     # when the account sends first operation in lifetime,
     # we need to reveal its public key
@@ -222,8 +222,8 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
 
         # support delegation and transfer from the old scriptless contracts (now with manager.tz script)
         if transaction.parameters_manager is not None:
-            parameters_manager = transaction.parameters_manager  # cache
-            parameters_manager_transfer = parameters_manager.transfer  # cache
+            parameters_manager = transaction.parameters_manager  # local_cache_attribute
+            parameters_manager_transfer = parameters_manager.transfer  # local_cache_attribute
 
             if parameters_manager.set_delegate is not None:
                 # _encode_manager_delegation

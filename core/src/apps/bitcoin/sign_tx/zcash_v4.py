@@ -137,7 +137,7 @@ class ZcashV4(Bitcoinlike):
         from apps.common.writers import write_compact_size
         from . import helpers
 
-        self_serialized_tx = self.serialized_tx  # cache
+        self_serialized_tx = self.serialized_tx  # local_cache_attribute
 
         self.write_tx_footer(self_serialized_tx, self.tx_info.tx)
 

@@ -59,7 +59,7 @@ class MemoryReaderWriter:
         return nread
 
     def write(self, buf: bytes) -> None:
-        self_buffer = self.buffer  # cache
+        self_buffer = self.buffer  # local_cache_attribute
 
         assert isinstance(self_buffer, bytearray)
         nwritten = len(buf)

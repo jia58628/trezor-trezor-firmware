@@ -84,7 +84,7 @@ async def _ask_transfer_mosaic(
             ),
         )
 
-        definition_levy = definition.levy  # cache
+        definition_levy = definition.levy  # local_cache_attribute
 
         if definition_levy is not None:
             if definition_levy == NEMMosaicLevy.MosaicLevy_Absolute:

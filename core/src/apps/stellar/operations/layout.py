@@ -136,8 +136,8 @@ async def _confirm_offer(
     from trezor.messages import StellarManageBuyOfferOp
     from ..layout import format_asset
 
-    buying_asset = op.buying_asset  # cache
-    selling_asset = op.selling_asset  # cache
+    buying_asset = op.buying_asset  # local_cache_attribute
+    selling_asset = op.selling_asset  # local_cache_attribute
 
     if StellarManageBuyOfferOp.is_type_of(op):
         buying = ("Buying:", format_amount(op.amount, buying_asset))
@@ -265,7 +265,7 @@ async def confirm_set_options_op(ctx: Context, op: StellarSetOptionsOp) -> None:
         await confirm_text(ctx, "op_set_options", "Set flags", data=t)
 
     thresholds: list[tuple[str, str]] = []
-    thresholds_append = thresholds.append  # cache
+    thresholds_append = thresholds.append  # local_cache_attribute
     if op.master_weight is not None:
         thresholds_append(("Master Weight:", str(op.master_weight)))
     if op.low_threshold is not None:
@@ -281,8 +281,8 @@ async def confirm_set_options_op(ctx: Context, op: StellarSetOptionsOp) -> None:
     if op.home_domain:
         await confirm_text(ctx, "op_home_domain", "Home Domain", op.home_domain)
 
-    signer_type = op.signer_type  # cache
-    signer_key = op.signer_key  # cache
+    signer_type = op.signer_type  # local_cache_attribute
+    signer_key = op.signer_key  # local_cache_attribute
 
     if signer_type is not None:
         if signer_key is None or op.signer_weight is None:

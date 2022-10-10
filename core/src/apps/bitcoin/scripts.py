@@ -41,7 +41,7 @@ def write_input_script_prefixed(
     from trezor.crypto.hashlib import sha256
     from trezor import wire
 
-    IST = InputScriptType  # cache
+    IST = InputScriptType  # local_cache_global
 
     if script_type == IST.SPENDADDRESS:
         # p2pkh or p2sh
@@ -184,7 +184,7 @@ def parse_input_script_p2pkh(
 def write_output_script_p2pkh(
     w: Writer, pubkeyhash: bytes, prefixed: bool = False
 ) -> None:
-    w_append = w.append  # cache
+    w_append = w.append  # local_cache_attribute
 
     if prefixed:
         write_compact_size(w, 25)

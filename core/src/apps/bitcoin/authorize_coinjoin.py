@@ -33,8 +33,8 @@ async def authorize_coinjoin(
     from .common import BIP32_WALLET_DEPTH
     from .keychain import validate_path_against_script_type
 
-    safety_checks_is_strict = safety_checks.is_strict()  # cache
-    msg_address_n = msg.address_n  # cache
+    safety_checks_is_strict = safety_checks.is_strict()  # result_cache
+    msg_address_n = msg.address_n  # local_cache_attribute
 
     if len(msg.coordinator) > _MAX_COORDINATOR_LEN or not all(
         32 <= ord(x) <= 126 for x in msg.coordinator

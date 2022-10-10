@@ -31,7 +31,7 @@ async def recovery_device(ctx: Context, msg: RecoveryDevice) -> Success:
     )
     from .homescreen import recovery_homescreen, recovery_process
 
-    msg_dry_run = msg.dry_run  # cache
+    msg_dry_run = msg.dry_run  # local_cache_attribute
 
     # --------------------------------------------------------
     # validate

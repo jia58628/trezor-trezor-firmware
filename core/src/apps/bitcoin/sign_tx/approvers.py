@@ -63,7 +63,7 @@ class Approver:
         pass
 
     def add_external_input(self, txi: TxInput) -> None:
-        txi_amount = txi.amount  # cache
+        txi_amount = txi.amount  # local_cache_attribute
 
         self.weight.add_input(txi)
         self.total_in += txi_amount
@@ -240,8 +240,8 @@ class BasicApprover(Approver):
     async def approve_tx(self, tx_info: TxInfo, orig_txs: list[OriginalTxInfo]) -> None:
         from trezor.wire import NotEnoughFunds
 
-        self_coin = self.coin  # cache
-        self_amount_unit = self.amount_unit  # cache
+        self_coin = self.coin  # local_cache_attribute
+        self_amount_unit = self.amount_unit  # local_cache_attribute
 
         await super().approve_tx(tx_info, orig_txs)
 

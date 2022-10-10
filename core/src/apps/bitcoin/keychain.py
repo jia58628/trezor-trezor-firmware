@@ -102,8 +102,8 @@ def validate_path_against_script_type(
     from trezor.enums import InputScriptType
 
     patterns = []
-    patterns_append = patterns.append  # cache
-    coin_slip44 = coin.slip44  # cache
+    patterns_append = patterns.append  # local_cache_attribute
+    coin_slip44 = coin.slip44  # local_cache_attribute
 
     if msg is not None:
         assert address_n is None and script_type is None

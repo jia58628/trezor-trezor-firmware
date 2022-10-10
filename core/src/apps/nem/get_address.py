@@ -20,8 +20,8 @@ async def get_address(
     from .helpers import check_path, get_network_str
     from .validators import validate_network
 
-    msg_address_n = msg.address_n  # cache
-    msg_network = msg.network  # cache
+    msg_address_n = msg.address_n  # local_cache_attribute
+    msg_network = msg.network  # local_cache_attribute
 
     validate_network(msg_network)
     await validate_path(

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from trezor.wire import GenericContext
 
 
-CONFIRMED = trezorui2.CONFIRMED  # cache
+CONFIRMED = trezorui2.CONFIRMED  # global_import_cache
 
 
 def _split_share_into_pages(share_words: Sequence[str], per_page: int = 4) -> List[str]:

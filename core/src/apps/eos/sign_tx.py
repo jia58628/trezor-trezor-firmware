@@ -21,7 +21,7 @@ async def sign_tx(ctx: Context, msg: EosSignTx, keychain: Keychain) -> EosSigned
     from .helpers import base58_encode
     from .layout import require_sign_tx
 
-    num_actions = msg.num_actions  # cache
+    num_actions = msg.num_actions  # local_cache_attribute
 
     if not num_actions:
         raise DataError("No actions")

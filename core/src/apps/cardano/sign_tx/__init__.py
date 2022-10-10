@@ -18,7 +18,7 @@ async def sign_tx(
 
     from .signer import Signer
 
-    msg_signing_mode = msg.signing_mode  # cache
+    msg_signing_mode = msg.signing_mode  # local_cache_attribute
 
     signer_type: Type[Signer]
     if msg_signing_mode == CardanoTxSigningMode.ORDINARY_TRANSACTION:

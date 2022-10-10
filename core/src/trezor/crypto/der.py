@@ -57,7 +57,7 @@ def _write_int(w: Writer, number: bytes) -> None:
 
 
 def _read_int(r: BufferReader) -> memoryview:
-    r_peek = r.peek  # cache
+    r_peek = r.peek  # local_cache_attribute
 
     if r.get() != 0x02:
         raise ValueError

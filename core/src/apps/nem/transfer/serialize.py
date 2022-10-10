@@ -38,7 +38,7 @@ def serialize_transfer(
     write_bytes_with_len(tx, transfer.recipient.encode())
     write_uint64_le(tx, transfer.amount)
 
-    write_uint32_le_local = write_uint32_le  # cache
+    write_uint32_le_local = write_uint32_le  # local_cache_global
 
     if payload:
         # payload + payload size (u32) + encryption flag (u32)

@@ -54,7 +54,7 @@ class LRUCache:
         self.cache: dict[Any, Deletable] = {}
 
     def insert(self, key: Any, value: Deletable) -> None:
-        self_cache_keys = self.cache_keys  # cache
+        self_cache_keys = self.cache_keys  # local_cache_attribute
 
         if key in self_cache_keys:
             self_cache_keys.remove(key)

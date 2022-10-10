@@ -34,12 +34,12 @@ async def set_input(
     from apps.monero import layout
     from apps.monero.xmr import monero, serialize
 
-    c_h = crypto_helpers  # cache
+    c_h = crypto_helpers  # local_cache_global
 
     state.current_input_index += 1
-    current_input_index = state.current_input_index  # cache
-    src_entr_amount = src_entr.amount  # cache
-    src_entr_outputs = src_entr.outputs  # cache
+    current_input_index = state.current_input_index  # local_cache_attribute
+    src_entr_amount = src_entr.amount  # local_cache_attribute
+    src_entr_outputs = src_entr.outputs  # local_cache_attribute
 
     await layout.transaction_step(state, state.STEP_INP, current_input_index)
 
@@ -171,7 +171,7 @@ def _absolute_output_offsets_to_relative(off: list[int]) -> list[int]:
 def _get_additional_public_key(
     src_entr: MoneroTransactionSourceEntry,
 ) -> crypto.Point | None:
-    additional_tx_keys = src_entr.real_out_additional_tx_keys  # cache
+    additional_tx_keys = src_entr.real_out_additional_tx_keys  # local_cache_attribute
 
     additional_tx_pub_key = None
     if len(additional_tx_keys) == 1:  # compression

@@ -155,7 +155,7 @@ class Decred(Bitcoin):
         approver = DecredApprover(tx, coin)
         super().__init__(tx, keychain, coin, approver)
 
-        self_tx_info_tx = self.tx_info.tx  # cache
+        self_tx_info_tx = self.tx_info.tx  # local_cache_attribute
 
         self.write_tx_header(self.serialized_tx, self_tx_info_tx, witness_marker=True)
         write_compact_size(self.serialized_tx, self_tx_info_tx.inputs_count)
@@ -172,7 +172,7 @@ class Decred(Bitcoin):
         return DecredSigHasher(self.h_prefix)
 
     async def step2_approve_outputs(self) -> None:
-        self_tx_info_tx = self.tx_info.tx  # cache
+        self_tx_info_tx = self.tx_info.tx  # local_cache_attribute
 
         write_compact_size(self.serialized_tx, self_tx_info_tx.outputs_count)
         write_compact_size(self.h_prefix, self_tx_info_tx.outputs_count)
@@ -212,8 +212,8 @@ class Decred(Bitcoin):
         from . import progress
         from .. import multisig
 
-        self_tx_info_tx_inputs_count = self.tx_info.tx.inputs_count  # cache
-        self_coin = self.coin  # cache
+        self_tx_info_tx_inputs_count = self.tx_info.tx.inputs_count  # local_cache_attribute
+        self_coin = self.coin  # local_cache_attribute
 
         write_compact_size(self.serialized_tx, self_tx_info_tx_inputs_count)
 
@@ -335,8 +335,8 @@ class Decred(Bitcoin):
         return scripts_decred.output_script_paytoopreturn(op_return_data)
 
     async def approve_staking_ticket(self) -> None:
-        self_approver = self.approver  # cache
-        self_tx_info = self.tx_info  # cache
+        self_approver = self.approver  # local_cache_attribute
+        self_tx_info = self.tx_info  # local_cache_attribute
 
         assert isinstance(self_approver, DecredApprover)
 

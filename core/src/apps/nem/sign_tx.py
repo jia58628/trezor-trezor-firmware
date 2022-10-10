@@ -25,8 +25,8 @@ async def sign_tx(ctx: Context, msg: NEMSignTx, keychain: Keychain) -> NEMSigned
 
     validate(msg)
 
-    msg_multisig = msg.multisig  # cache
-    msg_transaction = msg.transaction  # cache
+    msg_multisig = msg.multisig  # local_cache_attribute
+    msg_transaction = msg.transaction  # local_cache_attribute
 
     await validate_path(
         ctx,

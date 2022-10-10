@@ -105,7 +105,7 @@ async def handle_erc20(
     from .layout import require_confirm_unknown_token
     from . import tokens
 
-    msg_data_initial_chunk = msg.data_initial_chunk  # cache
+    msg_data_initial_chunk = msg.data_initial_chunk  # local_cache_attribute
 
     token = None
     address_bytes = recipient = bytes_from_address(msg.to)
@@ -186,7 +186,7 @@ def _sign_digest(
 
 
 def check_common_fields(msg: EthereumSignTxAny) -> None:
-    msg_data_length = msg.data_length  # cache
+    msg_data_length = msg.data_length  # local_cache_attribute
 
     if msg_data_length > 0:
         if not msg.data_initial_chunk:

@@ -17,9 +17,9 @@ if TYPE_CHECKING:
     from trezor.messages import Success
 
 
-BAK_T_BIP39 = BackupType.Bip39  # cache
-BAK_T_SLIP39_BASIC = BackupType.Slip39_Basic  # cache
-BAK_T_SLIP39_ADVANCED = BackupType.Slip39_Advanced  # cache
+BAK_T_BIP39 = BackupType.Bip39  # global_import_cache
+BAK_T_SLIP39_BASIC = BackupType.Slip39_Basic  # global_import_cache
+BAK_T_SLIP39_ADVANCED = BackupType.Slip39_Advanced  # global_import_cache
 _DEFAULT_BACKUP_TYPE = BAK_T_BIP39
 
 
@@ -31,7 +31,7 @@ async def reset_device(ctx: Context, msg: ResetDevice) -> Success:
     from trezor.crypto import bip39, random
     from trezor.messages import Success, EntropyAck, EntropyRequest
 
-    msg_backup_type = msg.backup_type  # cache
+    msg_backup_type = msg.backup_type  # local_cache_attribute
 
     # validate parameters and device state
     _validate_reset_device(msg)
@@ -111,7 +111,7 @@ async def reset_device(ctx: Context, msg: ResetDevice) -> Success:
 
 
 async def _backup_slip39_basic(ctx: Context, encrypted_master_secret: bytes) -> None:
-    local_layout = layout  # cache
+    local_layout = layout  # local_cache_global
 
     # get number of shares
     await local_layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_BASIC)
@@ -141,7 +141,7 @@ async def _backup_slip39_basic(ctx: Context, encrypted_master_secret: bytes) -> 
 
 
 async def _backup_slip39_advanced(ctx: Context, encrypted_master_secret: bytes) -> None:
-    local_layout = layout  # cache
+    local_layout = layout  # local_cache_global
 
     # get number of groups
     await local_layout.slip39_show_checklist(ctx, 0, BAK_T_SLIP39_ADVANCED)
@@ -185,7 +185,7 @@ def _validate_reset_device(msg: ResetDevice) -> None:
     from .. import backup_types
     from trezor.wire import UnexpectedMessage
 
-    msg_backup_type = msg.backup_type or _DEFAULT_BACKUP_TYPE  # cache
+    msg_backup_type = msg.backup_type or _DEFAULT_BACKUP_TYPE  # local_cache_attribute
     if msg_backup_type not in (
         BAK_T_BIP39,
         BAK_T_SLIP39_BASIC,

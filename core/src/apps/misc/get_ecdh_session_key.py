@@ -19,9 +19,9 @@ async def get_ecdh_session_key(ctx: Context, msg: GetECDHSessionKey) -> ECDHSess
     from apps.common.keychain import get_keychain
     from apps.common.paths import HARDENED, AlwaysMatchingSchema
 
-    msg_ecdsa_curve_name = msg.ecdsa_curve_name or "secp256k1"  # cache
-    msg_identity = msg.identity  # cache
-    msg_peer_public_key = msg.peer_public_key  # cache
+    msg_ecdsa_curve_name = msg.ecdsa_curve_name or "secp256k1"  # local_cache_attribute
+    msg_identity = msg.identity  # local_cache_attribute
+    msg_peer_public_key = msg.peer_public_key  # local_cache_attribute
 
     keychain = await get_keychain(ctx, msg_ecdsa_curve_name, [AlwaysMatchingSchema])
     identity = serialize_identity(msg_identity)

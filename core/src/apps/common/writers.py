@@ -75,7 +75,7 @@ def write_bytes_reversed(w: Writer, b: bytes, length: int) -> int:
 def write_compact_size(w: Writer, n: int) -> None:
     ensure(0 <= n <= 0xFFFF_FFFF)
 
-    w_append = w.append  # cache
+    w_append = w.append  # local_cache_attribute
 
     if n < 253:
         w_append(n & 0xFF)

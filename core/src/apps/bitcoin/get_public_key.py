@@ -21,9 +21,9 @@ async def get_public_key(
     coin = coininfo.by_name(coin_name)
     curve_name = msg.ecdsa_curve_name or coin.curve_name
 
-    msg_address_n = msg.address_n  # cache
-    msg_ignore_xpub_magic = msg.ignore_xpub_magic  # cache
-    coin_xpub_magic = coin.xpub_magic  # cache
+    msg_address_n = msg.address_n  # local_cache_attribute
+    msg_ignore_xpub_magic = msg.ignore_xpub_magic  # local_cache_attribute
+    coin_xpub_magic = coin.xpub_magic  # local_cache_attribute
 
     if msg_address_n and msg_address_n[0] == paths.SLIP25_PURPOSE:
         # UnlockPath is required to access SLIP25 paths.

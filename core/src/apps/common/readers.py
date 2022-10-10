@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 
 def read_compact_size(r: BufferReader) -> int:
-    r_get = r.get  # cache
+    r_get = r.get  # local_cache_attribute
 
     prefix = r_get()
     if prefix < 253:

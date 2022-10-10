@@ -60,14 +60,14 @@ def validate_address_parameters(
 
     _validate_address_parameters_structure(parameters)
 
-    address_type = parameters.address_type  # cache
-    address_n = parameters.address_n  # cache
-    address_n_staking = parameters.address_n_staking  # cache
-    script_payment_hash = parameters.script_payment_hash  # cache
-    is_shelley_path = seed.is_shelley_path  # cache
-    CAT = CardanoAddressType  # cache
-    assert_params = assert_params_cond  # cache
-    validate_script = _validate_script_hash  # cache
+    address_type = parameters.address_type  # local_cache_attribute
+    address_n = parameters.address_n  # local_cache_attribute
+    address_n_staking = parameters.address_n_staking  # local_cache_attribute
+    script_payment_hash = parameters.script_payment_hash  # local_cache_attribute
+    is_shelley_path = seed.is_shelley_path  # local_cache_attribute
+    CAT = CardanoAddressType  # local_cache_global
+    assert_params = assert_params_cond  # local_cache_global
+    validate_script = _validate_script_hash  # local_cache_global
 
     if address_type == CAT.BYRON:
         assert_params(seed.is_byron_path(address_n))
@@ -120,13 +120,13 @@ def validate_address_parameters(
 def _validate_address_parameters_structure(
     parameters: messages.CardanoAddressParametersType,
 ) -> None:
-    address_n = parameters.address_n  # cache
-    address_n_staking = parameters.address_n_staking  # cache
-    staking_key_hash = parameters.staking_key_hash  # cache
-    certificate_pointer = parameters.certificate_pointer  # cache
-    script_payment_hash = parameters.script_payment_hash  # cache
-    script_staking_hash = parameters.script_staking_hash  # cache
-    CAT = CardanoAddressType  # cache
+    address_n = parameters.address_n  # local_cache_attribute
+    address_n_staking = parameters.address_n_staking  # local_cache_attribute
+    staking_key_hash = parameters.staking_key_hash  # local_cache_attribute
+    certificate_pointer = parameters.certificate_pointer  # local_cache_attribute
+    script_payment_hash = parameters.script_payment_hash  # local_cache_attribute
+    script_staking_hash = parameters.script_staking_hash  # local_cache_attribute
+    CAT = CardanoAddressType  # local_cache_global
 
     fields_to_be_empty: dict[CAT, tuple[Any, ...]] = {
         CAT.BASE: (

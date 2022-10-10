@@ -90,9 +90,9 @@ async def _process_unknown_action(
     from .. import writers
     from . import layout
 
-    action_unknown = action.unknown  # cache
+    action_unknown = action.unknown  # local_cache_attribute
     assert action_unknown is not None
-    data_chunk = action_unknown.data_chunk  # cache
+    data_chunk = action_unknown.data_chunk  # local_cache_attribute
 
     checksum = HashWriter(sha256())
     writers.write_uvarint(checksum, action_unknown.data_size)

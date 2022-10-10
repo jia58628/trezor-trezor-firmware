@@ -31,7 +31,7 @@ def classify_subaddresses(
     single_dest_subaddress: MoneroAccountPublicAddress | None = None
     addr_set = set()
     for tx in tx_dests:
-        address = tx.addr  # cache
+        address = tx.addr  # local_cache_attribute
         if change_addr and addr_eq(change_addr, address):
             continue
         # addr_to_hash

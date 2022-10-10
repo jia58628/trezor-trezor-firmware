@@ -23,7 +23,7 @@ async def get_ownership_id(
     from .keychain import validate_path_against_script_type
     from .ownership import get_identifier
 
-    msg_script_type = msg.script_type  # cache
+    msg_script_type = msg.script_type  # local_cache_attribute
 
     await validate_path(
         ctx,

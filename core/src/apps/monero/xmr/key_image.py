@@ -15,7 +15,7 @@ def compute_hash(rr: MoneroTransferDetails) -> bytes:
     from apps.monero.xmr.serialize.int_serialize import dump_uvarint_b
 
     kck = crypto_helpers.get_keccak()
-    kck_update = kck.update  # cache
+    kck_update = kck.update  # local_cache_attribute
 
     kck_update(rr.out_key)
     kck_update(rr.tx_pub_key)
@@ -29,12 +29,12 @@ def compute_hash(rr: MoneroTransferDetails) -> bytes:
 def export_key_image(
     creds: AccountCreds, subaddresses: Subaddresses, td: MoneroTransferDetails
 ) -> tuple[crypto.Point, Sig]:
-    decodepoint = crypto_helpers.decodepoint  # cache
+    decodepoint = crypto_helpers.decodepoint  # local_cache_attribute
 
     out_key = decodepoint(td.out_key)
     tx_pub_key = decodepoint(td.tx_pub_key)
 
-    td_additional_tx_pub_keys = td.additional_tx_pub_keys  # cache
+    td_additional_tx_pub_keys = td.additional_tx_pub_keys  # local_cache_attribute
 
     additional_tx_pub_key = None
     if len(td_additional_tx_pub_keys) == 1:  # compression
@@ -81,8 +81,8 @@ def generate_ring_signature(
     from trezor.utils import memcpy
     from apps.monero.xmr import crypto
 
-    Scalar = crypto.Scalar  # cache
-    encodepoint_into = crypto.encodepoint_into  # cache
+    Scalar = crypto.Scalar  # local_cache_attribute
+    encodepoint_into = crypto.encodepoint_into  # local_cache_attribute
 
     if test:
         t = crypto.scalarmult_base_into(None, sec)

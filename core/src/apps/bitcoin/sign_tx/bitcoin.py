@@ -145,7 +145,7 @@ class Bitcoin:
     async def step1_process_inputs(self) -> None:
         from ..common import input_is_segwit
 
-        self_tx_info = self.tx_info  # cache
+        self_tx_info = self.tx_info  # local_cache_attribute
 
         h_external_inputs_check = HashWriter(sha256())
 
@@ -305,8 +305,8 @@ class Bitcoin:
         self.approver.add_external_input(txi)
 
     async def process_original_input(self, txi: TxInput, script_pubkey: bytes) -> None:
-        txi_orig_hash = txi.orig_hash  # cache
-        txi_orig_index = txi.orig_index  # cache
+        txi_orig_hash = txi.orig_hash  # local_cache_attribute
+        txi_orig_index = txi.orig_index  # local_cache_attribute
 
         assert txi_orig_hash is not None
         assert txi_orig_index is not None
@@ -375,8 +375,8 @@ class Bitcoin:
     async def get_original_output(
         self, txo: TxOutput, script_pubkey: bytes
     ) -> TxOutput:
-        txo_orig_hash = txo.orig_hash  # cache
-        txo_orig_index = txo.orig_index  # cache
+        txo_orig_hash = txo.orig_hash  # local_cache_attribute
+        txo_orig_index = txo.orig_index  # local_cache_attribute
 
         assert txo_orig_hash is not None
         assert txo_orig_index is not None
@@ -452,8 +452,8 @@ class Bitcoin:
         script_pubkey: bytes,
         orig_txo: TxOutput | None,
     ) -> None:
-        txo_payment_req_index = txo.payment_req_index  # cache
-        self_approver = self.approver  # cache
+        txo_payment_req_index = txo.payment_req_index  # local_cache_attribute
+        self_approver = self.approver  # local_cache_attribute
 
         if txo_payment_req_index != self.payment_req_index:
             if txo_payment_req_index is None:
@@ -647,8 +647,8 @@ class Bitcoin:
         tx_info: TxInfo | OriginalTxInfo,
         script_pubkey: bytes | None = None,
     ) -> tuple[bytes, TxInput, bip32.HDNode | None]:
-        tx_info_tx = tx_info.tx  # cache
-        self_coin = self.coin  # cache
+        tx_info_tx = tx_info.tx  # local_cache_attribute
+        self_coin = self.coin  # local_cache_attribute
 
         tx_hash = tx_info.orig_hash if isinstance(tx_info, OriginalTxInfo) else None
 
@@ -673,7 +673,7 @@ class Bitcoin:
                     self.tx_info.check_input(txi)
                     node = self.keychain.derive(txi.address_n)
                     key_sign_pub = node.public_key()
-                    txi_multisig = txi.multisig  # cache
+                    txi_multisig = txi.multisig  # local_cache_attribute
                     if txi_multisig:
                         # Sanity check to ensure we are signing with a key that is included in the multisig.
                         multisig.multisig_pubkey_index(txi_multisig, key_sign_pub)
@@ -743,7 +743,7 @@ class Bitcoin:
     async def get_prevtx_output(
         self, prev_hash: bytes, prev_index: int
     ) -> tuple[int, bytes]:
-        self_coin = self.coin  # cache
+        self_coin = self.coin  # local_cache_attribute
 
         amount_out = 0  # output amount
 
@@ -868,7 +868,7 @@ class Bitcoin:
     def set_serialized_signature(self, index: int, signature: bytes) -> None:
         from trezor.utils import ensure
 
-        self_tx_req_serialized = self.tx_req.serialized  # cache
+        self_tx_req_serialized = self.tx_req.serialized  # local_cache_attribute
 
         # Only one signature per TxRequest can be serialized.
         assert self_tx_req_serialized is not None

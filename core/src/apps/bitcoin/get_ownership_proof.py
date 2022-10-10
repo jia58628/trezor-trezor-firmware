@@ -30,8 +30,8 @@ async def get_ownership_proof(
     from .keychain import validate_path_against_script_type
     from .ownership import generate_proof, get_identifier
 
-    msg_script_type = msg.script_type  # cache
-    msg_ownership_ids = msg.ownership_ids  # cache
+    msg_script_type = msg.script_type  # local_cache_attribute
+    msg_ownership_ids = msg.ownership_ids  # local_cache_attribute
 
     if authorization:
         if not authorization.check_get_ownership_proof(msg):

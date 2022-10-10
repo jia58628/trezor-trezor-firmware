@@ -62,7 +62,7 @@ class PreMlsagHasher:
         if self.state == 8:
             raise ValueError("State error")
 
-        self_rsig_hasher_update = self.rsig_hasher.update  # cache
+        self_rsig_hasher_update = self.rsig_hasher.update  # local_cache_attribute
 
         if raw:
             # Avoiding problem with the memory fragmentation.

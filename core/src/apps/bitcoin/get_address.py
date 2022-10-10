@@ -44,9 +44,9 @@ async def get_address(
     from .keychain import validate_path_against_script_type
     from .multisig import multisig_pubkey_index
 
-    msg_multisig = msg.multisig  # cache
-    msg_address_n = msg.address_n  # cache
-    msg_script_type = msg.script_type  # cache
+    msg_multisig = msg.multisig  # local_cache_attribute
+    msg_address_n = msg.address_n  # local_cache_attribute
+    msg_script_type = msg.script_type  # local_cache_attribute
 
     if msg.show_display:
         # skip soft-validation for silent calls

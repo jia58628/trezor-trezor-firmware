@@ -19,7 +19,7 @@ async def get_address(
     from . import networks
     from .helpers import address_from_bytes
 
-    msg_address_n = msg.address_n  # cache
+    msg_address_n = msg.address_n  # local_cache_attribute
 
     await paths.validate_path(ctx, keychain, msg_address_n)
 

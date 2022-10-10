@@ -24,7 +24,7 @@ class PoolOwnerSigner(Signer):
     SIGNING_MODE_TITLE = "Confirming pool registration as owner."
 
     def _validate_tx_init(self) -> None:
-        self_msg = self.msg  # cache
+        self_msg = self.msg  # local_cache_attribute
 
         super()._validate_tx_init()
         for condition in (

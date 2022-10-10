@@ -24,10 +24,10 @@ def validate_native_script(script: messages.CardanoNativeScript | None) -> None:
 
     _validate_native_script_structure(script)
 
-    script_type = script.type  # cache
-    script_key_path = script.key_path  # cache
-    script_scripts = script.scripts  # cache
-    CNST = CardanoNativeScriptType  # cache
+    script_type = script.type  # local_cache_attribute
+    script_key_path = script.key_path  # local_cache_attribute
+    script_scripts = script.scripts  # local_cache_attribute
+    CNST = CardanoNativeScriptType  # local_cache_global
 
     if script_type == CNST.PUB_KEY:
         if script.key_hash and script_key_path:
@@ -63,13 +63,13 @@ def validate_native_script(script: messages.CardanoNativeScript | None) -> None:
 
 
 def _validate_native_script_structure(script: messages.CardanoNativeScript) -> None:
-    key_hash = script.key_hash  # cache
-    key_path = script.key_path  # cache
-    scripts = script.scripts  # cache
-    required_signatures_count = script.required_signatures_count  # cache
-    invalid_before = script.invalid_before  # cache
-    invalid_hereafter = script.invalid_hereafter  # cache
-    CNST = CardanoNativeScriptType  # cache
+    key_hash = script.key_hash  # local_cache_attribute
+    key_path = script.key_path  # local_cache_attribute
+    scripts = script.scripts  # local_cache_attribute
+    required_signatures_count = script.required_signatures_count  # local_cache_attribute
+    invalid_before = script.invalid_before  # local_cache_attribute
+    invalid_hereafter = script.invalid_hereafter  # local_cache_attribute
+    CNST = CardanoNativeScriptType  # local_cache_global
 
     fields_to_be_empty: dict[CNST, tuple[Any, ...]] = {
         CNST.PUB_KEY: (
@@ -133,8 +133,8 @@ def cborize_native_script(
 ) -> CborSequence:
     from .helpers.utils import get_public_key_hash
 
-    script_type = script.type  # cache
-    CNST = CardanoNativeScriptType  # cache
+    script_type = script.type  # local_cache_attribute
+    CNST = CardanoNativeScriptType  # local_cache_global
 
     script_content: CborSequence
     if script_type == CNST.PUB_KEY:

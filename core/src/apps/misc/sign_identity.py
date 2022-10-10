@@ -19,11 +19,11 @@ async def sign_identity(ctx: Context, msg: SignIdentity) -> SignedIdentity:
     from apps.common.keychain import get_keychain
     from apps.common.paths import HARDENED, AlwaysMatchingSchema
 
-    msg_ecdsa_curve_name = msg.ecdsa_curve_name or "secp256k1"  # cache
-    msg_identity = msg.identity  # cache
-    msg_identity_proto = msg_identity.proto  # cache
-    msg_challenge_visual = msg.challenge_visual  # cache
-    msg_challenge_hidden = msg.challenge_hidden  # cache
+    msg_ecdsa_curve_name = msg.ecdsa_curve_name or "secp256k1"  # local_cache_attribute
+    msg_identity = msg.identity  # local_cache_attribute
+    msg_identity_proto = msg_identity.proto  # local_cache_attribute
+    msg_challenge_visual = msg.challenge_visual  # local_cache_attribute
+    msg_challenge_hidden = msg.challenge_hidden  # local_cache_attribute
 
     keychain = await get_keychain(ctx, msg_ecdsa_curve_name, [AlwaysMatchingSchema])
     identity = serialize_identity(msg_identity)

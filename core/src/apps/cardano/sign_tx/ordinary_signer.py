@@ -19,8 +19,8 @@ class OrdinarySigner(Signer):
     SIGNING_MODE_TITLE = "Confirming a transaction."
 
     def _validate_tx_init(self) -> None:
-        self_msg = self.msg  # cache
-        self_assert = self._assert_tx_init_cond  # cache
+        self_msg = self.msg  # local_cache_attribute
+        self_assert = self._assert_tx_init_cond  # local_cache_attribute
 
         super()._validate_tx_init()
         self_assert(self_msg.collateral_inputs_count == 0)
@@ -29,7 +29,7 @@ class OrdinarySigner(Signer):
         self_assert(self_msg.reference_inputs_count == 0)
 
     async def _confirm_tx(self, tx_hash: bytes) -> None:
-        self_msg = self.msg  # cache
+        self_msg = self.msg  # local_cache_attribute
 
         # super() omitted intentionally
         is_network_id_verifiable = self._is_network_id_verifiable()

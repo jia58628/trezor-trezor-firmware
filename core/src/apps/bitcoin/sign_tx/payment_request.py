@@ -46,7 +46,7 @@ class PaymentRequestVerifier:
             if msg.memos:
                 DataError("Missing nonce in payment request.")
 
-        _writers = writers  # cache
+        _writers = writers  # local_cache_global
 
         _writers.write_bytes_fixed(self.h_pr, b"SL\x00\x24", 4)
         _writers.write_bytes_prefixed(self.h_pr, nonce)

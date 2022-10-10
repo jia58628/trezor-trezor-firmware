@@ -18,7 +18,7 @@ class Bulletproof(MessageType):
 
     @classmethod
     def f_specs(cls) -> tuple:
-        _ECKey = ECKey  # cache
+        _ECKey = ECKey  # local_cache_global
         return (
             ("A", _ECKey),
             ("S", _ECKey),
@@ -39,7 +39,7 @@ class BulletproofPlus(MessageType):
 
     @classmethod
     def f_specs(cls) -> tuple:
-        _ECKey = ECKey  # cache
+        _ECKey = ECKey  # local_cache_global
         return (
             ("A", _ECKey),
             ("A1", _ECKey),

@@ -121,11 +121,11 @@ def _generate_clsag(
     from apps.monero.xmr import crypto, crypto_helpers
     from apps.monero.xmr.serialize import int_serialize
 
-    crypto_Point = crypto.Point  # cache
-    crypto_Scalar = crypto.Scalar  # cache
-    crypto_encodepoint_into = crypto.encodepoint_into  # cache
-    crypto_sc_mul_into = crypto.sc_mul_into  # cache
-    crypto_scalarmult_into = crypto.scalarmult_into  # cache
+    crypto_Point = crypto.Point  # local_cache_attribute
+    crypto_Scalar = crypto.Scalar  # local_cache_attribute
+    crypto_encodepoint_into = crypto.encodepoint_into  # local_cache_attribute
+    crypto_sc_mul_into = crypto.sc_mul_into  # local_cache_attribute
+    crypto_scalarmult_into = crypto.scalarmult_into  # local_cache_attribute
 
     sI = crypto_Point()  # sig.I
     sD = crypto_Point()  # sig.D
@@ -170,7 +170,7 @@ def _generate_clsag(
 
     del (hsh_PC, hsh_P, hsh_C)
     c_to_hash = crypto_helpers.get_keccak()  # domain, P, C, C_offset, message, aG, aH
-    c_to_hash_update = c_to_hash.update  # cache
+    c_to_hash_update = c_to_hash.update  # local_cache_attribute
     c_to_hash_update(_HASH_KEY_CLSAG_ROUND)
     for i in range(len(P)):
         c_to_hash_update(P[i])

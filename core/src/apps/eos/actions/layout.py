@@ -80,7 +80,7 @@ async def confirm_action_delegate(ctx: Context, msg: EosActionDelegate) -> None:
         ("CPU:", eos_asset_to_string(msg.cpu_quantity)),
         ("NET:", eos_asset_to_string(msg.net_quantity)),
     ]
-    append = props.append  # cache
+    append = props.append  # local_cache_attribute
     if msg.transfer:
         append(("Transfer:", "Yes"))
         append(("Receiver:", eos_name_to_string(msg.receiver)))
@@ -131,7 +131,7 @@ async def confirm_action_refund(ctx: Context, msg: EosActionRefund) -> None:
 
 
 async def confirm_action_voteproducer(ctx: Context, msg: EosActionVoteProducer) -> None:
-    producers = msg.producers  # cache
+    producers = msg.producers  # local_cache_attribute
 
     if msg.proxy and not producers:
         # PROXY
@@ -214,7 +214,7 @@ async def confirm_action_deleteauth(ctx: Context, msg: EosActionDeleteAuth) -> N
 
 
 async def confirm_action_linkauth(ctx: Context, msg: EosActionLinkAuth) -> None:
-    name_to_str = eos_name_to_string  # cache, saves 3 bytes
+    name_to_str = eos_name_to_string  # local_cache_global
     await _confirm_properties(
         ctx,
         "confirm_linkauth",
@@ -279,7 +279,7 @@ def authorization_fields(auth: EosAuthorization) -> list[PropertyType]:
     from ..helpers import public_key_to_wif
 
     fields: list[PropertyType] = []
-    fields_append = fields.append  # cache, saving 16 bytes
+    fields_append = fields.append  # local_cache_attribute
 
     fields_append(("Threshold:", str(auth.threshold)))
 

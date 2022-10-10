@@ -15,10 +15,10 @@ if TYPE_CHECKING:
     from ..common import PropertyType, ExceptionType
 
 
-CONFIRMED = trezorui2.CONFIRMED  # cache
-CANCELLED = trezorui2.CANCELLED  # cache
-INFO = trezorui2.INFO  # cache
-BR_TYPE_OTHER = ButtonRequestType.Other  # cache
+CONFIRMED = trezorui2.CONFIRMED  # global_import_cache
+CANCELLED = trezorui2.CANCELLED  # global_import_cache
+INFO = trezorui2.INFO  # global_import_cache
+BR_TYPE_OTHER = ButtonRequestType.Other  # global_import_cache
 
 
 class _RustLayout(ui.Layout):

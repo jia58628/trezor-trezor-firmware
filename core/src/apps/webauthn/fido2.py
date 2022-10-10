@@ -230,7 +230,7 @@ def frame_init() -> uctypes.StructDict:
     # uint8_t bcnth;    // Message byte count - high part
     # uint8_t bcntl;    // Message byte count - low part
     # uint8_t data[HID_RPT_SIZE - 7];   // Data payload
-    _uctypes = uctypes  # cache
+    _uctypes = uctypes  # local_cache_global
     return {
         "cid": 0 | _uctypes.UINT32,
         "cmd": 4 | _uctypes.UINT8,
@@ -243,7 +243,7 @@ def frame_cont() -> uctypes.StructDict:
     # uint32_t cid;                     // Channel identifier
     # uint8_t seq;                      // Sequence number - b7 cleared
     # uint8_t data[HID_RPT_SIZE - 5];   // Data payload
-    _uctypes = uctypes  # cache
+    _uctypes = uctypes  # local_cache_global
     return {
         "cid": 0 | _uctypes.UINT32,
         "seq": 4 | _uctypes.UINT8,
@@ -259,7 +259,7 @@ def _resp_cmd_init() -> uctypes.StructDict:
     # uint8_t versionMinor;     // Minor version number
     # uint8_t versionBuild;     // Build version number
     # uint8_t capFlags;         // Capabilities flags
-    UINT8 = uctypes.UINT8  # cache
+    UINT8 = uctypes.UINT8  # local_cache_attribute
     return {
         "nonce": (0 | uctypes.ARRAY, 8 | UINT8),
         "cid": 8 | uctypes.UINT32,
@@ -282,8 +282,8 @@ def _resp_cmd_register(khlen: int, certlen: int, siglen: int) -> dict:
     # uint8_t cert[certlen];    // Attestation certificate
     # uint8_t sig[siglen];      // Registration signature
     # uint16_t status;
-    UINT8 = uctypes.UINT8  # cache
-    ARRAY = uctypes.ARRAY  # cache
+    UINT8 = uctypes.UINT8  # local_cache_attribute
+    ARRAY = uctypes.ARRAY  # local_cache_attribute
     return {
         "registerId": 0 | UINT8,
         "pubKey": (1 | ARRAY, 65 | UINT8),
@@ -304,8 +304,8 @@ def _req_cmd_authenticate(khlen: int) -> uctypes.StructDict:
     # uint8_t appId[32];        // Application id
     # uint8_t keyHandleLen;     // Length of key handle
     # uint8_t keyHandle[khlen]; // Key handle
-    UINT8 = uctypes.UINT8  # cache
-    ARRAY = uctypes.ARRAY  # cache
+    UINT8 = uctypes.UINT8  # local_cache_attribute
+    ARRAY = uctypes.ARRAY  # local_cache_attribute
     return {
         "chal": (0 | ARRAY, 32 | UINT8),
         "appId": (32 | ARRAY, 32 | UINT8),
@@ -320,7 +320,7 @@ def _resp_cmd_authenticate(siglen: int) -> uctypes.StructDict:
     # uint32_t ctr;         // Counter field (big-endian)
     # uint8_t sig[siglen];  // Signature
     # uint16_t status;
-    _uctypes = uctypes  # cache
+    _uctypes = uctypes  # local_cache_global
     return {
         "flags": 0 | _uctypes.UINT8,
         "ctr": 1 | _uctypes.UINT32,
@@ -362,7 +362,7 @@ class Cmd:
         self.data = data
 
     def to_msg(self) -> Msg:
-        self_data = self.data  # cache
+        self_data = self.data  # local_cache_attribute
 
         cla = self_data[_APDU_CLA]
         ins = self_data[_APDU_INS]
@@ -390,8 +390,8 @@ async def _read_cmd(iface: HID) -> Cmd | None:
         datalen = len(data)
         seq = 0
 
-        ifrm_cid = ifrm.cid  # cache
-        log_warning = log.warning  # cache
+        ifrm_cid = ifrm.cid  # local_cache_attribute
+        log_warning = log.warning  # local_cache_attribute
 
         if ifrm.cmd & _TYPE_MASK == _TYPE_CONT:
             # unexpected cont packet, abort current msg
@@ -428,7 +428,7 @@ async def _read_cmd(iface: HID) -> Cmd | None:
 
             cfrm = overlay_struct(bytearray(buf), desc_cont)
 
-            cfrm_cid = cfrm.cid  # cache
+            cfrm_cid = cfrm.cid  # local_cache_attribute
 
             if cfrm.seq == _CMD_INIT:
                 if cfrm_cid == ifrm_cid:
@@ -813,7 +813,7 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
     async def on_confirm(self) -> None:
         from .resident_credentials import store_resident_credential
 
-        self_cid = self.cid  # cache
+        self_cid = self.cid  # local_cache_attribute
 
         self._cred.generate_id()
         send_cmd_sync(cmd_keepalive(self_cid, _KEEPALIVE_STATUS_PROCESSING), self.iface)
@@ -891,7 +891,7 @@ class Fido2ConfirmGetAssertion(Fido2State, ConfirmInfo, Pageable):
         return True
 
     async def on_confirm(self) -> None:
-        self_cid = self.cid  # cache
+        self_cid = self.cid  # local_cache_attribute
 
         cred = self._creds[self.page()]
         try:
@@ -1041,7 +1041,7 @@ class DialogManager:
         return True
 
     async def keepalive_loop(self) -> None:
-        self_state = self.state  # cache
+        self_state = self.state  # local_cache_attribute
 
         try:
             if not self_state:
@@ -1075,8 +1075,8 @@ class DialogManager:
             if self.keepalive is not None:
                 loop.close(self.keepalive)
 
-            self_result = self.result  # cache
-            self_state = self.state  # cache
+            self_result = self.result  # local_cache_attribute
+            self_state = self.state  # local_cache_attribute
 
             if self_result == _RESULT_CONFIRM:
                 await self_state.on_confirm()
@@ -1089,10 +1089,10 @@ class DialogManager:
 
 
 def _dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
-    log_debug = log.debug  # cache
-    log_warning = log.warning  # cache
-    req_cid = req.cid  # cache
-    req_cmd = req.cmd  # cache
+    log_debug = log.debug  # local_cache_attribute
+    log_warning = log.warning  # local_cache_attribute
+    req_cid = req.cid  # local_cache_attribute
+    req_cmd = req.cmd  # local_cache_attribute
 
     if req_cmd == _CMD_MSG:
         try:
@@ -1100,7 +1100,7 @@ def _dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
         except IndexError:
             return cmd_error(req_cid, _ERR_INVALID_LEN)
 
-        m_ins = m.ins  # cache
+        m_ins = m.ins  # local_cache_attribute
 
         if m.cla != 0:
             if __debug__:
@@ -1147,7 +1147,7 @@ def _dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
     elif req_cmd == _CMD_CBOR and _ALLOW_FIDO2:
         if not req.data:
             return cmd_error(req_cid, _ERR_INVALID_LEN)
-        req_data_first = req.data[0]  # cache
+        req_data_first = req.data[0]  # local_cache_attribute
         if req_data_first == _CBOR_MAKE_CREDENTIAL:
             if __debug__:
                 log_debug(__name__, "_CBOR_MAKE_CREDENTIAL")
@@ -1192,7 +1192,7 @@ def _dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
 def cmd_init(req: Cmd) -> Cmd:
     from trezor.crypto import random
 
-    req_cid = req.cid  # cache
+    req_cid = req.cid  # local_cache_attribute
 
     if req_cid == _CID_BROADCAST:
         # uint32_t except 0 and 0xffff_ffff
@@ -1228,8 +1228,8 @@ def _cmd_wink(req: Cmd) -> Cmd:
 def _msg_register(req: Msg, dialog_mgr: DialogManager) -> Cmd:
     from .credential import U2fCredential
 
-    req_cid = req.cid  # cache
-    req_data = req.data  # cache
+    req_cid = req.cid  # local_cache_attribute
+    req_data = req.data  # local_cache_attribute
 
     if not config.is_unlocked():
         new_state: State = U2fUnlock(req_cid, dialog_mgr.iface)
@@ -1294,8 +1294,8 @@ def basic_attestation_sign(data: Iterable[bytes]) -> bytes:
 
 
 def _msg_register_sign(challenge: bytes, cred: U2fCredential) -> bytes:
-    utils_memcpy = utils.memcpy  # cache
-    cred_id = cred.id  # cache
+    utils_memcpy = utils.memcpy  # local_cache_attribute
+    cred_id = cred.id  # local_cache_attribute
 
     pubkey = cred.public_key()
 
@@ -1317,10 +1317,10 @@ def _msg_register_sign(challenge: bytes, cred: U2fCredential) -> bytes:
 
 
 def _msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
-    req_cid = req.cid  # cache
-    req_data = req.data  # cache
-    log_info = log.info  # cache
-    _msg_error = msg_error  # cache
+    req_cid = req.cid  # local_cache_attribute
+    req_data = req.data  # local_cache_attribute
+    log_info = log.info  # local_cache_attribute
+    _msg_error = msg_error  # local_cache_global
 
     if not config.is_unlocked():
         new_state: State = U2fUnlock(req_cid, dialog_mgr.iface)
@@ -1500,8 +1500,8 @@ def _cbor_make_credential(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
 def _cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State | Cmd:
     from . import knownapps
 
-    req_cid = req.cid  # cache
-    _cbor_error = cbor_error  # cache
+    req_cid = req.cid  # local_cache_attribute
+    _cbor_error = cbor_error  # local_cache_global
 
     if not storage_device.is_initialized():
         if __debug__:
@@ -1682,8 +1682,8 @@ def _cbor_get_assertion(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
 def _cbor_get_assertion_process(req: Cmd, dialog_mgr: DialogManager) -> State | Cmd:
     from .resident_credentials import find_by_rp_id_hash
 
-    req_cid = req.cid  # cache
-    _cbor_error = cbor_error  # cache
+    req_cid = req.cid  # local_cache_attribute
+    _cbor_error = cbor_error  # local_cache_global
 
     if not storage_device.is_initialized():
         if __debug__:
@@ -1797,7 +1797,7 @@ def _cbor_get_assertion_hmac_secret(
     from trezor.crypto import aes
     from trezor.crypto import hmac
 
-    _common = common  # cache
+    _common = common  # local_cache_global
 
     key_agreement = hmac_secret[1]  # The public key of platform key agreement key.
     # NOTE: We should check the key_agreement[COSE_KEY_ALG] here, but to avoid compatibility issues we don't,
@@ -1925,8 +1925,8 @@ def _cbor_get_info(req: Cmd) -> Cmd:
 def _cbor_client_pin(req: Cmd) -> Cmd:
     from storage.fido2 import KEY_AGREEMENT_PUBKEY
 
-    req_cid = req.cid  # cache
-    _common = common  # cache
+    req_cid = req.cid  # local_cache_attribute
+    _common = common  # local_cache_global
 
     try:
         param = cbor.decode(req.data, offset=1)

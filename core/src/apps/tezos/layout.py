@@ -8,8 +8,8 @@ if TYPE_CHECKING:
     from trezor.wire import Context
 
 
-BR_SIGN_TX = ButtonRequestType.SignTx  # cache
-BLUE = ui.BLUE  # cache
+BR_SIGN_TX = ButtonRequestType.SignTx  # global_import_cache
+BLUE = ui.BLUE  # global_import_cache
 
 
 async def require_confirm_tx(ctx: Context, to: str, value: int) -> None:

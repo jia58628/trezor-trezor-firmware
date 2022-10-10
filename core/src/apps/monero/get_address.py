@@ -22,9 +22,9 @@ async def get_address(
     from apps.monero.xmr import addresses, crypto_helpers, monero
     from apps.monero.xmr.networks import net_version
 
-    msg_account = msg.account  # cache
-    msg_minor = msg.minor  # cache
-    msg_payment_id = msg.payment_id  # cache
+    msg_account = msg.account  # local_cache_attribute
+    msg_minor = msg.minor  # local_cache_attribute
+    msg_payment_id = msg.payment_id  # local_cache_attribute
 
     await paths.validate_path(ctx, keychain, msg.address_n)
 

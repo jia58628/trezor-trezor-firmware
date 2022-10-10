@@ -46,7 +46,7 @@ async def _sign_tx_dispatch(state: State, msg, keychain: Keychain) -> tuple:
     from trezor.enums import MessageType
     from trezor import wire
 
-    MESSAGE_WIRE_TYPE = msg.MESSAGE_WIRE_TYPE  # cache
+    MESSAGE_WIRE_TYPE = msg.MESSAGE_WIRE_TYPE  # local_cache_attribute
 
     if MESSAGE_WIRE_TYPE == MessageType.MoneroTransactionInitRequest:
         from apps.monero.signing import step_01_init_transaction

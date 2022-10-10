@@ -15,9 +15,6 @@ if TYPE_CHECKING:
     from trezor.messages import RippleSignTx
     from trezor.utils import Writer
 
-    # NOTE: getting rid of `class RippleField` saved a lot of space
-    RippleField = tuple[int, int]
-
 
 _FIELD_TYPE_INT16 = const(1)
 _FIELD_TYPE_INT32 = const(2)
@@ -33,34 +30,31 @@ def serialize(
     signature: bytes | None = None,
 ) -> bytearray:
     # must be sorted numerically first by type and then by name
-    fields_to_write = (  # field, value
-        ((_FIELD_TYPE_INT16, 2), 0),  # payment type is 0
-        ((_FIELD_TYPE_INT32, 2), msg.flags),  # flags
-        ((_FIELD_TYPE_INT32, 4), msg.sequence),  # sequence
-        ((_FIELD_TYPE_INT32, 14), msg.payment.destination_tag),  # destinationTag
-        ((_FIELD_TYPE_INT32, 27), msg.last_ledger_sequence),  # lastLedgerSequence
-        ((_FIELD_TYPE_AMOUNT, 1), msg.payment.amount),  # amount
-        ((_FIELD_TYPE_AMOUNT, 8), msg.fee),  # fee
-        ((_FIELD_TYPE_VL, 3), pubkey),  # signingPubKey
-        ((_FIELD_TYPE_VL, 4), signature),  # txnSignature
-        ((_FIELD_TYPE_ACCOUNT, 1), source_address),  # account
-        ((_FIELD_TYPE_ACCOUNT, 3), msg.payment.destination),  # destination
+    fields_to_write = (  # field_type, field_key, value
+        (_FIELD_TYPE_INT16, 2, 0),  # payment type is 0
+        (_FIELD_TYPE_INT32, 2, msg.flags),  # flags
+        (_FIELD_TYPE_INT32, 4, msg.sequence),  # sequence
+        (_FIELD_TYPE_INT32, 14, msg.payment.destination_tag),  # destinationTag
+        (_FIELD_TYPE_INT32, 27, msg.last_ledger_sequence),  # lastLedgerSequence
+        (_FIELD_TYPE_AMOUNT, 1, msg.payment.amount),  # amount
+        (_FIELD_TYPE_AMOUNT, 8, msg.fee),  # fee
+        (_FIELD_TYPE_VL, 3, pubkey),  # signingPubKey
+        (_FIELD_TYPE_VL, 4, signature),  # txnSignature
+        (_FIELD_TYPE_ACCOUNT, 1, source_address),  # account
+        (_FIELD_TYPE_ACCOUNT, 3, msg.payment.destination),  # destination
     )
 
     w = bytearray()
-    for field, value in fields_to_write:
-        _write(w, field, value)
+    for field_type, field_key, value in fields_to_write:
+        _write(w, field_type, field_key, value)
     return w
 
 
-def _write(w: Writer, field: RippleField, value: int | bytes | str | None) -> None:
+def _write(w: Writer, field_type: int, field_key: int, value: int | bytes | str | None) -> None:
     from . import helpers
 
     if value is None:
         return
-
-    field_type = field[0]
-    field_key = field[1]
 
     # write_type
     if field_key <= 0xF:
@@ -102,7 +96,7 @@ def _write(w: Writer, field: RippleField, value: int | bytes | str | None) -> No
 def write_bytes_varint(w: Writer, value: bytes) -> None:
     """Serialize a variable length bytes."""
 
-    w_append = w.append  # cache
+    w_append = w.append  # local_cache_attribute
 
     # write_varint
     # Implements variable-length int encoding from Ripple.

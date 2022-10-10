@@ -53,8 +53,8 @@ class Credential:
     def payment_credential(
         cls, address_params: messages.CardanoAddressParametersType
     ) -> "Credential":
-        address_type = address_params.address_type  # cache
-        CAT = CardanoAddressType  # cache
+        address_type = address_params.address_type  # local_cache_attribute
+        CAT = CardanoAddressType  # local_cache_global
 
         credential = cls(
             type_name=CREDENTIAL_TYPE_PAYMENT,
@@ -100,9 +100,9 @@ class Credential:
     ) -> "Credential":
         from .paths import SCHEMA_STAKING
 
-        address_n_staking = address_params.address_n_staking  # cache
-        address_type = address_params.address_type  # cache
-        CAT = CardanoAddressType  # cache
+        address_n_staking = address_params.address_n_staking  # local_cache_attribute
+        address_type = address_params.address_type  # local_cache_attribute
+        CAT = CardanoAddressType  # local_cache_global
 
         credential = cls(
             type_name=CREDENTIAL_TYPE_STAKE,
@@ -188,7 +188,7 @@ class Credential:
         from ...common.paths import address_n_to_str
         from . import bech32
 
-        self_pointer = self.pointer  # cache
+        self_pointer = self.pointer  # local_cache_attribute
 
         if self.path:
             return [(None, address_n_to_str(self.path))]

@@ -17,7 +17,7 @@ class SignatureVerifier:
         coin: CoinInfo,
     ):
         from trezor import utils
-        from trezor.wire import DataError  # pylint: disable=reimported  # cache
+        from trezor.wire import DataError  # pylint: disable=reimported  # local_cache_attribute
         from trezor.crypto.hashlib import sha256
 
         from .common import OP_0, OP_1, SigHashType, ecdsa_hash_pubkey

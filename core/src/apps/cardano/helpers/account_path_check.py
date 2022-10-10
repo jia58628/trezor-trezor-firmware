@@ -53,7 +53,7 @@ class AccountPathChecker:
         from ...common.paths import HARDENED
         from .paths import ACCOUNT_PATH_INDEX, ACCOUNT_PATH_LENGTH
 
-        self_account_path = self.account_path  # cache
+        self_account_path = self.account_path  # local_cache_attribute
 
         assert isinstance(self_account_path, list)
         is_control_path_byron_or_shelley = seed.is_byron_path(

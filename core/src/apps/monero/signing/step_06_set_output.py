@@ -32,7 +32,7 @@ async def set_output(
 ) -> MoneroTransactionSetOutputAck:
     from apps.monero import layout
 
-    state_mem_trace = state.mem_trace  # cache
+    state_mem_trace = state.mem_trace  # local_cache_attribute
 
     state_mem_trace(0, True)
     mods = utils.unimport_begin()
@@ -129,7 +129,7 @@ def _validate(
     dst_entr_hmac: bytes,
     is_offloaded_bp: bool,
 ) -> MoneroTransactionDestinationEntry:
-    _ensure = utils.ensure  # cache
+    _ensure = utils.ensure  # local_cache_attribute
 
     if state.last_step not in (state.STEP_ALL_IN, state.STEP_OUT):
         raise ValueError("Invalid state transition")
@@ -249,8 +249,8 @@ def _range_proof(
     """
     from apps.monero.signing import Error
 
-    state_rsig_offload = state.rsig_offload  # cache
-    state_is_processing_offloaded = state.is_processing_offloaded  # cache
+    state_rsig_offload = state.rsig_offload  # local_cache_attribute
+    state_is_processing_offloaded = state.is_processing_offloaded  # local_cache_attribute
 
     provided_rsig = None
     if rsig_data and rsig_data.rsig and len(rsig_data.rsig) > 0:
@@ -387,7 +387,7 @@ def _dump_rsig_bp(rsig: Bulletproof) -> bytes:
     buff_size = 32 * (9 + 2 * (len(rsig.L))) + 2
     buff = bytearray(buff_size)
 
-    memcpy = utils.memcpy  # cache
+    memcpy = utils.memcpy  # local_cache_attribute
 
     memcpy(buff, 0, rsig.A, 0, 32)
     memcpy(buff, 32, rsig.S, 0, 32)

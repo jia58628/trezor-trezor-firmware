@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .signing.state import State
 
 
-BRT_SignTx = ButtonRequestType.SignTx  # cache
+BRT_SignTx = ButtonRequestType.SignTx  # global_import_cache
 
 
 def _format_amount(value: int) -> str:
@@ -95,7 +95,7 @@ async def require_confirm_transaction(
     outputs = tsx_data.outputs
     change_idx = get_change_addr_idx(outputs, tsx_data.change_dts)
 
-    payment_id = tsx_data.payment_id  # cache
+    payment_id = tsx_data.payment_id  # local_cache_attribute
 
     if tsx_data.unlock_time != 0:
         await _require_confirm_unlock_time(ctx, tsx_data.unlock_time)
@@ -193,7 +193,7 @@ class TransactionStep(ui.Component):
         self.info = info
 
     def on_render(self) -> None:
-        _ui = ui  # cache
+        _ui = ui  # local_cache_global
 
         state = self.state
         info = self.info
@@ -218,7 +218,7 @@ class KeyImageSyncStep(ui.Component):
         self.total_num = total_num
 
     def on_render(self) -> None:
-        _ui = ui  # cache
+        _ui = ui  # local_cache_global
 
         current = self.current
         total_num = self.total_num
@@ -233,7 +233,7 @@ class LiveRefreshStep(ui.Component):
         self.current = current
 
     def on_render(self) -> None:
-        _ui = ui  # cache
+        _ui = ui  # local_cache_global
 
         current = self.current
         _ui.header("Refreshing", _ui.ICON_SEND, _ui.TITLE_GREY, _ui.BG, _ui.BLUE)

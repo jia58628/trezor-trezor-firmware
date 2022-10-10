@@ -21,8 +21,8 @@ from .helpers.utils import (
     format_stake_pool_id,
 )
 
-confirm_metadata = layouts.confirm_metadata  # cache
-confirm_properties = layouts.confirm_properties  # cache
+confirm_metadata = layouts.confirm_metadata  # local_cache_attribute
+confirm_properties = layouts.confirm_properties  # local_cache_attribute
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -66,7 +66,7 @@ CERTIFICATE_TYPE_NAMES = {
     CardanoCertificateType.STAKE_POOL_REGISTRATION: "Stakepool registration",
 }
 
-BRT_Other = ButtonRequestType.Other  # cache
+BRT_Other = ButtonRequestType.Other  # global_import_cache
 
 
 def format_coin_amount(amount: int, network_id: int) -> str:
@@ -81,11 +81,11 @@ async def show_native_script(
     script: messages.CardanoNativeScript,
     indices: list[int] | None = None,
 ) -> None:
-    CNST = CardanoNativeScriptType  # cache
-    script_type = script.type  # cache
-    script_key_path = script.key_path  # cache
-    script_key_hash = script.key_hash  # cache
-    script_scripts = script.scripts  # cache
+    CNST = CardanoNativeScriptType  # local_cache_global
+    script_type = script.type  # local_cache_attribute
+    script_key_path = script.key_path  # local_cache_attribute
+    script_key_hash = script.key_hash  # local_cache_attribute
+    script_scripts = script.scripts  # local_cache_attribute
 
     script_heading = "Script"
     if indices is None:
@@ -106,7 +106,7 @@ async def show_native_script(
             None,
         )
     ]
-    props_append = props.append  # cache
+    props_append = props.append  # local_cache_attribute
 
     if script_type == CNST.PUB_KEY:
         assert script_key_hash is not None or script_key_path  # validate_script
@@ -158,14 +158,12 @@ async def show_script_hash(
 ) -> None:
     from trezor.enums import CardanoNativeScriptHashDisplayFormat
 
-    CNSHDF = CardanoNativeScriptHashDisplayFormat  # cache
-
     assert display_format in (
-        CNSHDF.BECH32,
-        CNSHDF.POLICY_ID,
+        CardanoNativeScriptHashDisplayFormat.BECH32,
+        CardanoNativeScriptHashDisplayFormat.POLICY_ID,
     )
 
-    if display_format == CNSHDF.BECH32:
+    if display_format == CardanoNativeScriptHashDisplayFormat.BECH32:
         await confirm_properties(
             ctx,
             "verify_script",
@@ -173,7 +171,7 @@ async def show_script_hash(
             (("Script hash:", bech32.encode(bech32.HRP_SCRIPT_HASH, script_hash)),),
             br_code=BRT_Other,
         )
-    elif display_format == CNSHDF.POLICY_ID:
+    elif display_format == CardanoNativeScriptHashDisplayFormat.POLICY_ID:
         await layouts.confirm_blob(
             ctx,
             "verify_script",
@@ -375,7 +373,7 @@ async def _show_credential(
     )
 
     props: list[PropertyType] = []
-    props_append = props.append  # cache
+    props_append = props.append  # local_cache_attribute
 
     # Credential can be empty in case of enterprise address stake credential
     # and reward address payment credential. In that case we don't want to
@@ -532,7 +530,7 @@ async def confirm_tx(
     props: list[PropertyType] = [
         ("Transaction fee:", format_coin_amount(fee, network_id)),
     ]
-    props_append = props.append  # cache
+    props_append = props.append  # local_cache_attribute
 
     if total_collateral is not None:
         props_append(
@@ -906,7 +904,7 @@ async def show_cardano_address(
     address: str,
     protocol_magic: int,
 ) -> None:
-    CAT = CardanoAddressType  # cache
+    CAT = CardanoAddressType  # local_cache_global
 
     network_name = None
     if not protocol_magics.is_mainnet(protocol_magic):

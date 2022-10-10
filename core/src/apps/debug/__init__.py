@@ -83,8 +83,8 @@ if __debug__:
         else:
             from trezor.ui.components.tt import confirm
 
-        msg_button = msg.button  # cache
-        msg_swipe = msg.swipe  # cache
+        msg_button = msg.button  # local_cache_attribute
+        msg_swipe = msg.swipe  # local_cache_attribute
 
         if msg_button is not None:
             if msg_button == DebugButton.NO:
@@ -147,8 +147,8 @@ if __debug__:
         if debuglink_decision_chan.putters:
             log.warning(__name__, "DebugLinkDecision queue is not empty")
 
-        msg_x = msg.x  # cache
-        msg_y = msg.y  # cache
+        msg_x = msg.x  # local_cache_attribute
+        msg_y = msg.y  # local_cache_attribute
 
         if msg_x is not None and msg_y is not None:
             evt_down = io.TOUCH_START, msg_x, msg_y
@@ -218,7 +218,7 @@ if __debug__:
     ) -> Success:
         from trezor import io
 
-        io_sdcard = io.sdcard  # cache
+        io_sdcard = io.sdcard  # local_cache_attribute
 
         try:
             io_sdcard.power_on()
@@ -238,7 +238,7 @@ if __debug__:
         return Success()
 
     def boot() -> None:
-        workflow_handlers_register = workflow_handlers.register  # cache
+        workflow_handlers_register = workflow_handlers.register  # local_cache_attribute
 
         workflow_handlers_register(MessageType.DebugLinkDecision, dispatch_DebugLinkDecision)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkDecision) -> Coroutine[Any, Any, None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]
         workflow_handlers_register(MessageType.DebugLinkGetState, dispatch_DebugLinkGetState)  # type: ignore [Argument of type "(ctx: Context, msg: DebugLinkGetState) -> Coroutine[Any, Any, DebugLinkState | None]" cannot be assigned to parameter "handler" of type "Handler[Msg@register]" in function "register"]

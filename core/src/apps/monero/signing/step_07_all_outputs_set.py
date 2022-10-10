@@ -15,7 +15,7 @@ async def all_outputs_set(state: State) -> MoneroTransactionAllOutSetAck:
     import gc
     from apps.monero import layout
 
-    state_mem_trace = state.mem_trace  # cache
+    state_mem_trace = state.mem_trace  # local_cache_attribute
 
     state_mem_trace(0)
 
@@ -96,8 +96,8 @@ async def all_outputs_set(state: State) -> MoneroTransactionAllOutSetAck:
 
 
 def _validate(state: State) -> None:
-    out_money = state.summary_outs_money  # cache
-    in_money = state.summary_inputs_money  # cache
+    out_money = state.summary_outs_money  # local_cache_attribute
+    in_money = state.summary_inputs_money  # local_cache_attribute
 
     if state.last_step != state.STEP_OUT:
         raise ValueError("Invalid state transition")
@@ -126,7 +126,7 @@ def _set_tx_extra(state: State) -> bytes:
     from apps.monero.xmr import crypto
     from apps.monero.xmr.serialize import int_serialize
 
-    extra_nonce = state.extra_nonce  # cache
+    extra_nonce = state.extra_nonce  # local_cache_attribute
 
     # Extra buffer length computation
     # TX_EXTRA_TAG_PUBKEY (1B) | tx_pub_key (32B)

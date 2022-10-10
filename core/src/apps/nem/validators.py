@@ -16,14 +16,14 @@ def validate(msg: NEMSignTx) -> None:
         NEM_MAX_SUPPLY,
     )
 
-    _ProcessError = ProcessError  # cache
+    _ProcessError = ProcessError  # local_cache_global
 
-    nem_validate_address = nem.validate_address  # cache
-    msg_transfer = msg.transfer  # cache
-    msg_aggregate_modification = msg.aggregate_modification  # cache
-    msg_multisig = msg.multisig  # cache
-    msg_mosaic_creation = msg.mosaic_creation  # cache
-    msg_transaction_network = msg.transaction.network  # cache
+    nem_validate_address = nem.validate_address  # local_cache_attribute
+    msg_transfer = msg.transfer  # local_cache_attribute
+    msg_aggregate_modification = msg.aggregate_modification  # local_cache_attribute
+    msg_multisig = msg.multisig  # local_cache_attribute
+    msg_mosaic_creation = msg.mosaic_creation  # local_cache_attribute
+    msg_transaction_network = msg.transaction.network  # local_cache_attribute
 
     # _validate_single_tx
     # ensure exactly one transaction is provided
@@ -56,7 +56,7 @@ def validate(msg: NEMSignTx) -> None:
 
     if msg_transfer:
         # _validate_transfer
-        msg_transfer_payload = msg_transfer.payload  # cache
+        msg_transfer_payload = msg_transfer.payload  # local_cache_attribute
 
         if msg_transfer.public_key is not None:
             _validate_public_key(
@@ -89,9 +89,9 @@ def validate(msg: NEMSignTx) -> None:
         if not nem_validate_address(msg_mosaic_creation.sink, msg_transaction_network):
             raise _ProcessError("Invalid creation sink address")
 
-        msg_mosaic_creation_definition = msg_mosaic_creation.definition  # cache
-        supply = msg_mosaic_creation_definition.supply  # cache
-        divisibility = msg_mosaic_creation_definition.divisibility  # cache
+        msg_mosaic_creation_definition = msg_mosaic_creation.definition  # local_cache_attribute
+        supply = msg_mosaic_creation_definition.supply  # local_cache_attribute
+        divisibility = msg_mosaic_creation_definition.divisibility  # local_cache_attribute
 
         if msg_mosaic_creation_definition.name is not None:
             raise _ProcessError("Name not allowed in mosaic creation transactions")
@@ -183,7 +183,7 @@ def validate_network(network: int) -> None:
 def _validate_common(common: NEMTransactionCommon, inner: bool = False) -> None:
     validate_network(common.network)
 
-    common_signer = common.signer  # cache
+    common_signer = common.signer  # local_cache_attribute
 
     err = None
 

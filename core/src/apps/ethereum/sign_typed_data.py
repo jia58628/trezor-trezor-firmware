@@ -249,7 +249,7 @@ class TypedDataEnvelope:
         """
         from .layout import confirm_typed_value, should_show_array
 
-        self_ctx = self.ctx  # cache
+        self_ctx = self.ctx  # local_cache_attribute
 
         type_members = self.types[primary_type].members
         member_value_path = member_path + [0]
@@ -379,7 +379,7 @@ def encode_field(
       encodeData of their contents
     - Struct values are encoded recursively as hashStruct(value)
     """
-    EDT = EthereumDataType  # cache
+    EDT = EthereumDataType  # local_cache_global
 
     data_type = field.data_type
 
@@ -426,7 +426,7 @@ def _validate_value(field: EthereumFieldType, value: bytes) -> None:
 
     Raise DataError if encountering a problem, so clients are notified.
     """
-    _DataError = DataError  # cache
+    _DataError = DataError  # local_cache_global
 
     # Checking if the size corresponds to what is defined in types,
     # and also setting our maximum supported size in bytes
@@ -457,8 +457,8 @@ def validate_field_type(field: EthereumFieldType) -> None:
 
     Raise DataError if encountering a problem, so clients are notified.
     """
-    _DataError = DataError  # cache
-    EDT = EthereumDataType  # cache
+    _DataError = DataError  # local_cache_global
+    EDT = EthereumDataType  # local_cache_global
 
     data_type = field.data_type
 
@@ -480,7 +480,7 @@ def validate_field_type(field: EthereumFieldType) -> None:
         if field.struct_name is not None:
             raise _DataError("Unexpected struct_name in nonstruct")
 
-    field_size = field.size  # cache
+    field_size = field.size  # local_cache_attribute
 
     # size is special for each type
     if data_type == EDT.STRUCT:

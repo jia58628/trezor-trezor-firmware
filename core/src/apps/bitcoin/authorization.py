@@ -25,7 +25,7 @@ class CoinJoinAuthorization:
         from trezor import utils
         from .writers import write_bytes_prefixed
 
-        self_params = self.params  # cache
+        self_params = self.params  # local_cache_attribute
 
         # Check whether the current params matches the parameters of the request.
         coordinator = utils.empty_bytearray(1 + len(self_params.coordinator.encode()))
@@ -50,7 +50,7 @@ class CoinJoinAuthorization:
     def approve_sign_tx(self, msg: SignTx) -> bool:
         from apps.common import authorization
 
-        self_params = self.params  # cache
+        self_params = self.params  # local_cache_attribute
 
         if self_params.max_rounds < 1 or msg.coin_name != self_params.coin_name:
             return False

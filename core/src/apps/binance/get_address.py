@@ -20,7 +20,7 @@ async def get_address(
     from .helpers import address_from_public_key
 
     HRP = "bnb"
-    address_n = msg.address_n  # cache
+    address_n = msg.address_n  # local_cache_attribute
 
     await paths.validate_path(ctx, keychain, address_n)
 

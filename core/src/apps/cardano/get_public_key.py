@@ -17,7 +17,7 @@ async def get_public_key(
     from apps.common import paths
     from .helpers.paths import SCHEMA_MINT, SCHEMA_PUBKEY
 
-    address_n = msg.address_n  # cache
+    address_n = msg.address_n  # local_cache_attribute
 
     await paths.validate_path(
         ctx,

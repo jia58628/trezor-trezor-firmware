@@ -26,7 +26,7 @@ def get_address(
     from trezor.enums import InputScriptType
     from .multisig import multisig_get_pubkeys, multisig_pubkey_index
 
-    node_public_key = node.public_key()  # cache
+    node_public_key = node.public_key()  # result_cache
 
     if multisig:
         # Ensure that our public key is included in the multisig.

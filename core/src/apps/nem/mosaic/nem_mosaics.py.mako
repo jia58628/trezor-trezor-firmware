@@ -59,9 +59,11 @@ def mosaics_iterator() -> Iterator[Mosaic]:
             "${m.levy_namespace}",  # namespace
             "${m.levy_mosaic}",  # mosaic
         ),
+% else:
+        None,  # levy
 % endif
 % if "networks" in m:
-        networks=${tuple(m.networks)},
+        ${tuple(m.networks)},  # networks
 % endif
     )
 % endfor

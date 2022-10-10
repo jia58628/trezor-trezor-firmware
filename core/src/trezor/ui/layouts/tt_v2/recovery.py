@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from trezor.wire import GenericContext
 
 
-CONFIRMED = trezorui2.CONFIRMED  # cache
-INFO = trezorui2.INFO  # cache
+CONFIRMED = trezorui2.CONFIRMED  # global_import_cache
+INFO = trezorui2.INFO  # global_import_cache
 
 
 async def _is_confirmed_info(

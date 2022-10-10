@@ -207,7 +207,7 @@ class Fido2Credential(Credential):
         if not isinstance(data, dict):
             raise ValueError  # invalid CBOR data
 
-        data_get = data.get  # cache
+        data_get = data.get  # local_cache_attribute
 
         cred = cls()
         cred.rp_id = data_get(_CRED_ID_RP_ID, None)
@@ -297,7 +297,7 @@ class Fido2Credential(Credential):
     def public_key(self) -> bytes:
         from . import common
 
-        self_curve = self.curve  # cache
+        self_curve = self.curve  # local_cache_attribute
 
         if self_curve == COSE_CURVE_P256:
             pubkey = nist256p1.publickey(self._private_key(), False)

@@ -41,10 +41,10 @@ class Lockscreen(HomescreenBase):
     def do_render(self) -> None:
         from trezor import res
 
-        local_ui = ui  # cache
-        display = local_ui.display  # cache
-        title_grey = local_ui.TITLE_GREY  # cache
-        bg = local_ui.BG  # cache
+        local_ui = ui  # local_cache_global
+        display = local_ui.display  # local_cache_attribute
+        title_grey = local_ui.TITLE_GREY  # local_cache_attribute
+        bg = local_ui.BG  # local_cache_attribute
 
         # homescreen with label text on top
         display.text_center(

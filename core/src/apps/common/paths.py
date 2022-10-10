@@ -198,7 +198,7 @@ class PathSchema:
             # optionally replace a keyword
             component = cls.REPLACEMENTS.get(component, component)
 
-            schema_append = schema.append  # cache
+            schema_append = schema.append  # local_cache_attribute
 
             if "-" in component:
                 # parse as a range
@@ -261,7 +261,7 @@ class PathSchema:
         is returned.
         """
 
-        self_schema = self.schema  # cache
+        self_schema = self.schema  # local_cache_attribute
 
         for i, value in enumerate(path):
             if i < len(self_schema):
@@ -290,7 +290,7 @@ class PathSchema:
 
         def __repr__(self) -> str:
             components = ["m"]
-            components_append = components.append  # cache
+            components_append = components.append  # local_cache_attribute
 
             def unharden(item: int) -> int:
                 return item ^ (item & HARDENED)

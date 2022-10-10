@@ -30,7 +30,7 @@ async def sign_tx(
     node = keychain.derive(msg.address_n)
     pubkey = seed.remove_ed25519_prefix(node.public_key())
 
-    num_operations = msg.num_operations  # cache
+    num_operations = msg.num_operations  # local_cache_attribute
 
     if num_operations == 0:
         raise ProcessError("Stellar: At least one operation is required")
@@ -72,8 +72,8 @@ async def sign_tx(
     # ---------------------------------
     # MEMO
     # ---------------------------------
-    memo_type = msg.memo_type  # cache
-    memo_text = msg.memo_text  # cache
+    memo_type = msg.memo_type  # local_cache_attribute
+    memo_text = msg.memo_text  # local_cache_attribute
 
     writers.write_uint32(w, memo_type)
     if memo_type == StellarMemoType.NONE:

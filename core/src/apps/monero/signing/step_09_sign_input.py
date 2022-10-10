@@ -48,10 +48,10 @@ async def sign_input(
     from apps.monero.xmr import crypto_helpers
     from apps.monero.xmr import crypto
 
-    _ensure = utils.ensure  # cache
-    state_mem_trace = state.mem_trace  # cache
-    state_input_count = state.input_count  # cache
-    src_entr_outputs = src_entr.outputs  # cache
+    _ensure = utils.ensure  # local_cache_attribute
+    state_mem_trace = state.mem_trace  # local_cache_attribute
+    state_input_count = state.input_count  # local_cache_attribute
+    src_entr_outputs = src_entr.outputs  # local_cache_attribute
 
     await layout.transaction_step(state, state.STEP_SIGN, state.current_input_index + 1)
 

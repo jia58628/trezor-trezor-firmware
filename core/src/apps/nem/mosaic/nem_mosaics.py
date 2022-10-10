@@ -51,6 +51,7 @@ def mosaics_iterator() -> Iterator[Mosaic]:
         "nem",  # namespace
         "xem",  # mosaic
         6,  # divisibility
+        None,  # levy
     )
     yield Mosaic(
         "DIMCOIN",  # name
@@ -64,7 +65,7 @@ def mosaics_iterator() -> Iterator[Mosaic]:
             "dim",  # namespace
             "coin",  # mosaic
         ),
-        networks=(104,),
+        (104,),  # networks
     )
     yield Mosaic(
         "DIM TOKEN",  # name
@@ -72,7 +73,8 @@ def mosaics_iterator() -> Iterator[Mosaic]:
         "dim",  # namespace
         "token",  # mosaic
         6,  # divisibility
-        networks=(104,),
+        None,  # levy
+        (104,),  # networks
     )
     yield Mosaic(
         "Breeze Token",  # name
@@ -80,7 +82,8 @@ def mosaics_iterator() -> Iterator[Mosaic]:
         "breeze",  # namespace
         "breeze-token",  # mosaic
         0,  # divisibility
-        networks=(104,),
+        None,  # levy
+        (104,),  # networks
     )
     yield Mosaic(
         "PacNEM Game Credits",  # name
@@ -88,7 +91,8 @@ def mosaics_iterator() -> Iterator[Mosaic]:
         "pacnem",  # namespace
         "heart",  # mosaic
         0,  # divisibility
-        networks=(104,),
+        None,  # levy
+        (104,),  # networks
     )
     yield Mosaic(
         "PacNEM Score Tokens",  # name
@@ -102,5 +106,5 @@ def mosaics_iterator() -> Iterator[Mosaic]:
             "nem",  # namespace
             "xem",  # mosaic
         ),
-        networks=(104,),
+        (104,),  # networks
     )

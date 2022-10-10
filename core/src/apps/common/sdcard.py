@@ -128,7 +128,7 @@ async def ensure_sdcard(
     if not ensure_filesystem:
         return
 
-    io_fatfs = io.fatfs  # cache
+    io_fatfs = io.fatfs  # local_cache_attribute
     while True:
         try:
             try:

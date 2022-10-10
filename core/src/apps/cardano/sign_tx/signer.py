@@ -135,9 +135,9 @@ class Signer:
         self._validate_tx_init()
         await self._show_tx_init()
 
-        self_msg = self.msg  # cache
-        self_tx_dict_add = self.tx_dict.add  # cache
-        HBL = HashBuilderList  # cache
+        self_msg = self.msg  # local_cache_attribute
+        self_tx_dict_add = self.tx_dict.add  # local_cache_attribute
+        HBL = HashBuilderList  # local_cache_global
 
         inputs_list: HashBuilderList[tuple[bytes, int]] = HBL(self_msg.inputs_count)
         with self_tx_dict_add(_TX_BODY_KEY_INPUTS, inputs_list):
@@ -218,7 +218,7 @@ class Signer:
     def _validate_tx_init(self) -> None:
         from ..helpers.utils import validate_network_info
 
-        self_msg = self.msg  # cache
+        self_msg = self.msg  # local_cache_attribute
 
         if self_msg.fee > LOVELACE_MAX_SUPPLY:
             raise ProcessError("Fee is out of range!")
@@ -308,7 +308,7 @@ class Signer:
     def _validate_output(self, output: CardanoTxOutput) -> None:
         from ..helpers import OUTPUT_DATUM_HASH_SIZE
 
-        output_address_parameters = output.address_parameters  # cache
+        output_address_parameters = output.address_parameters  # local_cache_attribute
 
         if output_address_parameters is not None and output.address is not None:
             raise ProcessError("Invalid output")
@@ -824,7 +824,7 @@ class Signer:
     async def _process_auxiliary_data(self) -> None:
         from .. import auxiliary_data
 
-        self_msg = self.msg  # cache
+        self_msg = self.msg  # local_cache_attribute
 
         data: messages.CardanoTxAuxiliaryData = await self.ctx.call(
             CardanoTxItemAck(), messages.CardanoTxAuxiliaryData
@@ -967,7 +967,7 @@ class Signer:
     ) -> None:
         from ..helpers import ADDRESS_KEY_HASH_SIZE
 
-        required_signer_key_path = required_signer.key_path  # cache
+        required_signer_key_path = required_signer.key_path  # local_cache_attribute
 
         INVALID_REQUIRED_SIGNER = ProcessError("Invalid required signer")
 

@@ -63,7 +63,7 @@ def _header(typ: int, l: int) -> bytes:
 
 
 def _cbor_encode(value: Value) -> Iterator[bytes]:
-    header = _header  # cache
+    header = _header  # local_cache_global
 
     if isinstance(value, int):
         if value >= 0:
@@ -137,7 +137,7 @@ def _read_length(r: BufferReader, aux: int) -> int:
 
 
 def _cbor_decode(r: BufferReader) -> Value:
-    read_length = _read_length  # cache
+    read_length = _read_length  # local_cache_global
 
     fb = r.get()
     fb_type = fb & _CBOR_TYPE_MASK

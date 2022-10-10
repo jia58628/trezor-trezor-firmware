@@ -32,9 +32,9 @@ def process_slip39(words: str) -> tuple[bytes | None, slip39.Share]:
     """
     share = slip39.decode_mnemonic(words)
 
-    recovery_shares = storage_recovery_shares  # cache
-    recovery = storage_recovery  # cache
-    share_group_index = share.group_index  # cache
+    recovery_shares = storage_recovery_shares  # global_import_cache
+    recovery = storage_recovery  # global_import_cache
+    share_group_index = share.group_index  # local_cache_attribute
 
     remaining = recovery.fetch_slip39_remaining_shares()
 
