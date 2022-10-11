@@ -19,13 +19,13 @@ from .crypto import builder, redpallas
 from .crypto.address import Address
 from .crypto.note import Note
 from .debug import watch_gc_async
+from .keychain import OrchardKeychain
 from .random import BundleShieldingRng
 
 if TYPE_CHECKING:
     from typing import Awaitable, List
     from apps.common.coininfo import CoinInfo
     from apps.bitcoin.sign_tx.tx_info import TxInfo
-    from .keychain import OrchardKeychain
     from .crypto.keys import FullViewingKey
     from ..approver import ZcashApprover
     from .random import ActionShieldingRng
@@ -55,7 +55,7 @@ class OrchardSigner:
     def __init__(
         self,
         tx_info: TxInfo,
-        keychain: OrchardKeychain,
+        seed: bytes,
         approver: ZcashApprover,
         coin: CoinInfo,
         tx_req: TxRequest,
@@ -78,7 +78,7 @@ class OrchardSigner:
             return  # no need to initialize other attributes
 
         self.tx_info = tx_info
-        self.keychain = keychain
+        self.keychain = OrchardKeychain.from_seed_and_coin(seed, coin)
         self.approver = approver
         self.coin = coin
         self.tx_req = tx_req
@@ -92,10 +92,10 @@ class OrchardSigner:
             coin.slip44 | HARDENED,  # purpose
             account | HARDENED,  # account
         ]
-        self.key_node = keychain.derive(key_path)
+        self.key_node = self.keychain.derive(key_path)
 
         self.msg_acc = MessageAccumulator(
-            keychain.derive_slip21(
+            self.keychain.derive_slip21(
                 [b"Zcash Orchard", b"Message Accumulator"],
             ).key()
         )

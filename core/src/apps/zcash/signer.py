@@ -32,7 +32,7 @@ if TYPE_CHECKING:
         TxOutput,
     )
     from apps.bitcoin.keychain import Keychain
-    from .orchard.keychain import OrchardKeychain
+
 
 OVERWINTERED = const(0x8000_0000)
 
@@ -55,10 +55,9 @@ class Zcash(Bitcoinlike):
         super().__init__(tx, keychain, coin, approver)
 
         if ZCASH_SHIELDED:
-            orchard_keychain = OrchardKeychain.from_seed_and_coin(keychain.seed, coin)
             self.orchard = OrchardSigner(
                 self.tx_info,
-                orchard_keychain,
+                keychain.seed,
                 approver,
                 coin,
                 self.tx_req,
