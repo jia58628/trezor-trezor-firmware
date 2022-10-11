@@ -48,7 +48,9 @@ class UiConfirmTransparentOutput(UiConfirm):
     def confirm_dialog(self, ctx: Context) -> Awaitable[Any]:
         content = Confirm(get_pay_page(self.txo, self.coin, "t"))
         assert self.txo.address is not None  # typing
-        return maybe_show_full_address(ctx, content, self.txo.address)
+        return maybe_show_full_address(
+            ctx, content, self.txo.address, ButtonRequestType.ConfirmOutput
+        )
 
 
 class UiConfirmOrchardOutput(UiConfirm):
@@ -66,7 +68,9 @@ class UiConfirmOrchardOutput(UiConfirm):
         assert len(pages) >= 2  # pay page + memo page
         content = Paginated(pages)
         assert self.txo.address is not None  # typing
-        return maybe_show_full_address(ctx, content, self.txo.address)
+        return maybe_show_full_address(
+            ctx, content, self.txo.address, ButtonRequestType.ConfirmOutput
+        )
 
 
 def get_pay_page(
@@ -111,7 +115,7 @@ def get_memo_pages(memo: str | None) -> list[Component]:
 
 
 async def maybe_show_full_address(
-    ctx: Context, content: LayoutType, full_address: str
+    ctx: Context, content: LayoutType, full_address: str, br_code: ButtonRequestType
 ) -> None:
     """Lets user to toggle between output-confirmation-dialog
     and see-full-address-dialog before he confirms an output."""
@@ -121,6 +125,7 @@ async def maybe_show_full_address(
                 ctx,
                 content,
                 "confirm_output",
+                br_code,
             )
         )
         if result is SHOW_PAGINATED:

@@ -106,6 +106,23 @@ class TxInfoBase:
             return False
         if txo.multisig and not self.multisig_fingerprint.output_matches(txo):
             return False
+        from trezor import log
+
+        log.error(
+            __name__,
+            "%s",
+            str(
+                (
+                    (
+                        self.wallet_path.output_matches(txo),
+                        len(txo.address_n) >= BIP32_WALLET_DEPTH,
+                        txo.address_n[-2] <= _BIP32_CHANGE_CHAIN,
+                        txo.address_n[-1] <= _BIP32_MAX_LAST_ELEMENT,
+                        txo.amount > 0,
+                    )
+                )
+            ),
+        )
         return (
             self.wallet_path.output_matches(txo)
             and len(txo.address_n) >= BIP32_WALLET_DEPTH

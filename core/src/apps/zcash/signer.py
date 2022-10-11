@@ -9,6 +9,7 @@ from trezor.wire import DataError, ProcessError
 from apps.bitcoin import scripts
 from apps.bitcoin.common import ecdsa_sign
 from apps.bitcoin.sign_tx.bitcoinlike import Bitcoinlike
+from apps.common.paths import HARDENED
 from apps.common.writers import write_compact_size, write_uint32_le
 
 from . import unified_addresses
@@ -62,6 +63,11 @@ class Zcash(Bitcoinlike):
                 coin,
                 self.tx_req,
             )
+            self.tx_info.wallet_path.attribute = [
+                44 | HARDENED,  # BIP-44 constant
+                coin.slip44 | HARDENED,
+                tx.account | HARDENED,
+            ]
 
     def create_sig_hasher(self, tx: SignTx | PrevTx) -> ZcashHasher:
         return ZcashHasher(tx)
