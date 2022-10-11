@@ -393,7 +393,7 @@ extern "C" fn new_confirm_output(n_args: usize, args: *const Obj, kwargs: *mut M
         let title: StrBuffer = kwargs.get(Qstr::MP_QSTR_title)?.try_into()?;
         let description: StrBuffer = kwargs.get(Qstr::MP_QSTR_description)?.try_into()?;
         let value: StrBuffer = kwargs.get(Qstr::MP_QSTR_value)?.try_into()?;
-        let verb = "NEXT";
+        let verb: StrBuffer = kwargs.get_or(Qstr::MP_QSTR_verb, "NEXT".into())?;
 
         let paragraphs = Paragraphs::new()
             .add(theme::TEXT_NORMAL, description)

@@ -645,7 +645,15 @@ def confirm_address(
     icon: str = ui.ICON_SEND,  # TODO cleanup @ redesign
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
 ) -> Awaitable[None]:
-    raise NotImplementedError
+    return _confirm_general(
+        ctx,
+        title,
+        address,
+        description or "",
+        "Next",
+        br_type,
+        br_code,
+    )
 
 
 async def confirm_text(
@@ -658,7 +666,15 @@ async def confirm_text(
     icon: str = ui.ICON_SEND,  # TODO cleanup @ redesign
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
 ) -> None:
-    raise NotImplementedError
+    return await _confirm_general(
+        ctx,
+        title,
+        data,
+        description or "",
+        "Confirm",
+        br_type,
+        br_code,
+    )
 
 
 def confirm_amount(
@@ -671,6 +687,31 @@ def confirm_amount(
     icon: str = ui.ICON_SEND,  # TODO cleanup @ redesign
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
 ) -> Awaitable[None]:
+    return _confirm_general(
+        ctx,
+        title,
+        amount,
+        description,
+        "Next",
+        br_type,
+        br_code,
+    )
+
+
+def _confirm_general(
+    ctx: wire.GenericContext,
+    title: str,
+    value: str,
+    description: str,
+    verb: str,
+    br_type: str,
+    br_code: ButtonRequestType = ButtonRequestType.Other,
+) -> Awaitable[None]:
+    """General confirmation dialogue, used by many other confirm_* functions."""
+
+    # TODO: the general function probably should not be calling
+    # `trezorui2.confirm_output`, we should expose something like
+    # `trezorui2.confirm_general`
     return raise_if_not_confirmed(
         interact(
             ctx,
@@ -678,7 +719,8 @@ def confirm_amount(
                 trezorui2.confirm_output(
                     title=title.upper(),
                     description=description,
-                    value=amount,
+                    value=value,
+                    verb=verb,
                 )
             ),
             br_type,
