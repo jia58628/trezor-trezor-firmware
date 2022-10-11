@@ -43,15 +43,15 @@ SECTIONS {
     KEEP(*(.header));
   } >FLASH AT>FLASH
 
-  .flash2 : ALIGN(64) {
+  .flash2 : ALIGN(512) {
     build/firmware/frozen_mpy.o(.rodata*);
     build/firmware/vendor/secp256k1-zkp/src/secp256k1.o(.rodata*);
     build/firmware/vendor/secp256k1-zkp/src/precomputed_ecmult.o(.rodata*);
     build/firmware/vendor/secp256k1-zkp/src/precomputed_ecmult_gen.o(.rodata*);
-    . = ALIGN(64);
+    . = ALIGN(512);
   } >FLASH2 AT>FLASH2
 
-  .flash : ALIGN(64) {
+  .flash : ALIGN(512) {
     KEEP(*(.vector_table));
     . = ALIGN(4);
     *(.text*);
@@ -60,7 +60,7 @@ SECTIONS {
     . = ALIGN(4);
     KEEP(*(.bootloader));
     *(.bootloader*);
-    . = ALIGN(64);
+    . = ALIGN(512);
   } >FLASH AT>FLASH
 
   .stack : ALIGN(8) {
@@ -69,7 +69,7 @@ SECTIONS {
 
   .data : ALIGN(4) {
     *(.data*);
-    . = ALIGN(64);
+    . = ALIGN(512);
   } >SRAM AT>FLASH
 
   .bss : ALIGN(4) {
