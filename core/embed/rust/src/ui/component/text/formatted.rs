@@ -34,6 +34,8 @@ pub struct FormattedFonts {
     pub bold: Font,
     /// Font used to format `{mono}`.
     pub mono: Font,
+    /// Font used to format `{demibold}`.
+    pub demibold: Font,
 }
 
 impl<F, T> FormattedText<F, T> {
@@ -107,6 +109,7 @@ where
                 Token::Argument("bold") => Some(Op::Font(self.fonts.bold)),
                 Token::Argument("normal") => Some(Op::Font(self.fonts.normal)),
                 Token::Argument("medium") => Some(Op::Font(self.fonts.medium)),
+                Token::Argument("demibold") => Some(Op::Font(self.fonts.demibold)),
                 Token::Argument(argument) => self
                     .args
                     .get(argument)

@@ -28,11 +28,13 @@ if TREZOR_MODEL in ('1', 'R'):
     FONT_MEDIUM=None
     FONT_BOLD=None
     FONT_MONO='Font_PixelOperatorMono_Regular_8'
+    FONT_DEMIBOLD=None
 if TREZOR_MODEL in ('T', ):
     FONT_NORMAL='Font_Roboto_Regular_20'
     FONT_MEDIUM=None
     FONT_BOLD=None
     FONT_MONO='Font_RobotoMono_Regular_20'
+    FONT_DEMIBOLD=None
 
 # modtrezorcrypto
 CCFLAGS_MOD += '-Wno-sequence-point '
@@ -151,6 +153,7 @@ tools.add_font('NORMAL', FONT_NORMAL, CPPDEFINES_MOD, SOURCE_MOD)
 tools.add_font('BOLD', FONT_BOLD, CPPDEFINES_MOD, SOURCE_MOD)
 tools.add_font('MEDIUM', FONT_MEDIUM, CPPDEFINES_MOD, SOURCE_MOD)
 tools.add_font('MONO', FONT_MONO, CPPDEFINES_MOD, SOURCE_MOD)
+tools.add_font('DEMIBOLD', FONT_DEMIBOLD, CPPDEFINES_MOD, SOURCE_MOD)
 
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))

@@ -101,7 +101,7 @@ where
                         .align_at_center()
                         .with_spacing(Self::VALUE_SPACE),
                 )
-                .add(theme::TEXT_MEDIUM, title)
+                .add(theme::TEXT_DEMIBOLD, title)
                 .centered(),
             controls: Child::new(controls),
         }
@@ -125,11 +125,11 @@ where
                 .with_placement(LinearPlacement::vertical().align_at_center())
                 .add_color(theme::TEXT_NORMAL, theme::OFF_WHITE, l0)
                 .centered()
-                .add(theme::TEXT_MEDIUM, l1)
+                .add(theme::TEXT_DEMIBOLD, l1)
                 .centered()
                 .add_color(theme::TEXT_NORMAL, theme::OFF_WHITE, l2)
                 .centered()
-                .add(theme::TEXT_MEDIUM, l3)
+                .add(theme::TEXT_DEMIBOLD, l3)
                 .centered(),
             controls: Child::new(controls),
         }

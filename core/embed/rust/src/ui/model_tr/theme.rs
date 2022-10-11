@@ -60,10 +60,12 @@ pub const TEXT_NORMAL: TextStyle = TextStyle::new(Font::NORMAL, FG, BG, FG, FG);
 pub const TEXT_MEDIUM: TextStyle = TextStyle::new(Font::MEDIUM, FG, BG, FG, FG);
 pub const TEXT_BOLD: TextStyle = TextStyle::new(Font::BOLD, FG, BG, FG, FG);
 pub const TEXT_MONO: TextStyle = TextStyle::new(Font::MONO, FG, BG, FG, FG);
+pub const TEXT_DEMIBOLD: TextStyle = TextStyle::new(Font::DEMIBOLD, FG, BG, FG, FG);
 
 pub const FORMATTED: FormattedFonts = FormattedFonts {
     normal: Font::NORMAL,
     medium: Font::MEDIUM,
     bold: Font::BOLD,
     mono: Font::MONO,
+    demibold: Font::DEMIBOLD,
 };

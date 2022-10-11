@@ -100,7 +100,7 @@ pub fn label_checklist_done() -> LabelStyle {
 
 pub fn label_keyboard() -> LabelStyle {
     LabelStyle {
-        font: Font::MEDIUM,
+        font: Font::DEMIBOLD,
         text_color: OFF_WHITE,
         background_color: BG,
     }
@@ -108,7 +108,7 @@ pub fn label_keyboard() -> LabelStyle {
 
 pub fn label_keyboard_warning() -> LabelStyle {
     LabelStyle {
-        font: Font::MEDIUM,
+        font: Font::DEMIBOLD,
         text_color: RED,
         background_color: BG,
     }
@@ -132,7 +132,7 @@ pub fn label_page_hint() -> LabelStyle {
 
 pub fn label_warning() -> LabelStyle {
     LabelStyle {
-        font: Font::MEDIUM,
+        font: Font::DEMIBOLD,
         text_color: FG,
         background_color: BG,
     }
@@ -357,7 +357,7 @@ pub fn button_pin() -> ButtonStyleSheet {
 pub fn button_counter() -> ButtonStyleSheet {
     ButtonStyleSheet {
         normal: &ButtonStyle {
-            font: Font::MEDIUM,
+            font: Font::DEMIBOLD,
             text_color: FG,
             button_color: GREY_DARK,
             background_color: BG,
@@ -366,7 +366,7 @@ pub fn button_counter() -> ButtonStyleSheet {
             border_width: 0,
         },
         active: &ButtonStyle {
-            font: Font::MEDIUM,
+            font: Font::DEMIBOLD,
             text_color: FG,
             button_color: GREY_MEDIUM,
             background_color: BG,
@@ -375,7 +375,7 @@ pub fn button_counter() -> ButtonStyleSheet {
             border_width: 0,
         },
         disabled: &ButtonStyle {
-            font: Font::MEDIUM,
+            font: Font::DEMIBOLD,
             text_color: GREY_LIGHT,
             button_color: GREY_DARK,
             background_color: BG,
@@ -409,12 +409,14 @@ pub const TEXT_NORMAL: TextStyle = TextStyle::new(Font::NORMAL, FG, BG, GREY_LIG
 pub const TEXT_MEDIUM: TextStyle = TextStyle::new(Font::MEDIUM, FG, BG, GREY_LIGHT, GREY_LIGHT);
 pub const TEXT_BOLD: TextStyle = TextStyle::new(Font::BOLD, FG, BG, GREY_LIGHT, GREY_LIGHT);
 pub const TEXT_MONO: TextStyle = TextStyle::new(Font::MONO, FG, BG, GREY_LIGHT, GREY_LIGHT);
+pub const TEXT_DEMIBOLD: TextStyle = TextStyle::new(Font::DEMIBOLD, FG, BG, GREY_LIGHT, GREY_LIGHT);
 
 pub const FORMATTED: FormattedFonts = FormattedFonts {
     normal: Font::NORMAL,
     medium: Font::MEDIUM,
     bold: Font::BOLD,
     mono: Font::MONO,
+    demibold: Font::DEMIBOLD,
 };
 
 pub const CONTENT_BORDER: i16 = 5;
