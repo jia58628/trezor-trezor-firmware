@@ -44,7 +44,6 @@ class Zcash(Bitcoinlike):
         keychain: Keychain,
         coin: CoinInfo,
         approver: Approver | None,
-        orchard_keychain: OrchardKeychain,
     ) -> None:
         ensure(coin.overwintered)
         if tx.version != 5:
@@ -54,7 +53,9 @@ class Zcash(Bitcoinlike):
         approver = ZcashApprover(tx, coin)
 
         super().__init__(tx, keychain, coin, approver)
+
         if ZCASH_SHIELDED:
+            orchard_keychain = OrchardKeychain.from_seed_and_coin(keychain.seed, coin)
             self.orchard = OrchardSigner(
                 self.tx_info,
                 orchard_keychain,

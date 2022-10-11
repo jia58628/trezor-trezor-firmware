@@ -26,10 +26,9 @@ if TYPE_CHECKING:
     from trezor.messages import TxInput, TxOutput, SignTx, PrevTx
     from trezor.utils import Writer
     from apps.common.coininfo import CoinInfo
-    from typing import Sequence, IntEnum
-
-    if ZCASH_SHIELDED:
-        from .orchard.crypto.builder import Action
+    from typing import Sequence
+    from enum import IntEnum
+    from .orchard.crypto.builder import Action
 else:
     IntEnum = object
 

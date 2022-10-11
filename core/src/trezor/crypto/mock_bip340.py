@@ -1,6 +1,6 @@
-from typing import *
-
 BYTES = 32 * b"\x00"
+
+
 # extmod/modtrezorcrypto/modtrezorcrypto-bip340.h
 def generate_secret() -> bytes:
     """

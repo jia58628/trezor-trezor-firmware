@@ -11,7 +11,6 @@ from . import approvers, bitcoin, helpers, progress
 if not utils.BITCOIN_ONLY:
     from . import bitcoinlike, decred, zcash_v4
     from apps.zcash.signer import Zcash
-    from apps.zcash.orchard.keychain import OrchardKeychain
 
 if TYPE_CHECKING:
     from typing import Protocol
@@ -47,7 +46,6 @@ if TYPE_CHECKING:
             keychain: Keychain,
             coin: CoinInfo,
             approver: approvers.Approver | None,
-            **kwargs,
         ) -> None:
             ...
 
@@ -67,7 +65,6 @@ async def sign_tx(
     if authorization:
         approver = approvers.CoinJoinApprover(msg, coin, authorization)
 
-    kwargs = dict()
     if utils.BITCOIN_ONLY or coin.coin_name in BITCOIN_NAMES:
         signer_class: type[SignerClass] = bitcoin.Bitcoin
     else:
@@ -76,13 +73,12 @@ async def sign_tx(
         elif coin.overwintered:
             if msg.version == 5:
                 signer_class = Zcash
-                kwargs["orchard_keychain"] = await OrchardKeychain.for_coin(ctx, coin)
             else:
                 signer_class = zcash_v4.ZcashV4
         else:
             signer_class = bitcoinlike.Bitcoinlike
 
-    signer = signer_class(msg, keychain, coin, approver, **kwargs).signer()
+    signer = signer_class(msg, keychain, coin, approver).signer()
 
     res: TxAckType | bool | None = None
     while True:
