@@ -12,9 +12,9 @@ if __debug__:
             __name__,
             "GC[%s]: alloc: %d kb, free: %d kb (%d/1000)",
             label,
-            gc.mem_alloc() // 1000,
-            gc.mem_free() // 1000,
-            (1000 * gc.mem_free()) // (gc.mem_free() + gc.mem_alloc()),
+            gc.mem_alloc() // 1000,  # type: ignore
+            gc.mem_free() // 1000,  # type: ignore
+            (1000 * gc.mem_free()) // (gc.mem_free() + gc.mem_alloc()),  # type: ignore
         )
 
     def trace_gc(x):
