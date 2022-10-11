@@ -24,7 +24,7 @@ class TestZcashOrchardKeyComponents(unittest.TestCase):
     def test_zcash_orchard_key_components(self):
         for tv in zcash_parse(ZCASH_TEST_VECTORS):
             ask = sk_to_ask(tv.sk)
-            self.assertEqual(ask, tv.ask)
+            self.assertEqual(ask.to_bytes() , tv.ask)
 
             fvk = FullViewingKey.from_spending_key(tv.sk)
             self.assertEqual(fvk.ak.to_bytes(), tv.ak)

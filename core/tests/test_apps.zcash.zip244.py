@@ -101,7 +101,7 @@ class TestZcashSigHasher(unittest.TestCase):
                 for action in tx["orchard"]["actions"]:
                     hasher.orchard.add_action(action)
                 hasher.orchard.finalize(
-                    tx["orchard"]["flags"],
+                    tx["orchard"]["flags"][0],
                     tx["orchard"]["balance"],
                     tx["orchard"]["anchor"],
                 )
