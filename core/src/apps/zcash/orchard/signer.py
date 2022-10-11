@@ -18,7 +18,7 @@ from .accumulator import MessageAccumulator
 from .crypto import builder, redpallas
 from .crypto.address import Address
 from .crypto.note import Note
-from .debug import watch_gc, watch_gc_async
+from .debug import watch_gc_async
 from .random import BundleShieldingRng
 
 if TYPE_CHECKING:
@@ -52,7 +52,6 @@ def skip_if_empty(func):
 
 
 class OrchardSigner:
-    @watch_gc
     def __init__(
         self,
         tx_info: TxInfo,
@@ -104,7 +103,6 @@ class OrchardSigner:
         self.rng = None
 
     @skip_if_empty
-    @watch_gc_async
     async def process_inputs(self) -> None:
         await self.check_orchard_inputs_count()
         for i in range(self.inputs_count):
@@ -117,7 +115,6 @@ class OrchardSigner:
             yield ConfirmOrchardInputsCountOverThreshold(self.inputs_count)
 
     @skip_if_empty
-    @watch_gc_async
     async def approve_outputs(self) -> None:
         for i in range(self.outputs_count):
             txo = await self.get_output(i)
@@ -128,7 +125,6 @@ class OrchardSigner:
                 await self.approver.add_orchard_external_output(txo)
 
     @skip_if_empty
-    @watch_gc_async
     async def compute_digest(self) -> None:
         # derive shielding seed
         shielding_seed = self.derive_shielding_seed()
@@ -157,7 +153,7 @@ class OrchardSigner:
         fvk = self.key_node.full_viewing_key()
 
         # shield and hash actions
-        log.info(__name__, "=== start shielding ===")
+        log.info(__name__, "start shielding")
         for i, (j, k) in enumerate(
             zip(
                 self.shuffled_inputs,
@@ -165,7 +161,7 @@ class OrchardSigner:
             )
         ):
             gc.collect()
-            log.info(__name__, "=== action %d (io: %s %s) ===", i, str(j), str(k))
+            log.info(__name__, "shielding action %d (io: %s %s)", i, str(j), str(k))
             rng_i = self.rng.for_action(i)
             input_info = await self.build_input_info(j, fvk, rng_i)
             output_info = await self.build_output_info(k, fvk, rng_i)
@@ -173,8 +169,7 @@ class OrchardSigner:
             action = builder.build_action(input_info, output_info, rng_i)
             self.sig_hasher.orchard.add_action(action)
 
-            gc.collect()
-        log.info(__name__, "=== end shielding ===")
+        log.info(__name__, "end shielding")
 
         # check that message accumulator is empty
         self.msg_acc.check()

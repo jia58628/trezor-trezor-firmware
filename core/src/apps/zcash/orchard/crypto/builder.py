@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
+import gc
 
 from trezor.crypto.pallas import Point, Scalar, scalar_from_i64
 
-from ..debug import log_gc
 from .generators import (
     SPENDING_KEY_BASE,
     VALUE_COMMITMENT_RANDOMNESS_BASE,
@@ -79,7 +79,8 @@ def build_action(
     output: OutputInfo,
     rng: ActionShieldingRng,
 ) -> Action:
-    log_gc("build 1")
+    gc.collect()
+
     # nullifier
     nf_old = input.note.nullifier(input.fvk.nk)
 
@@ -97,23 +98,13 @@ def build_action(
     )
     cm_new = note.commitment()
 
-    # logging
-    from trezor import log
-
-    log.warning(__name__, "new Note:")
-    log.warning(__name__, "recipient: %s", str(note.recipient.to_bytes()))
-    log.warning(__name__, "value: %s", str(note.value))
-    log.warning(__name__, "rho: %s", str(note.rho.to_bytes()))
-    log.warning(__name__, "rseed: %s", str(note.rseed))
-    log.warning(__name__, "cmx: %s", str(cm_new.extract().to_bytes()))
-
     # value commitment
     v_net = input.note.value - output.value
     rcv = rng.rcv()
     cv_net = commit_value(rcv, v_net)
 
-    log_gc("build 2")
     # note encryption
+    gc.collect()
     encrypted_note = encrypt_note(
         note,
         output.memo,
@@ -123,11 +114,13 @@ def build_action(
         rng,
     )
 
-    log_gc("build 3")
-    return Action(
+    gc.collect()
+    action = Action(
         cv=cv_net.to_bytes(),
         nf=nf_old.to_bytes(),
         rk=rk.to_bytes(),
         cmx=cm_new.extract().to_bytes(),
         encrypted_note=encrypted_note,
     )
+    gc.collect()
+    return action
