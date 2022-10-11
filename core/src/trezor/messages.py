@@ -522,6 +522,14 @@ if TYPE_CHECKING:
             return isinstance(msg, cls)
 
     class ZcashAck(protobuf.MessageType):
+        never_use_this_field: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            never_use_this_field: "bytes | None" = None,
+        ) -> None:
+            pass
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["ZcashAck"]:

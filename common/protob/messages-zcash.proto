@@ -97,4 +97,6 @@ message ZcashOrchardOutput {
     optional string memo = 3;     // an optional message for a recepient
 }
 
-message ZcashAck {}
+message ZcashAck {
+    optional bytes never_use_this_field = 1;  // for some reason, empty messages are forbidden
+}
