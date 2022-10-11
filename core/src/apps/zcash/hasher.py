@@ -8,7 +8,7 @@ specification: https://zips.z.cash/zip-0244
 from typing import TYPE_CHECKING
 
 from trezor.crypto.hashlib import blake2b
-from trezor.utils import HashWriter, empty_bytearray, ZCASH_SHIELDED
+from trezor.utils import ZCASH_SHIELDED, HashWriter, empty_bytearray
 
 from apps.bitcoin.common import SigHashType
 from apps.bitcoin.writers import write_uint32  # TODO: import from apps.common.writers
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from trezor.utils import Writer
     from apps.common.coininfo import CoinInfo
     from typing import Sequence, IntEnum
+
     if ZCASH_SHIELDED:
         from .orchard.crypto.builder import Action
 else:
@@ -281,8 +282,12 @@ class OrchardHasher:
         self.state = OrchardHasherState.EMPTY
 
     if ZCASH_SHIELDED:
+
         def add_action(self, action: Action) -> None:
-            assert self.state in (OrchardHasherState.EMPTY, OrchardHasherState.ADDING_ACTIONS)
+            assert self.state in (
+                OrchardHasherState.EMPTY,
+                OrchardHasherState.ADDING_ACTIONS,
+            )
             self.state = OrchardHasherState.ADDING_ACTIONS
             encrypted = action.encrypted_note
             write_bytes_fixed(self.ch, action.nf, 32)  # T.4a.i

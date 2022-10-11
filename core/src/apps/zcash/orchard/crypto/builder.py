@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
 import gc
+from typing import TYPE_CHECKING
 
 from trezor.crypto.pallas import Point, Scalar, scalar_from_i64
 
