@@ -1,6 +1,7 @@
 # Debugging T1 signatures
 
-1. T1 firmware must be built with `DEBUG_T1_SIGNATURES=1` to be able to debug them
+## Signing with the "SignMessage" (v3) method
+1. T1 firmware+bootloader must be built with `DEBUG_T1_SIGNATURES=1` to be able to debug them
 1. Load signing device or emulator (must have `PYOPT=0` for core or `DEBUG_LINK=1` 
    for T1 legacy) with:
    `trezorctl device load -m "table table table table table table table table table table table advance"` 
@@ -16,6 +17,15 @@ inside to have different order or different keys (1 <= index <= 5 )
 
 Update FW on T1 either via `trezorctl device firmware-update` or 
 `make flash_firmware_jlink`.
+
+## Signing with the v2 method (called "new" for confusing historical reasons)
+
+This method is currently (Oct 2022) used for signing official T1 firmwares.
+To debug it, you also need `DEBUG_T1_SIGNATURES=1` build (bootloader and FW)
+
+Use this to sign FW:
+
+    sign_firmware_v2_signature.py ../firmware/trezor.bin ../firmware/trezor.bin.signed.v2
 
 ## Notes on signatures patching
 
