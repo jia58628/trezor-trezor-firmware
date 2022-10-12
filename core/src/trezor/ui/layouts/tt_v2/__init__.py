@@ -14,6 +14,10 @@ if TYPE_CHECKING:
     from ..common import PropertyType, ExceptionType
 
 
+def is_confirmed(x: Any) -> bool:
+    return x is trezorui2.CONFIRMED
+
+
 class _RustLayout(ui.Layout):
     # pylint: disable=super-init-not-called
     def __init__(self, layout: Any, is_backup=False):
@@ -205,7 +209,7 @@ async def confirm_action(
         br_type,
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise exc
 
 
@@ -228,7 +232,7 @@ async def confirm_reset_device(
         "recover_device" if recovery else "setup_device",
         ButtonRequestType.ProtectCall if recovery else ButtonRequestType.ResetDevice,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -248,7 +252,7 @@ async def confirm_backup(ctx: wire.GenericContext) -> bool:
         "backup_device",
         ButtonRequestType.ResetDevice,
     )
-    if result is trezorui2.CONFIRMED:
+    if is_confirmed(result):
         return True
 
     result = await interact(
@@ -265,7 +269,7 @@ async def confirm_backup(ctx: wire.GenericContext) -> bool:
         "backup_device",
         ButtonRequestType.ResetDevice,
     )
-    return result is trezorui2.CONFIRMED
+    return is_confirmed(result)
 
 
 async def confirm_path_warning(
@@ -282,7 +286,7 @@ async def confirm_path_warning(
         "path_warning",
         ButtonRequestType.UnknownDerivationPath,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -306,7 +310,7 @@ async def show_xpub(
         "show_xpub",
         ButtonRequestType.PublicKey,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -339,7 +343,7 @@ async def show_address(
             "show_address",
             ButtonRequestType.Address,
         )
-        if result is trezorui2.CONFIRMED:
+        if is_confirmed(result):
             break
 
         result = await interact(
@@ -355,7 +359,7 @@ async def show_address(
             "show_qr",
             ButtonRequestType.Address,
         )
-        if result is trezorui2.CONFIRMED:
+        if is_confirmed(result):
             break
 
         if is_multisig:
@@ -369,7 +373,7 @@ async def show_address(
                     "show_xpub",
                     ButtonRequestType.PublicKey,
                 )
-                if result is trezorui2.CONFIRMED:
+                if is_confirmed(result):
                     return
 
 
@@ -436,7 +440,7 @@ async def show_warning(
         br_type,
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -460,7 +464,7 @@ async def show_success(
         br_type,
         ButtonRequestType.Success,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -495,7 +499,7 @@ async def confirm_output(
         "confirm_output",
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
     result = await interact(
@@ -510,7 +514,7 @@ async def confirm_output(
         "confirm_output",
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -619,7 +623,7 @@ async def confirm_blob(
         br_type,
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -699,7 +703,7 @@ async def confirm_total(
         "confirm_total",
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
     result = await interact(
@@ -714,7 +718,7 @@ async def confirm_total(
         "confirm_total",
         br_code,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -732,7 +736,7 @@ async def confirm_joint_total(
         "confirm_joint_total",
         ButtonRequestType.SignTx,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -782,7 +786,7 @@ async def confirm_metadata(
         br_code,
     )
 
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -801,7 +805,7 @@ async def confirm_replacement(
         "confirm_replacement",
         ButtonRequestType.SignTx,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -825,7 +829,7 @@ async def confirm_modify_output(
         "modify_output",
         ButtonRequestType.ConfirmOutput,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -848,7 +852,7 @@ async def confirm_modify_fee(
         "modify_fee",
         ButtonRequestType.SignTx,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -867,7 +871,7 @@ async def confirm_coinjoin(
         "coinjoin_final",
         ButtonRequestType.Other,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
@@ -900,7 +904,7 @@ async def confirm_signverify(
         br_type,
         ButtonRequestType.Other,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
     result = await interact(
@@ -915,7 +919,7 @@ async def confirm_signverify(
         br_type,
         ButtonRequestType.Other,
     )
-    if result is not trezorui2.CONFIRMED:
+    if not is_confirmed(result):
         raise wire.ActionCancelled
 
 
