@@ -2,7 +2,7 @@ from typing import Any, Tuple
 
 import storage.cache
 import storage.device
-from trezor import io, loop, ui
+from trezor import io, loop, ui, utils
 
 import trezorui2
 from apps.base import set_homescreen
@@ -30,6 +30,16 @@ class HomescreenBase(_RustLayout):
         if storage.cache.homescreen_shown is not self.RENDER_INDICATOR:
             super()._first_paint()
             storage.cache.homescreen_shown = self.RENDER_INDICATOR
+
+        # - RENDER_INDICATOR is set -> USB warning is not displayed
+        # - RENDER_INDICATOR is not set -> initially homescreen does not display warning
+        # - usb_checker_task only handles state changes
+        # Here we need to handle the case when homescreen is started with USB disconnected.
+        if not utils.usb_data_connected():
+            msg = self.layout.usb_event(False)
+            self._paint()
+            if msg is not None:
+                raise ui.Result(msg)
 
 
 class Homescreen(HomescreenBase):
