@@ -3,7 +3,7 @@ use core::{cmp::Ordering, convert::TryInto, ops::Deref};
 use crate::{
     error::Error,
     micropython::{
-        buffer::StrBuffer,
+        buffer::{get_buffer, StrBuffer},
         iter::{Iter, IterBuf},
         map::Map,
         module::Module,
@@ -585,6 +585,47 @@ extern "C" fn new_show_error(n_args: usize, args: *const Obj, kwargs: *mut Map) 
     unsafe { util::try_with_args_and_kwargs(n_args, args, kwargs, block) }
 }
 
+extern "C" fn new_confirm_webauthn(n_args: usize, args: *const Obj, kwargs: *mut Map) -> Obj {
+    let block = move |_args: &[Obj], kwargs: &Map| {
+        let title: StrBuffer = kwargs.get(Qstr::MP_QSTR_title)?.try_into()?;
+        let app_name: StrBuffer = kwargs.get(Qstr::MP_QSTR_app_name)?.try_into()?;
+        let account_name: Option<StrBuffer> =
+            kwargs.get(Qstr::MP_QSTR_account_name)?.try_into_option()?;
+        let icon = kwargs.get(Qstr::MP_QSTR_icon)?;
+
+        // Getting icon byte data from `mp_obj_t`.
+        // Byte icon data need to be sent from `micropython` as it stores
+        // the database of all `webauthn` applications together with their icons.
+        let icon_data = unsafe { get_buffer(icon)? };
+
+        let mut dialog = IconDialog::new(
+            icon_data,
+            title,
+            Button::cancel_confirm(
+                Button::with_icon(theme::ICON_CANCEL).styled(theme::button_cancel()),
+                Button::with_text("CONFIRM").styled(theme::button_confirm()),
+                2,
+            ),
+        );
+
+        // App name is always there
+        dialog = dialog.with_description(app_name);
+
+        // Account name is optional.
+        if let Some(account_name) = account_name {
+            // Showing it only if it differs from app name.
+            // (Dummy requests usually have some text as both app_name and account_name.)
+            if app_name != account_name {
+                dialog = dialog.with_description(account_name);
+            }
+        }
+
+        let obj = LayoutObj::new(dialog)?;
+        Ok(obj.into())
+    };
+    unsafe { util::try_with_args_and_kwargs(n_args, args, kwargs, block) }
+}
+
 extern "C" fn new_show_warning(n_args: usize, args: *const Obj, kwargs: *mut Map) -> Obj {
     let block = move |_args: &[Obj], kwargs: &Map| {
         new_show_modal(kwargs, theme::IMAGE_WARN, theme::button_reset())
@@ -1084,6 +1125,16 @@ pub static mp_module_trezorui2: Module = obj_module! {
     /// ) -> object:
     ///     """Decrease or increase transaction fee."""
     Qstr::MP_QSTR_confirm_modify_fee => obj_fn_kw!(0, new_confirm_modify_fee).as_obj(),
+
+    /// def confirm_webauthn(
+    ///     *,
+    ///     title: str,
+    ///     app_name: str,
+    ///     account_name: str | None,
+    ///     icon: bytes,
+    /// ) -> object:
+    ///     """Webauthn confirmation."""
+    Qstr::MP_QSTR_confirm_webauthn => obj_fn_kw!(0, new_confirm_webauthn).as_obj(),
 
     /// def show_error(
     ///     *,
