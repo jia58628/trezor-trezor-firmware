@@ -937,14 +937,11 @@ async def confirm_coinjoin(
 async def confirm_sign_identity(
     ctx: wire.GenericContext, proto: str, identity: str, challenge_visual: str | None
 ) -> None:
-    data = challenge_visual + "\n" if challenge_visual else ""
-    data += identity
-
     await confirm_blob(
         ctx,
         title=f"Sign {proto}",
-        data=data,
-        description=None,
+        data=identity,
+        description=challenge_visual + "\n" if challenge_visual else "",
         br_type="sign_identity",
         br_code=ButtonRequestType.Other,
     )
