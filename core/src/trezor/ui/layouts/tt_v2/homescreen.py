@@ -94,6 +94,7 @@ class Lockscreen(HomescreenBase):
         label: str | None,
         bootscreen: bool = False,
     ) -> None:
+        self.bootscreen = bootscreen
         if bootscreen:
             self.BACKLIGHT_LEVEL = ui.BACKLIGHT_NORMAL
 
@@ -107,6 +108,12 @@ class Lockscreen(HomescreenBase):
                 skip_first_paint=skip,
             ),
         )
+
+    async def __iter__(self) -> Any:
+        result = await super().__iter__()
+        if self.bootscreen:
+            self.request_complete_repaint()
+        return result
 
 
 class Busyscreen(HomescreenBase):
