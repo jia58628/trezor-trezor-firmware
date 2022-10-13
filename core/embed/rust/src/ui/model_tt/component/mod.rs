@@ -8,6 +8,7 @@ mod number_input;
 mod page;
 mod scroll;
 mod swipe;
+pub mod webauthn;
 
 pub use button::{
     Button, ButtonContent, ButtonMsg, ButtonStyle, ButtonStyleSheet, CancelConfirmMsg,

@@ -27,13 +27,12 @@ async def confirm_webauthn(
         # TODO: should create a UI test if relevant
         raise NotImplementedError
 
-    assert info.app_icon is not None
     confirm = _RustLayout(
         trezorui2.confirm_webauthn(
             title=info.get_header(),
             app_name=info.app_name(),
             account_name=info.account_name(),
-            icon=info.app_icon,
+            icon=info.app_icon_name,
         )
     )
 
@@ -48,7 +47,7 @@ async def confirm_webauthn(
 async def confirm_webauthn_reset() -> bool:
     confirm = _RustLayout(
         trezorui2.confirm_action(
-            title="FIDO2 Reset",
+            title="FIDO2 RESET",
             action="erase all credentials?",
             description="Do you really want to",
             reverse=True,

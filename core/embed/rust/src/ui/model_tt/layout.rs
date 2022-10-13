@@ -3,7 +3,7 @@ use core::{cmp::Ordering, convert::TryInto, ops::Deref};
 use crate::{
     error::Error,
     micropython::{
-        buffer::{get_buffer, StrBuffer},
+        buffer::StrBuffer,
         iter::{Iter, IterBuf},
         map::Map,
         module::Module,
@@ -30,12 +30,12 @@ use crate::{
 
 use super::{
     component::{
-        Bip39Input, Button, ButtonMsg, ButtonStyleSheet, CancelConfirmMsg, CancelInfoConfirmMsg,
-        Dialog, DialogMsg, Frame, HoldToConfirm, HoldToConfirmMsg, IconDialog, MnemonicInput,
-        MnemonicKeyboard, MnemonicKeyboardMsg, NotificationFrame, NumberInputDialog,
-        NumberInputDialogMsg, PassphraseKeyboard, PassphraseKeyboardMsg, PinKeyboard,
-        PinKeyboardMsg, SelectWordCount, SelectWordCountMsg, SelectWordMsg, Slip39Input,
-        SwipeHoldPage, SwipePage,
+        webauthn, Bip39Input, Button, ButtonMsg, ButtonStyleSheet, CancelConfirmMsg,
+        CancelInfoConfirmMsg, Dialog, DialogMsg, Frame, HoldToConfirm, HoldToConfirmMsg,
+        IconDialog, MnemonicInput, MnemonicKeyboard, MnemonicKeyboardMsg, NotificationFrame,
+        NumberInputDialog, NumberInputDialogMsg, PassphraseKeyboard, PassphraseKeyboardMsg,
+        PinKeyboard, PinKeyboardMsg, SelectWordCount, SelectWordCountMsg, SelectWordMsg,
+        Slip39Input, SwipeHoldPage, SwipePage,
     },
     theme,
 };
@@ -591,12 +591,9 @@ extern "C" fn new_confirm_webauthn(n_args: usize, args: *const Obj, kwargs: *mut
         let app_name: StrBuffer = kwargs.get(Qstr::MP_QSTR_app_name)?.try_into()?;
         let account_name: Option<StrBuffer> =
             kwargs.get(Qstr::MP_QSTR_account_name)?.try_into_option()?;
-        let icon = kwargs.get(Qstr::MP_QSTR_icon)?;
+        let icon: Option<StrBuffer> = kwargs.get(Qstr::MP_QSTR_icon)?.try_into_option()?;
 
-        // Getting icon byte data from `mp_obj_t`.
-        // Byte icon data need to be sent from `micropython` as it stores
-        // the database of all `webauthn` applications together with their icons.
-        let icon_data = unsafe { get_buffer(icon)? };
+        let icon_data = webauthn::get_icon_data(icon);
 
         let mut dialog = IconDialog::new(
             icon_data,
@@ -1131,7 +1128,7 @@ pub static mp_module_trezorui2: Module = obj_module! {
     ///     title: str,
     ///     app_name: str,
     ///     account_name: str | None,
-    ///     icon: bytes,
+    ///     icon: str | None,
     /// ) -> object:
     ///     """Webauthn confirmation."""
     Qstr::MP_QSTR_confirm_webauthn => obj_fn_kw!(0, new_confirm_webauthn).as_obj(),

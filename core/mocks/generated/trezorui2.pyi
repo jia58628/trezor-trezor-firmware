@@ -161,7 +161,7 @@ def confirm_webauthn(
     title: str,
     app_name: str,
     account_name: str | None,
-    icon: bytes,
+    icon: str | None,
 ) -> object:
     """Webauthn confirmation."""
 
