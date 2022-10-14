@@ -17,7 +17,7 @@ use crate::{
             paginated::{PageMsg, Paginate},
             painter,
             text::paragraphs::{Checklist, Paragraphs},
-            Border, Component, LineBreaking, Timeout, TimeoutMsg,
+            Border, Component, Timeout, TimeoutMsg,
         },
         geometry,
         layout::{
@@ -318,13 +318,10 @@ extern "C" fn new_confirm_blob(n_args: usize, args: *const Obj, kwargs: *mut Map
         let _ask_pagination: bool = kwargs.get_or(Qstr::MP_QSTR_ask_pagination, false)?;
         let hold: bool = kwargs.get_or(Qstr::MP_QSTR_hold, false)?;
 
-        // Blob/data in monospace font should not include hyphens at the end of lines
-        let mono_style = theme::TEXT_MONO.with_line_breaking(LineBreaking::BreakAtWhitespace);
-
         let paragraphs = Paragraphs::new()
             .add(theme::TEXT_NORMAL, description)
             .add(theme::TEXT_BOLD, extra)
-            .add(mono_style, data);
+            .add(theme::TEXT_MONO, data);
 
         let obj = if hold {
             LayoutObj::new(

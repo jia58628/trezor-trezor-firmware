@@ -81,11 +81,6 @@ impl TextStyle {
             page_breaking: PageBreaking::CutAndInsertEllipsis,
         }
     }
-
-    pub const fn with_line_breaking(mut self, line_breaking: LineBreaking) -> Self {
-        self.line_breaking = line_breaking;
-        self
-    }
 }
 
 impl TextLayout {
@@ -213,7 +208,7 @@ impl TextLayout {
                 // We're advancing to the next line.
 
                 // Check if we should be appending a hyphen at this point.
-                if self.include_hyphen() && span.insert_hyphen_before_line_break {
+                if span.insert_hyphen_before_line_break {
                     sink.hyphen(*cursor, self);
                 }
                 // Check the amount of vertical space we have left.
@@ -262,13 +257,6 @@ impl TextLayout {
             + self.style.text_font.text_height()
             + (end_cursor.y - init_cursor.y)
             + self.padding_bottom
-    }
-
-    fn include_hyphen(&self) -> bool {
-        matches!(
-            self.style.line_breaking,
-            LineBreaking::BreakWordsAndInsertHyphen
-        )
     }
 }
 
