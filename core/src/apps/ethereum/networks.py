@@ -36,47 +36,40 @@ def _networks_iterator() -> Iterator[EthereumNetworkInfo]:
         slip44=60,
         shortcut="ETH",
         name="Ethereum",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=3,
         slip44=1,
         shortcut="tROP",
         name="Ropsten",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=4,
         slip44=1,
         shortcut="tRIN",
         name="Rinkeby",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=5,
         slip44=1,
         shortcut="tGOR",
         name="Görli",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=56,
         slip44=714,
         shortcut="BNB",
         name="Binance Smart Chain",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=61,
         slip44=61,
         shortcut="ETC",
         name="Ethereum Classic",
-        rskip60=False,
     )
     yield EthereumNetworkInfo(
         chain_id=137,
         slip44=966,
         shortcut="MATIC",
         name="Polygon",
-        rskip60=False,
     )

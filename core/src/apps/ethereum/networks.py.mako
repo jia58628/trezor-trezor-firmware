@@ -37,6 +37,5 @@ def _networks_iterator() -> Iterator[EthereumNetworkInfo]:
         slip44=${n.slip44},
         shortcut="${n.shortcut}",
         name="${n.name}",
-        rskip60=${n.rskip60},
     )
 % endfor

@@ -3421,7 +3421,6 @@ if TYPE_CHECKING:
         slip44: "int"
         shortcut: "str"
         name: "str"
-        rskip60: "bool"
 
         def __init__(
             self,
@@ -3430,7 +3429,6 @@ if TYPE_CHECKING:
             slip44: "int",
             shortcut: "str",
             name: "str",
-            rskip60: "bool",
         ) -> None:
             pass
 
