@@ -58,7 +58,7 @@ async def sign_tx_eip1559(
     ctx: wire.Context,
     msg: EthereumSignTxEIP1559,
     keychain: Keychain,
-    defs: definitions.EthereumDefinitions,
+    defs: definitions.Definitions,
 ) -> EthereumTxRequest:
     check(msg)
 
@@ -66,7 +66,7 @@ async def sign_tx_eip1559(
 
     # Handle ERC20s
     token, address_bytes, recipient, value = await handle_erc20(
-        ctx, msg, defs.token_dict
+        ctx, msg, defs.tokens
     )
 
     data_total = msg.data_length

@@ -35,7 +35,7 @@ async def sign_message(
     ctx: Context,
     msg: EthereumSignMessage,
     keychain: Keychain,
-    defs: definitions.EthereumDefinitions,
+    defs: definitions.Definitions,
 ) -> EthereumMessageSignature:
     await paths.validate_path(ctx, keychain, msg.address_n)
 

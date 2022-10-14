@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
     # TODO: check the types of messages
     HandlerWithKeychainAndDefinitions = Callable[
-        [wire.Context, MsgInGeneric, Keychain, definitions.EthereumDefinitions],
+        [wire.Context, MsgInGeneric, Keychain, definitions.Definitions],
         Awaitable[MsgOut],
     ]
 
@@ -124,7 +124,7 @@ def with_keychain_from_path_and_defs(
     return decorator
 
 
-def _schemas_from_chain_id(
+def _schemas_from_network(
     network_info: EthereumNetworkInfo | None,
 ) -> Iterable[paths.PathSchema]:
     slip44_id: tuple[int, ...]
@@ -149,7 +149,7 @@ def with_keychain_from_chain_id_and_defs(
     # this is only for SignTx, and only PATTERN_ADDRESS is allowed
     async def wrapper(ctx: wire.Context, msg: MsgInKeychainChainIdDefs) -> MsgOut:
         defs = definitions.get_definitions_from_msg(msg)
-        schemas = _schemas_from_chain_id(defs.network)
+        schemas = _schemas_from_network(defs.network)
         keychain = await get_keychain(ctx, CURVE, schemas)
         with keychain:
             return await func(ctx, msg, keychain, defs)

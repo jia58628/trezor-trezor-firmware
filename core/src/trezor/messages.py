@@ -3458,7 +3458,7 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: protobuf.MessageType) -> TypeGuard["EthereumTokenInfo"]:
             return isinstance(msg, cls)
 
-    class EthereumEncodedDefinitions(protobuf.MessageType):
+    class EthereumDefinitions(protobuf.MessageType):
         encoded_network: "bytes | None"
         encoded_token: "bytes | None"
 
@@ -3471,7 +3471,7 @@ if TYPE_CHECKING:
             pass
 
         @classmethod
-        def is_type_of(cls, msg: protobuf.MessageType) -> TypeGuard["EthereumEncodedDefinitions"]:
+        def is_type_of(cls, msg: protobuf.MessageType) -> TypeGuard["EthereumDefinitions"]:
             return isinstance(msg, cls)
 
     class EthereumSignTx(protobuf.MessageType):
@@ -3485,7 +3485,7 @@ if TYPE_CHECKING:
         data_length: "int"
         chain_id: "int"
         tx_type: "int | None"
-        definitions: "EthereumEncodedDefinitions | None"
+        definitions: "EthereumDefinitions | None"
 
         def __init__(
             self,
@@ -3500,7 +3500,7 @@ if TYPE_CHECKING:
             data_initial_chunk: "bytes | None" = None,
             data_length: "int | None" = None,
             tx_type: "int | None" = None,
-            definitions: "EthereumEncodedDefinitions | None" = None,
+            definitions: "EthereumDefinitions | None" = None,
         ) -> None:
             pass
 
@@ -3520,7 +3520,7 @@ if TYPE_CHECKING:
         data_length: "int"
         chain_id: "int"
         access_list: "list[EthereumAccessList]"
-        definitions: "EthereumEncodedDefinitions | None"
+        definitions: "EthereumDefinitions | None"
 
         def __init__(
             self,
@@ -3536,7 +3536,7 @@ if TYPE_CHECKING:
             access_list: "list[EthereumAccessList] | None" = None,
             to: "str | None" = None,
             data_initial_chunk: "bytes | None" = None,
-            definitions: "EthereumEncodedDefinitions | None" = None,
+            definitions: "EthereumDefinitions | None" = None,
         ) -> None:
             pass
 

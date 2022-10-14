@@ -44,7 +44,7 @@ async def sign_typed_data(
     ctx: Context,
     msg: EthereumSignTypedData,
     keychain: Keychain,
-    defs: definitions.EthereumDefinitions,
+    defs: definitions.Definitions,
 ) -> EthereumTypedDataSignature:
     await paths.validate_path(ctx, keychain, msg.address_n)
 

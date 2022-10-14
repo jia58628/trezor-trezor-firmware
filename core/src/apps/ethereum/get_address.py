@@ -23,7 +23,7 @@ async def get_address(
     ctx: Context,
     msg: EthereumGetAddress,
     keychain: Keychain,
-    defs: definitions.EthereumDefinitions,
+    defs: definitions.Definitions,
 ) -> EthereumAddress:
     await paths.validate_path(ctx, keychain, msg.address_n)
 
