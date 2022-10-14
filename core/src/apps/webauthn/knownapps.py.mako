@@ -7,12 +7,13 @@ class FIDOApp:
     def __init__(
         self,
         label: str,
+        icon: str | None,  # UI1, TO BE REMOVED
         icon_name: str | None,
         use_sign_count: bool | None,
         use_self_attestation: bool | None,
     ) -> None:
         self.label = label
-        # Icon name gets translated into actual icon in Rust UI
+        self.icon = icon  # UI1, TO BE REMOVED
         self.icon_name = icon_name
         self.use_sign_count = use_sign_count
         self.use_self_attestation = use_self_attestation
@@ -29,9 +30,11 @@ for app in fido:
         rp_id_hash = sha256(origin.encode()).digest()
         fido_entries.append((origin, rp_id_hash, "WebAuthn", app))
     if app.icon is not None:
-        app.icon = app.key
+        app.icon_res = f"apps/webauthn/res/icon_{app.key}.toif" # UI1, TO BE REMOVED
+        app.icon_name = app.key
     else:
-        app.icon = None
+        app.icon_res = None  # UI1, TO BE REMOVED
+        app.icon_name = None
 %>\
 # fmt: off
 def by_rp_id_hash(rp_id_hash: bytes) -> FIDOApp | None:
@@ -40,7 +43,8 @@ def by_rp_id_hash(rp_id_hash: bytes) -> FIDOApp | None:
         # ${type} key for ${app.name}
         return FIDOApp(
             label=${black_repr(label)},
-            icon_name=${black_repr(app.icon)},
+            icon=${black_repr(app.icon_res)},  # UI1, TO BE REMOVED
+            icon_name=${black_repr(app.icon_name)},
             use_sign_count=${black_repr(app.use_sign_count)},
             use_self_attestation=${black_repr(app.use_self_attestation)},
         )
